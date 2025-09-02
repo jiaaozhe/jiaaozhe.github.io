@@ -11,7 +11,6 @@ title: 关于
         
         <h3>技术栈</h3>
         <ul>
-            <li>Web 开发：HTML, CSS, JavaScript</li>
             <li>后端：Node.js, Python</li>
             <li>数据库：MySQL, MongoDB</li>
             <li>其他：Git, Docker, Linux</li>
@@ -21,7 +20,7 @@ title: 关于
         <p>如果你对我的文章有任何想法或建议，欢迎通过以下方式联系我：</p>
         <ul>
             <li>GitHub: [你的GitHub用户名]</li>
-            <li>Email: [你的邮箱]</li>
+            <li>Email: jiaaozhe1999@outlook.com</li>
         </ul>
     </div>
 </article>

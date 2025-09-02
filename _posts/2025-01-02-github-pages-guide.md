@@ -1,6 +1,6 @@
 ---
 title: "GitHub Pages 搭建指南"
-date: 2024-01-02
+date: 2025-01-02
 excerpt: "如何用 GitHub Pages 快速搭建个人博客网站。"
 categories: ["技术", "教程"]
 ---
