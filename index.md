@@ -6,6 +6,7 @@ title: 首页
 <section class="hero">
     <h2>欢迎来到我的博客</h2>
     <p>分享技术、生活和思考</p>
+    <p><a href="/categories/">查看所有分类</a></p>
 </section>
 
 <section class="blog-posts">
