@@ -1,37 +1,80 @@
 # 个人博客
 
-这是一个使用 GitHub Pages 搭建的个人博客网站。
+使用 Jekyll 和 GitHub Pages 搭建的个人博客网站。
 
 ## 功能特性
 
+- 使用 Markdown 写作
 - 响应式设计，支持移动端
-- 简洁的博客文章布局
-- 基于纯 HTML/CSS/JavaScript
+- 自动文章列表和分页
+- SEO 优化
 - 使用 GitHub Pages 免费托管
 
 ## 本地开发
 
-1. 克隆仓库：
-```bash
-git clone https://github.com/your-username/your-username.github.io.git
+1. 安装 Ruby 和 Jekyll：
+   ```bash
+   gem install jekyll bundler
+   ```
+
+2. 安装依赖：
+   ```bash
+   bundle install
+   ```
+
+3. 启动本地服务器：
+   ```bash
+   bundle exec jekyll serve
+   ```
+
+4. 在浏览器打开 http://localhost:4000
+
+## 添加新文章
+
+在 `_posts/` 目录创建 Markdown 文件，文件名格式：
+
+```
+YYYY-MM-DD-title.md
 ```
 
-2. 在浏览器中打开 `index.html` 文件即可预览
+文件头部需要包含 YAML front matter：
+
+```markdown
+---
+title: "文章标题"
+date: YYYY-MM-DD
+excerpt: "文章摘要"
+---
+
+文章内容...
+```
 
 ## 部署
 
-1. 将代码推送到 GitHub 仓库
-2. 在仓库设置中启用 GitHub Pages
-3. 访问 `https://your-username.github.io`
+推送到 GitHub 后会自动部署：
+
+```bash
+git add .
+git commit -m "添加新文章"
+git push origin main
+```
+
+网站将在几分钟内更新：https://username.github.io
 
 ## 项目结构
 
 ```
-├── index.html          # 主页
-├── about.html          # 关于页面
-├── styles.css          # 样式文件
-├── posts/              # 博客文章目录
-│   ├── first-post.html
-│   └── second-post.html
+├── _config.yml         # Jekyll 配置
+├── _layouts/           # 布局模板
+│   ├── default.html
+│   └── post.html
+├── _posts/             # 博客文章 (Markdown)
+│   ├── 2024-01-01-first-post.md
+│   └── 2024-01-02-github-pages-guide.md
+├── assets/css/         # 样式文件
+│   └── styles.css
+├── index.md            # 主页
+├── about.md            # 关于页面
+├── Gemfile             # Ruby 依赖
 └── README.md           # 项目说明
 ```

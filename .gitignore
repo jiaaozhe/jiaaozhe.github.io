@@ -122,3 +122,9 @@ Desktop.ini
 
 # Local development
 .local
+
+# Jekyll
+_site/
+.sass-cache/
+.jekyll-cache/
+.jekyll-metadata
