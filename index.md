@@ -1,6 +1,7 @@
 ---
 layout: default
-title: 首页
+title: 博客首页
+permalink: /posts/
 ---
 
 <section class="hero">
