@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% if page.title %}{{ page.title }} - {{ site.title }}{% else %}{{ site.title }}{% endif %}</title>
-    <link rel="stylesheet" href="{{ '/styles.css' | relative_url }}">
-    <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ '/assets/css/styles.css' | relative_url }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     {% seo %}
 </head>
 <body>
@@ -13,7 +13,9 @@
         <nav>
             <h1><a href="{{ '/' | relative_url }}">{{ site.title }}</a></h1>
             <ul>
-                <li><a href="{{ '/' | relative_url }}">个人介绍</a></li>
+                <li><a href="{{ '/' | relative_url }}">首页</a></li>
+                <li><a href="{{ '/introduction' | relative_url }}">个人简介</a></li>
+                <li><a href="{{ '/research' | relative_url }}">学术研究</a></li>
                 <li><a href="{{ '/posts' | relative_url }}">博客</a></li>
                 <li><a href="{{ '/categories' | relative_url }}">分类</a></li>
                 <li><a href="{{ '/about' | relative_url }}">关于</a></li>
@@ -28,5 +30,23 @@
     <footer>
         <p>&copy; {{ site.time | date: '%Y' }} {{ site.title }}. 使用 GitHub Pages 搭建.</p>
     </footer>
+
+    <!-- BibTeX Modal -->
+    <div id="bibtex-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>BibTeX 引用</h3>
+                <span class="close-btn">&times;</span>
+            </div>
+            <div class="modal-body">
+                <pre id="bibtex-content"></pre>
+            </div>
+            <div class="modal-footer">
+                <button id="copy-bibtex" class="copy-btn">复制到剪贴板</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ '/assets/js/script.js' | relative_url }}"></script>
 </body>
 </html>

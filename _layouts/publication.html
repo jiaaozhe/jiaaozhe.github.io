@@ -1,0 +1,34 @@
+---
+layout: default
+---
+<article class="publication-detail">
+    <header class="publication-header">
+        <div class="publication-badge">{{ page.badge }}</div>
+        <h1>{{ page.title }}</h1>
+        <p class="publication-authors">{{ page.authors }}</p>
+        <p class="publication-venue">{{ page.venue }}, {{ page.year }}</p>
+
+        <div class="publication-links" data-bibtex="{{ page.bibtex | escape }}">
+            {% if page.pdf_url %}
+            <a href="{{ page.pdf_url }}" class="publication-link" target="_blank" rel="noopener noreferrer">📄 PDF</a>
+            {% endif %}
+            {% if page.project_url %}
+            <a href="{{ page.project_url }}" class="publication-link" target="_blank" rel="noopener noreferrer">🔗 项目</a>
+            {% endif %}
+            {% if page.bibtex %}
+            <a href="#" class="publication-link">📖 引用</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <div class="publication-content">
+        <h2>摘要</h2>
+        <div class="abstract">
+            {{ page.abstract | markdownify }}
+        </div>
+    </div>
+
+    <footer class="publication-footer">
+        <a href="{{ '/' | relative_url }}" class="back-link">← 返回首页</a>
+    </footer>
+</article>

@@ -18,6 +18,9 @@ collections:
   posts:
     output: true
     permalink: /posts/:title/
+  publications:
+    output: true
+    permalink: /publications/:title/
 
 # Defaults
 defaults:
@@ -26,6 +29,11 @@ defaults:
       type: "posts"
     values:
       layout: "post"
+  - scope:
+      path: ""
+      type: "publications"
+    values:
+      layout: "publication"
 
 # Exclude from processing
 exclude:
