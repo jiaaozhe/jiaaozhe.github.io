@@ -10,7 +10,7 @@ layout: default
         <div class="post-categories">
             分类:
             {% for category in page.categories %}
-            <a href="/categories/#{{ category | slugify }}">{{ category }}</a>{% unless forloop.last %}, {% endunless %}
+            <a href="{{ '/posts/' | relative_url }}?category={{ category | uri_escape }}">{{ category }}</a>
             {% endfor %}
         </div>
         {% endif %}
@@ -21,6 +21,6 @@ layout: default
     </div>
 
     <footer class="post-footer">
-        <a href="{{ '/' | relative_url }}" class="back-link">← 返回首页</a>
+        <a href="{{ '/' | relative_url }}" class="back-link">返回首页</a>
     </footer>
 </article>

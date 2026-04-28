@@ -23,7 +23,6 @@ username.github.io
 
 - `index.html` - 主页
 - `styles.css` - 样式文件  
-- `about.html` - 关于页面
 - `posts/` - 博客文章目录
 
 ## 3. 上传到 GitHub

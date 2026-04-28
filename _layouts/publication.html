@@ -10,13 +10,13 @@ layout: default
 
         <div class="publication-links" data-bibtex="{{ page.bibtex | escape }}">
             {% if page.pdf_url %}
-            <a href="{{ page.pdf_url }}" class="publication-link" target="_blank" rel="noopener noreferrer">📄 PDF</a>
+            <a href="{{ page.pdf_url }}" class="publication-link" target="_blank" rel="noopener noreferrer">PDF</a>
             {% endif %}
             {% if page.project_url %}
-            <a href="{{ page.project_url }}" class="publication-link" target="_blank" rel="noopener noreferrer">🔗 项目</a>
+            <a href="{{ page.project_url }}" class="publication-link" target="_blank" rel="noopener noreferrer">项目</a>
             {% endif %}
             {% if page.bibtex %}
-            <a href="#" class="publication-link">📖 引用</a>
+            <a href="#" class="publication-link">引用</a>
             {% endif %}
         </div>
     </header>
@@ -29,6 +29,6 @@ layout: default
     </div>
 
     <footer class="publication-footer">
-        <a href="{{ '/' | relative_url }}" class="back-link">← 返回首页</a>
+        <a href="{{ '/' | relative_url }}" class="back-link">返回首页</a>
     </footer>
 </article>

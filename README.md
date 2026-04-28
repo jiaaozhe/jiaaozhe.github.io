@@ -74,7 +74,6 @@ git push origin main
 ├── assets/css/         # 样式文件
 │   └── styles.css
 ├── index.md            # 主页
-├── about.md            # 关于页面
 ├── Gemfile             # Ruby 依赖
 └── README.md           # 项目说明
 ```

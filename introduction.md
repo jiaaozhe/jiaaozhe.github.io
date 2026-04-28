@@ -1,6 +1,6 @@
 ---
 layout: default
-title: 个人简介
+title: 关于
 permalink: /introduction/
 ---
 
@@ -24,9 +24,9 @@ permalink: /introduction/
 
         <div class="research-card">
             <div class="card-header">
-                <h2>🔬 研究兴趣</h2>
+                <h2>研究兴趣</h2>
                 <div class="icon-wrapper">
-                    <span>🔬</span>
+                    <span>Research</span>
                 </div>
             </div>
             <div class="card-content">
@@ -48,7 +48,7 @@ permalink: /introduction/
 
 <section class="publications-section">
     <div class="section-header-main">
-        <h2>📚 学术论文</h2>
+        <h2>学术论文</h2>
         <p>已发表的学术研究成果</p>
     </div>
 
@@ -61,13 +61,13 @@ permalink: /introduction/
             <p class="publication-venue">{{ publication.venue }}, {{ publication.year }}</p>
             <div class="publication-links">
                 {% if publication.pdf_url %}
-                <a href="{{ publication.pdf_url }}" class="publication-link" target="_blank" rel="noopener noreferrer">📄 PDF</a>
+                <a href="{{ publication.pdf_url }}" class="publication-link" target="_blank" rel="noopener noreferrer">PDF</a>
                 {% endif %}
                 {% if publication.project_url %}
-                <a href="{{ publication.project_url }}" class="publication-link" target="_blank" rel="noopener noreferrer">🔗 项目</a>
+                <a href="{{ publication.project_url }}" class="publication-link" target="_blank" rel="noopener noreferrer">项目</a>
                 {% endif %}
                 {% if publication.bibtex %}
-                <a href="#" class="publication-link">📖 引用</a>
+                <a href="#" class="publication-link">引用</a>
                 {% endif %}
             </div>
         </div>
@@ -77,23 +77,23 @@ permalink: /introduction/
 
 <section class="contact-section">
     <div class="section-header-main">
-        <h2>📞 联系方式</h2>
+        <h2>联系方式</h2>
         <p>欢迎与我交流合作</p>
     </div>
 
     <div class="contact-grid">
         <div class="contact-item">
-            <div class="contact-icon">✉️</div>
+            <div class="contact-icon">Mail</div>
             <div class="contact-info">
                 <h4>邮箱</h4>
-                <p>jiaaozhe1999@outlook.com</p>
+                <p><a href="mailto:jiaaozhe1999@outlook.com">jiaaozhe1999@outlook.com</a></p>
             </div>
         </div>
         <div class="contact-item">
-            <div class="contact-icon">💼</div>
+            <div class="contact-icon">Git</div>
             <div class="contact-info">
                 <h4>GitHub</h4>
-                <p>github.com/jiaaozhe</p>
+                <p><a href="https://github.com/jiaaozhe" target="_blank" rel="noopener noreferrer">github.com/jiaaozhe</a></p>
             </div>
         </div>
     </div>
