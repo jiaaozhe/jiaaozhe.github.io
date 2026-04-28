@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% if page.title %}{{ page.title }} - {{ site.title }}{% else %}{{ site.title }}{% endif %}</title>
     <link rel="icon" type="image/svg+xml" href="{{ '/favicon.svg' | relative_url }}">
-    <link rel="stylesheet" href="{{ '/assets/css/styles.css' | relative_url }}">
+    <link rel="stylesheet" href="{{ '/assets/css/styles.css' | relative_url }}?v={{ site.time | date: '%s' }}">
     {% seo %}
 </head>
 <body>
@@ -54,6 +54,6 @@
         </div>
     </div>
 
-    <script src="{{ '/assets/js/script.js' | relative_url }}"></script>
+    <script src="{{ '/assets/js/script.js' | relative_url }}?v={{ site.time | date: '%s' }}"></script>
 </body>
 </html>
