@@ -45,6 +45,19 @@
         <p>&copy; {{ site.time | date: '%Y' }} {{ site.title }}. Built with GitHub Pages.</p>
     </footer>
 
+    <div id="command-palette" class="command-palette" aria-hidden="true">
+        <div class="command-panel" role="dialog" aria-modal="true" aria-labelledby="command-title">
+            <div class="command-title" id="command-title">jiaaozhe.site</div>
+            <div class="command-output" id="command-output" aria-live="polite">
+                <p>type "help"</p>
+            </div>
+            <form class="command-form" id="command-form">
+                <label for="command-input">&gt;</label>
+                <input id="command-input" class="command-input" type="text" autocomplete="off" spellcheck="false">
+            </form>
+        </div>
+    </div>
+
     <!-- BibTeX Modal -->
     <div id="bibtex-modal" class="modal">
         <div class="modal-content">
@@ -61,6 +74,16 @@
         </div>
     </div>
 
+    <script type="application/json" id="site-posts-data">
+        [
+            {% for post in site.posts %}
+            {
+                "title": {{ post.title | jsonify }},
+                "url": {{ post.url | relative_url | jsonify }}
+            }{% unless forloop.last %},{% endunless %}
+            {% endfor %}
+        ]
+    </script>
     <script src="{{ '/assets/js/script.js' | relative_url }}?v={{ site.time | date: '%s' }}"></script>
 </body>
 </html>

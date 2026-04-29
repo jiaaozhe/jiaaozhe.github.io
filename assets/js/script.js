@@ -3,6 +3,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const navMenu = document.getElementById('site-menu');
     const filterRoot = document.querySelector('[data-post-filter]');
     const postCards = Array.from(document.querySelectorAll('[data-post-categories]'));
+    const commandPalette = document.getElementById('command-palette');
+    const commandForm = document.getElementById('command-form');
+    const commandInput = document.getElementById('command-input');
+    const commandOutput = document.getElementById('command-output');
 
     if (navToggle && navMenu) {
         navToggle.addEventListener('click', function() {
@@ -77,6 +81,120 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         applyPostFilter(new URLSearchParams(window.location.search).get('category') || 'all', false);
+    }
+
+    if (commandPalette && commandForm && commandInput && commandOutput) {
+        const postsData = JSON.parse(document.getElementById('site-posts-data').textContent || '[]');
+        const commands = {
+            help: 'show commands',
+            posts: 'open articles',
+            research: 'open research',
+            about: 'open about',
+            random: 'open random post',
+            clear: 'clear output'
+        };
+
+        function getHelpLines() {
+            return Object.keys(commands).map(function(key) {
+                return key.padEnd(10, ' ') + commands[key];
+            });
+        }
+
+        function writeCommandOutput(lines) {
+            commandOutput.innerHTML = '';
+            lines.forEach(function(line) {
+                const item = document.createElement('p');
+                item.textContent = line;
+                commandOutput.appendChild(item);
+            });
+        }
+
+        function openCommandPalette() {
+            commandPalette.classList.add('is-open');
+            commandPalette.setAttribute('aria-hidden', 'false');
+            commandInput.value = '';
+            writeCommandOutput(getHelpLines());
+            window.setTimeout(function() {
+                commandInput.focus();
+            }, 0);
+        }
+
+        function closeCommandPalette() {
+            commandPalette.classList.remove('is-open');
+            commandPalette.setAttribute('aria-hidden', 'true');
+        }
+
+        function runCommand(value) {
+            const command = value.trim().toLowerCase();
+
+            if (!command) {
+                return;
+            }
+
+            if (command === 'help') {
+                writeCommandOutput(getHelpLines());
+                return;
+            }
+
+            if (command === 'clear') {
+                writeCommandOutput(getHelpLines());
+                return;
+            }
+
+            if (command === 'posts') {
+                window.location.href = '/posts/';
+                return;
+            }
+
+            if (command === 'research') {
+                window.location.href = '/research/';
+                return;
+            }
+
+            if (command === 'about') {
+                window.location.href = '/introduction/';
+                return;
+            }
+
+            if (command === 'random') {
+                if (!postsData.length) {
+                    writeCommandOutput(['no posts found']);
+                    return;
+                }
+
+                const post = postsData[Math.floor(Math.random() * postsData.length)];
+                window.location.href = post.url;
+                return;
+            }
+
+            writeCommandOutput(['unknown command: ' + command, 'type "help"']);
+        }
+
+        document.addEventListener('keydown', function(event) {
+            const target = event.target;
+            const isTyping = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target.isContentEditable;
+
+            if (event.key === '/' && !isTyping && !commandPalette.classList.contains('is-open')) {
+                event.preventDefault();
+                openCommandPalette();
+            }
+
+            if (event.key === 'Escape' && commandPalette.classList.contains('is-open')) {
+                closeCommandPalette();
+            }
+        });
+
+        commandPalette.addEventListener('click', function(event) {
+            if (event.target === commandPalette) {
+                closeCommandPalette();
+            }
+        });
+
+        commandForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            runCommand(commandInput.value);
+            commandInput.value = '';
+        });
     }
 });
 

@@ -844,6 +844,71 @@ img {
     border-color: var(--line);
 }
 
+.command-palette {
+    position: fixed;
+    inset: 0;
+    z-index: 1900;
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 12vh 24px 24px;
+    background: rgba(255, 255, 255, 0.92);
+}
+
+.command-palette.is-open {
+    display: flex;
+}
+
+.command-panel {
+    width: min(100%, 560px);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--white);
+    color: var(--near-black);
+    font-family: var(--mono-font);
+}
+
+.command-title {
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--line);
+    color: var(--black);
+    font-size: 14px;
+}
+
+.command-output {
+    min-height: 160px;
+    padding: 18px 20px;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.command-output p {
+    margin: 0;
+    white-space: pre;
+}
+
+.command-form {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 20px 18px;
+    border-top: 1px solid var(--line);
+}
+
+.command-form label {
+    color: var(--black);
+}
+
+.command-input {
+    width: 100%;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--black);
+    font: inherit;
+}
+
 @media (max-width: 850px) {
     .site-nav {
         min-height: 72px;
