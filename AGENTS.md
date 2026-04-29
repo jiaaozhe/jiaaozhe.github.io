@@ -18,11 +18,12 @@
 │       └── script.js
 ├── DESIGN.md
 ├── favicon.svg
-├── fragments.md
 ├── Gemfile
 ├── Gemfile.lock
 ├── index.md
-├── introduction.md
-├── posts.md
-├── README.md
-└── research.md
+├── pages
+│   ├── fragments.md
+│   ├── introduction.md
+│   ├── posts.md
+│   └── research.md
+└── README.md

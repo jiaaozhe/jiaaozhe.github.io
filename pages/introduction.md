@@ -18,10 +18,10 @@ permalink: /introduction/
                 <path d="M73 32h18"></path>
             </svg>
         </div>
-        <p class="subtitle">专注于人工智能与机器学习研究</p>
+        <p class="subtitle">Code is cheap, show me your talk.</p>
         <div class="hero-tags">
-            <span class="tag">多模态表征</span>
-            <span class="tag">计算机视觉</span>
+            <span class="tag">Multimodal Representation</span>
+            <span class="tag">Automation</span>
         </div>
     </div>
 </section>
@@ -39,12 +39,12 @@ permalink: /introduction/
             <div class="card-content">
                 <div class="research-interests-preview">
                     <div class="research-interest-preview">
-                        <h4>多模态表征</h4>
-                        <p class="research-interest-meta">多模态理解、多模态特征对齐与融合</p>
+                        <h4>Multimodal Representation</h4>
+                        <p class="research-interest-meta">Unified Multimodal Understanding, Contrastive Learning</p>
                     </div>
                     <div class="research-interest-preview">
-                        <h4>计算机视觉</h4>
-                        <p class="research-interest-meta">图像描述</p>
+                        <h4>Automation</h4>
+                        <p class="research-interest-meta">Token is all you need.</p>
                     </div>
                 </div>
             </div>

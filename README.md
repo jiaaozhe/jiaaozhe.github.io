@@ -65,14 +65,25 @@ git push origin main
 
 ```
 ├── _config.yml         # Jekyll 配置
+├── _data/              # 站点数据
+│   └── fragments.yml
 ├── _layouts/           # 布局模板
 │   ├── default.html
-│   └── post.html
+│   ├── post.html
+│   └── publication.html
 ├── _posts/             # 博客文章 (Markdown)
-│   ├── 2024-01-01-first-post.md
-│   └── 2024-01-02-github-pages-guide.md
+│   ├── 2025-01-01-first-post.md
+│   └── 2025-01-02-github-pages-guide.md
+├── _publications/      # 学术成果
 ├── assets/css/         # 样式文件
 │   └── styles.css
+├── assets/js/          # 交互脚本
+│   └── script.js
+├── pages/              # 独立页面
+│   ├── fragments.md
+│   ├── introduction.md
+│   ├── posts.md
+│   └── research.md
 ├── index.md            # 主页
 ├── Gemfile             # Ruby 依赖
 └── README.md           # 项目说明
