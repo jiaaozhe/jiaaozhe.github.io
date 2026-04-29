@@ -7,7 +7,6 @@ permalink: /research/
 <section class="research-hero">
     <div class="hero-content">
         <h1>学术研究</h1>
-        <p class="subtitle">GPU is all you need.</p>
     </div>
 </section>
 

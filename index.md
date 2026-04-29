@@ -24,7 +24,6 @@ title: 个人主页
 
 <section class="recent-fragments">
     <div class="section-header-main">
-        <p>Fragments</p>
         <h2>碎片流</h2>
     </div>
     <div class="home-fragment-list">

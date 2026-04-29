@@ -5,7 +5,6 @@ permalink: /posts/
 ---
 
 <section class="hero">
-    <p class="hero-kicker">Writing</p>
     <h1>我的博客文章</h1>
 </section>
 

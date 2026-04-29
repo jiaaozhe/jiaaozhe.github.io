@@ -5,7 +5,6 @@ permalink: /fragments/
 ---
 
 <section class="hero fragments-hero">
-    <p class="hero-kicker">Fragments</p>
     <h1>碎片流</h1>
     <p>论文、工具、实验和代码库的短记录。它们不够完整，但值得留下。</p>
 </section>

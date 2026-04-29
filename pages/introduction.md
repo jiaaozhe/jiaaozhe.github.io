@@ -18,6 +18,7 @@ permalink: /introduction/
                 <path d="M73 32h18"></path>
             </svg>
         </div>
+        <h1>关于</h1>
         <p class="subtitle">Code is cheap, show me your talk.</p>
         <div class="hero-tags">
             <span class="tag">Multimodal Representation</span>
