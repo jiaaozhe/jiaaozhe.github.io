@@ -1,90 +1,86 @@
 # 个人博客
 
-使用 Jekyll 和 GitHub Pages 搭建的个人博客网站。
+基于 Jekyll 和 GitHub Pages 的个人网站。
 
-## 功能特性
+## 本地启动
 
-- 使用 Markdown 写作
-- 响应式设计，支持移动端
-- 自动文章列表和分页
-- SEO 优化
-- 使用 GitHub Pages 免费托管
-
-## 本地开发
-
-1. 安装 Ruby 和 Jekyll：
-   ```bash
-   gem install jekyll bundler
-   ```
-
-2. 安装依赖：
-   ```bash
-   bundle install
-   ```
-
-3. 启动本地服务器：
-   ```bash
-   bundle exec jekyll serve
-   ```
-
-4. 在浏览器打开 http://localhost:4000
-
-## 添加新文章
-
-在 `_posts/` 目录创建 Markdown 文件，文件名格式：
-
+```bash
+bundle install
+bundle exec jekyll serve
 ```
+
+打开 `http://localhost:4000`。
+
+## 内容维护
+
+### 文章
+
+在 `_posts/` 新建 Markdown 文件，文件名格式：
+
+```text
 YYYY-MM-DD-title.md
 ```
 
-文件头部需要包含 YAML front matter：
+示例：
 
 ```markdown
 ---
 title: "文章标题"
-date: YYYY-MM-DD
+date: 2026-04-29
 excerpt: "文章摘要"
+categories: [技术]
 ---
 
-文章内容...
+正文内容。
 ```
 
-## 部署
+### 碎片流
 
-推送到 GitHub 后会自动部署：
+碎片流放在 `_fragments/`，每条一个 Markdown 文件。
 
-```bash
-git add .
-git commit -m "添加新文章"
-git push origin main
+```text
+_fragments/YYYY-MM-DD-title.md
 ```
 
-网站将在几分钟内更新：https://username.github.io
+示例：
 
-## 项目结构
+```markdown
+---
+date: 2026-04-29
+type: 观察
+---
 
+这里写短记录内容。
+
+可以写多段、列表、链接或代码。
 ```
-├── _config.yml         # Jekyll 配置
-├── _data/              # 站点数据
-│   └── fragments.yml
-├── _layouts/           # 布局模板
-│   ├── default.html
-│   ├── post.html
-│   └── publication.html
-├── _posts/             # 博客文章 (Markdown)
-│   ├── 2025-01-01-first-post.md
-│   └── 2025-01-02-github-pages-guide.md
-├── _publications/      # 学术成果
-├── assets/css/         # 样式文件
-│   └── styles.css
-├── assets/js/          # 交互脚本
-│   └── script.js
-├── pages/              # 独立页面
+
+`type` 会自动生成顶部筛选按钮，不需要额外配置。
+
+### 学术成果
+
+学术成果放在 `_publications/`，每篇一个 Markdown 文件。
+
+## 目录结构
+
+```text
+├── _config.yml
+├── _fragments/
+├── _layouts/
+├── _posts/
+├── _publications/
+├── assets/
+│   ├── css/
+│   └── js/
+├── pages/
 │   ├── fragments.md
 │   ├── introduction.md
 │   ├── posts.md
 │   └── research.md
-├── index.md            # 主页
-├── Gemfile             # Ruby 依赖
-└── README.md           # 项目说明
+├── index.md
+└── README.md
 ```
+
+## 部署
+
+推送到 `main` 后由 GitHub Pages 自动构建。

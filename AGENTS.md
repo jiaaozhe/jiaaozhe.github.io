@@ -1,7 +1,7 @@
 .
 ├── _config.yml
-├── _data
-│   └── fragments.yml
+├── _fragments
+│   └── .gitkeep
 ├── _layouts
 │   ├── default.html
 │   ├── post.html

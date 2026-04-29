@@ -123,39 +123,8 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
 
-        document.querySelectorAll('[data-fragment-tag]').forEach(function(button) {
-            button.addEventListener('click', function() {
-                const tag = button.dataset.fragmentTag;
-
-                fragmentButtons.forEach(function(filterButton) {
-                    filterButton.classList.toggle('is-active', filterButton.dataset.fragmentType === 'all');
-                    filterButton.setAttribute('aria-pressed', String(filterButton.dataset.fragmentType === 'all'));
-                });
-
-                fragmentItems.forEach(function(item) {
-                    const tags = item.dataset.fragmentTags.split('|').filter(Boolean);
-                    item.hidden = !tags.includes(tag);
-                });
-
-                const url = new URL(window.location.href);
-                url.searchParams.delete('type');
-                url.searchParams.set('tag', tag);
-                window.history.replaceState({}, '', url);
-            });
-        });
-
         const params = new URLSearchParams(window.location.search);
-        const initialTag = params.get('tag');
-
-        if (initialTag) {
-            const tagButton = document.querySelector('[data-fragment-tag="' + CSS.escape(initialTag) + '"]');
-
-            if (tagButton) {
-                tagButton.click();
-            }
-        } else {
-            applyFragmentFilter(params.get('type') || 'all', false);
-        }
+        applyFragmentFilter(params.get('type') || 'all', false);
     }
 
     if (commandPalette && commandForm && commandInput && commandOutput) {

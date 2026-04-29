@@ -21,6 +21,8 @@ collections:
   publications:
     output: true
     permalink: /publications/:title/
+  fragments:
+    output: false
 
 # Defaults
 defaults:

@@ -58,6 +58,10 @@ img {
     height: auto;
 }
 
+[hidden] {
+    display: none !important;
+}
+
 ::selection {
     background: var(--black);
     color: var(--white);
@@ -229,6 +233,11 @@ img {
 }
 
 .hero h1 {
+    font-size: clamp(30px, 4vw, 44px);
+    line-height: 1.15;
+}
+
+.research-hero h1 {
     font-size: clamp(30px, 4vw, 44px);
     line-height: 1.15;
 }
@@ -501,7 +510,8 @@ img {
 
 .fragment-item {
     display: grid;
-    grid-template-columns: 120px minmax(0, 1fr);
+    grid-template-columns: 140px minmax(0, 1fr) auto;
+    align-items: start;
     gap: 32px;
     padding: 30px 0;
     border-top: 1px solid var(--line);
@@ -511,37 +521,51 @@ img {
     border-bottom: 1px solid var(--line);
 }
 
-.fragment-body {
+.fragment-content {
     display: grid;
     gap: 12px;
 }
 
-.fragment-body p {
+.fragment-content p,
+.fragment-content ul,
+.fragment-content ol,
+.fragment-content pre {
     margin: 0;
+}
+
+.fragment-content p,
+.fragment-content li {
     color: var(--near-black);
     font-size: 18px;
     line-height: 1.7;
 }
 
-.fragment-meta {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
+.fragment-content ul,
+.fragment-content ol {
+    padding-left: 22px;
+}
+
+.fragment-content code {
+    font-family: var(--mono-font);
+    font-size: 0.94em;
+}
+
+.fragment-content pre {
+    overflow: auto;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--snow);
+}
+
+.fragment-type {
     color: var(--muted);
+    font-family: var(--mono-font);
     font-size: 13px;
+    line-height: 1.8;
+    white-space: nowrap;
 }
 
-.fragment-tag {
-    padding: 0;
-    border: 0;
-    background: transparent;
-    color: var(--muted);
-    font: inherit;
-    cursor: pointer;
-}
-
-.fragment-tag:hover,
 .fragment-source:hover {
     color: var(--black);
 }
@@ -1071,6 +1095,17 @@ img {
         gap: 8px;
     }
 
+    .fragment-item {
+        position: relative;
+        padding-top: 36px;
+    }
+
+    .fragment-type {
+        position: absolute;
+        top: 30px;
+        right: 0;
+    }
+
     .profile-hero,
     .research-hero {
         padding: 72px 0 48px;
@@ -1133,7 +1168,8 @@ img {
     }
 
     .home-fragment p,
-    .fragment-body p {
+    .fragment-content p,
+    .fragment-content li {
         font-size: 16px;
     }
 }

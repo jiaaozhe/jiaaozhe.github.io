@@ -28,11 +28,11 @@ title: 个人主页
         <h2>碎片流</h2>
     </div>
     <div class="home-fragment-list">
-        {% assign fragments = site.data.fragments | sort: "date" | reverse %}
+        {% assign fragments = site.fragments | sort: "date" | reverse %}
         {% for fragment in fragments limit:3 %}
         <article class="home-fragment">
             <time datetime="{{ fragment.date }}">{{ fragment.date | date: "%Y.%m.%d" }}</time>
-            <p>{{ fragment.text }}</p>
+            <p>{{ fragment.content | strip_html | truncate: 120 }}</p>
         </article>
         {% endfor %}
     </div>

@@ -12,32 +12,27 @@ permalink: /fragments/
 
 <section class="fragment-filter">
     <span>筛选碎片</span>
+    {% assign fragments = site.fragments | sort: "date" | reverse %}
+    {% assign fragment_types = fragments | map: "type" | compact | uniq %}
     <div class="filter-links" data-fragment-filter>
         <button type="button" class="filter-button is-active" data-fragment-type="all" aria-pressed="true">全部</button>
-        <button type="button" class="filter-button" data-fragment-type="paper" aria-pressed="false">论文</button>
-        <button type="button" class="filter-button" data-fragment-type="tool" aria-pressed="false">工具</button>
-        <button type="button" class="filter-button" data-fragment-type="experiment" aria-pressed="false">实验</button>
-        <button type="button" class="filter-button" data-fragment-type="code" aria-pressed="false">代码</button>
+        {% for type in fragment_types %}
+        <button type="button" class="filter-button" data-fragment-type="{{ type | escape }}" aria-pressed="false">{{ type }}</button>
+        {% endfor %}
     </div>
 </section>
 
 <section class="fragment-stream" aria-label="碎片流列表">
-    {% assign fragments = site.data.fragments | sort: "date" | reverse %}
     {% for fragment in fragments %}
-    <article class="fragment-item" data-fragment-item data-fragment-type="{{ fragment.type | escape }}" data-fragment-tags="{{ fragment.tags | join: '|' | escape }}">
+    <article class="fragment-item" data-fragment-item data-fragment-type="{{ fragment.type | escape }}">
         <time class="fragment-date" datetime="{{ fragment.date }}">{{ fragment.date | date: "%Y.%m.%d" }}</time>
-        <div class="fragment-body">
-            <div class="fragment-meta">
-                <span>{{ fragment.type_label }}</span>
-                {% for tag in fragment.tags %}
-                <button type="button" class="fragment-tag" data-fragment-tag="{{ tag | escape }}">#{{ tag }}</button>
-                {% endfor %}
-            </div>
-            <p>{{ fragment.text }}</p>
-            {% if fragment.source %}
-            <a class="fragment-source" href="{{ fragment.source.url }}" target="_blank" rel="noopener noreferrer">{{ fragment.source.label }}</a>
-            {% endif %}
+        <div class="fragment-content">
+            {{ fragment.content }}
         </div>
+        <span class="fragment-type">{{ fragment.type }}</span>
+        {% if fragment.source %}
+        <a class="fragment-source" href="{{ fragment.source.url }}" target="_blank" rel="noopener noreferrer">{{ fragment.source.label }}</a>
+        {% endif %}
     </article>
     {% endfor %}
     {% if fragments.size == 0 %}
