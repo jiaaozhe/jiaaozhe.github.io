@@ -257,6 +257,50 @@ document.addEventListener('DOMContentLoaded', function() {
             commandInput.value = '';
         });
     }
+
+    // Timeline filter
+    var timelineFilterRoot = document.querySelector('[data-timeline-filter]');
+    var timeline = document.querySelector('[data-timeline]');
+
+    if (timelineFilterRoot && timeline) {
+        var timelineFilterButtons = Array.from(timelineFilterRoot.querySelectorAll('[data-filter]'));
+        var timelineItems = Array.from(timeline.querySelectorAll('[data-timeline-kind]'));
+
+        timelineItems.sort(function(a, b) {
+            return b.dataset.timelineDate.localeCompare(a.dataset.timelineDate);
+        });
+        timelineItems.forEach(function(item) {
+            timeline.appendChild(item);
+        });
+
+        function applyTimelineFilter(type) {
+            var activeType = timelineFilterButtons.some(function(b) {
+                return b.dataset.filter === type;
+            }) ? type : 'all';
+
+            timelineFilterButtons.forEach(function(button) {
+                var isActive = button.dataset.filter === activeType;
+                button.classList.toggle('is-active', isActive);
+                button.setAttribute('aria-pressed', String(isActive));
+            });
+
+            var visibleCount = 0;
+            timelineItems.forEach(function(item) {
+                var isMatch = activeType === 'all' || item.dataset.timelineKind === activeType;
+                var shouldShow = isMatch && visibleCount < 12;
+                item.hidden = !shouldShow;
+                if (isMatch) visibleCount++;
+            });
+        }
+
+        timelineFilterButtons.forEach(function(button) {
+            button.addEventListener('click', function() {
+                applyTimelineFilter(button.dataset.filter);
+            });
+        });
+
+        applyTimelineFilter('all');
+    }
 });
 
 document.addEventListener('DOMContentLoaded', function() {
