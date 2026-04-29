@@ -1,5 +1,7 @@
 .
 ├── _config.yml
+├── _data
+│   └── fragments.yml
 ├── _layouts
 │   ├── default.html
 │   ├── post.html
@@ -16,6 +18,7 @@
 │       └── script.js
 ├── DESIGN.md
 ├── favicon.svg
+├── fragments.md
 ├── Gemfile
 ├── Gemfile.lock
 ├── index.md

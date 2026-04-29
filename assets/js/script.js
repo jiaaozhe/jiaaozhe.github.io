@@ -3,6 +3,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const navMenu = document.getElementById('site-menu');
     const filterRoot = document.querySelector('[data-post-filter]');
     const postCards = Array.from(document.querySelectorAll('[data-post-categories]'));
+    const fragmentFilterRoot = document.querySelector('[data-fragment-filter]');
+    const fragmentItems = Array.from(document.querySelectorAll('[data-fragment-item]'));
     const commandPalette = document.getElementById('command-palette');
     const commandForm = document.getElementById('command-form');
     const commandInput = document.getElementById('command-input');
@@ -83,11 +85,85 @@ document.addEventListener('DOMContentLoaded', function() {
         applyPostFilter(new URLSearchParams(window.location.search).get('category') || 'all', false);
     }
 
+    if (fragmentFilterRoot && fragmentItems.length) {
+        const fragmentButtons = Array.from(fragmentFilterRoot.querySelectorAll('[data-fragment-type]'));
+
+        function applyFragmentFilter(type, updateUrl) {
+            const activeType = fragmentButtons.some(function(button) {
+                return button.dataset.fragmentType === type;
+            }) ? type : 'all';
+
+            fragmentButtons.forEach(function(button) {
+                const isActive = button.dataset.fragmentType === activeType;
+                button.classList.toggle('is-active', isActive);
+                button.setAttribute('aria-pressed', String(isActive));
+            });
+
+            fragmentItems.forEach(function(item) {
+                const isHidden = activeType !== 'all' && item.dataset.fragmentType !== activeType;
+                item.hidden = isHidden;
+            });
+
+            if (updateUrl) {
+                const url = new URL(window.location.href);
+
+                if (activeType === 'all') {
+                    url.searchParams.delete('type');
+                } else {
+                    url.searchParams.set('type', activeType);
+                }
+
+                window.history.replaceState({}, '', url);
+            }
+        }
+
+        fragmentButtons.forEach(function(button) {
+            button.addEventListener('click', function() {
+                applyFragmentFilter(button.dataset.fragmentType, true);
+            });
+        });
+
+        document.querySelectorAll('[data-fragment-tag]').forEach(function(button) {
+            button.addEventListener('click', function() {
+                const tag = button.dataset.fragmentTag;
+
+                fragmentButtons.forEach(function(filterButton) {
+                    filterButton.classList.toggle('is-active', filterButton.dataset.fragmentType === 'all');
+                    filterButton.setAttribute('aria-pressed', String(filterButton.dataset.fragmentType === 'all'));
+                });
+
+                fragmentItems.forEach(function(item) {
+                    const tags = item.dataset.fragmentTags.split('|').filter(Boolean);
+                    item.hidden = !tags.includes(tag);
+                });
+
+                const url = new URL(window.location.href);
+                url.searchParams.delete('type');
+                url.searchParams.set('tag', tag);
+                window.history.replaceState({}, '', url);
+            });
+        });
+
+        const params = new URLSearchParams(window.location.search);
+        const initialTag = params.get('tag');
+
+        if (initialTag) {
+            const tagButton = document.querySelector('[data-fragment-tag="' + CSS.escape(initialTag) + '"]');
+
+            if (tagButton) {
+                tagButton.click();
+            }
+        } else {
+            applyFragmentFilter(params.get('type') || 'all', false);
+        }
+    }
+
     if (commandPalette && commandForm && commandInput && commandOutput) {
         const postsData = JSON.parse(document.getElementById('site-posts-data').textContent || '[]');
         const commands = {
             help: 'show commands',
             posts: 'open articles',
+            fragments: 'open fragments',
             research: 'open research',
             about: 'open about',
             random: 'open random post',
@@ -143,6 +219,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (command === 'posts') {
                 window.location.href = '/posts/';
+                return;
+            }
+
+            if (command === 'fragments') {
+                window.location.href = '/fragments/';
                 return;
             }
 

@@ -22,6 +22,28 @@ title: 个人主页
     </div>
 </section>
 
+<section class="recent-fragments">
+    <div class="section-header-main">
+        <p>Fragments</p>
+        <h2>碎片流</h2>
+    </div>
+    <div class="home-fragment-list">
+        {% assign fragments = site.data.fragments | sort: "date" | reverse %}
+        {% for fragment in fragments limit:3 %}
+        <article class="home-fragment">
+            <time datetime="{{ fragment.date }}">{{ fragment.date | date: "%Y.%m.%d" }}</time>
+            <p>{{ fragment.text }}</p>
+        </article>
+        {% endfor %}
+    </div>
+    {% if fragments.size == 0 %}
+    <p class="empty-state">碎片流还没有内容。</p>
+    {% endif %}
+    <div class="view-all">
+        <a href="/fragments/" class="view-all-link">查看碎片流</a>
+    </div>
+</section>
+
 <section class="recent-posts">
     <h2>最新文章</h2>
     <div class="blog-posts">
