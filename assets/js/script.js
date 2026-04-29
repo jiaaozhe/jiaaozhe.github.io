@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const navToggle = document.querySelector('.nav-toggle');
     const navMenu = document.getElementById('site-menu');
+    const themeToggle = document.querySelector('.theme-toggle');
     const filterRoot = document.querySelector('[data-post-filter]');
     const postCards = Array.from(document.querySelectorAll('[data-post-categories]'));
     const fragmentFilterRoot = document.querySelector('[data-fragment-filter]');
@@ -9,6 +10,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const commandForm = document.getElementById('command-form');
     const commandInput = document.getElementById('command-input');
     const commandOutput = document.getElementById('command-output');
+
+    if (themeToggle) {
+        themeToggle.addEventListener('click', function() {
+            const root = document.documentElement;
+            const current = root.getAttribute('data-theme') || 'light';
+            const next = current === 'dark' ? 'light' : 'dark';
+            root.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+        });
+    }
 
     if (navToggle && navMenu) {
         navToggle.addEventListener('click', function() {
