@@ -12,7 +12,14 @@
     <header class="site-header">
         <nav class="site-nav" aria-label="主导航">
             <a class="site-brand" href="{{ '/' | relative_url }}" aria-label="{{ site.title }} 首页">
-                <span class="brand-mark" aria-hidden="true">J</span>
+                <svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true">
+                    <circle cx="32" cy="32" r="23"></circle>
+                    <path d="M23 18v20c0 8 7 13 15 8l12-8-17-9 15-10"></path>
+                    <circle cx="23" cy="18" r="3"></circle>
+                    <circle cx="38" cy="46" r="3"></circle>
+                    <circle cx="50" cy="38" r="3"></circle>
+                    <circle cx="48" cy="19" r="3"></circle>
+                </svg>
                 <span>{{ site.title }}</span>
             </a>
 

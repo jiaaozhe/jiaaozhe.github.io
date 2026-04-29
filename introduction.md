@@ -7,9 +7,16 @@ permalink: /introduction/
 <section class="profile-hero">
     <div class="hero-content">
         <div class="profile-avatar">
-            <div class="avatar-placeholder">
-                <span>J</span>
-            </div>
+            <svg class="avatar-mark" viewBox="0 0 128 128" role="img" aria-label="Jiaaozhe identity mark">
+                <circle cx="64" cy="64" r="52"></circle>
+                <path d="M45 34v40c0 20 18 28 34 17l27-18-42-22 35-22"></path>
+                <circle cx="45" cy="34" r="5"></circle>
+                <circle cx="79" cy="91" r="5"></circle>
+                <circle cx="106" cy="73" r="5"></circle>
+                <circle cx="99" cy="29" r="5"></circle>
+                <path d="M37 96h18"></path>
+                <path d="M73 32h18"></path>
+            </svg>
         </div>
         <p class="subtitle">专注于人工智能与机器学习研究</p>
         <div class="hero-tags">

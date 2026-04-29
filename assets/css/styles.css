@@ -92,17 +92,30 @@ img {
 }
 
 .brand-mark {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
     width: 34px;
     height: 34px;
-    border: 1px solid var(--black);
-    border-radius: var(--pill);
     color: var(--black);
-    font-family: var(--display-font);
-    font-size: 16px;
-    font-weight: 500;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 3;
+    flex: 0 0 auto;
+}
+
+.brand-mark path,
+.avatar-mark path {
+    fill: none;
+}
+
+.brand-mark circle:first-child,
+.avatar-mark circle:first-child {
+    fill: var(--white);
+}
+
+.brand-mark circle:not(:first-child),
+.avatar-mark circle:not(:first-child) {
+    fill: currentColor;
+    stroke: none;
 }
 
 .nav-menu {
@@ -448,19 +461,14 @@ img {
     margin-bottom: 8px;
 }
 
-.avatar-placeholder {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+.avatar-mark {
     width: 112px;
     height: 112px;
-    border: 1px solid var(--black);
-    border-radius: var(--pill);
-    background: var(--white);
     color: var(--black);
-    font-family: var(--display-font);
-    font-size: 42px;
-    font-weight: 500;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2;
 }
 
 .hero-content {
