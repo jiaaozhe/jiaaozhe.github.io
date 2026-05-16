@@ -7,7 +7,7 @@
     background: #fff;
 }
 
-body:has(.os-dashboard) .cat-bot {
+body:has(.os-dashboard) .cat-bot-wrap {
     display: none;
 }
 
@@ -249,11 +249,15 @@ body:has(.os-dashboard) .cat-bot {
 }
 
 .gauge-name {
+    min-width: 0;
     max-width: 138px;
+    overflow: hidden;
     color: var(--dash-ink);
     font-size: 15px;
     font-weight: 850;
     line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .gauge-pid {

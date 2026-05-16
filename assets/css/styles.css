@@ -697,6 +697,61 @@ img {
     margin: 0 auto;
 }
 
+.about-profile {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 0 72px;
+}
+
+.about-rows {
+    border-top: 1px solid var(--line);
+}
+
+.about-row {
+    display: grid;
+    grid-template-columns: 160px minmax(0, 1fr);
+    gap: 28px;
+    padding: 24px 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.about-label {
+    color: var(--muted);
+    font-family: var(--mono-font);
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+.about-copy {
+    margin: 0;
+    color: var(--near-black);
+    font-size: 18px;
+    line-height: 1.65;
+}
+
+.about-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.about-links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 38px;
+    padding: 9px 18px;
+    border: 1px solid var(--line);
+    border-radius: var(--pill);
+    background: var(--white);
+    color: var(--near-black);
+    font-size: 14px;
+    line-height: 1;
+}
+
+.about-links a:hover {
+    background: var(--surface);
+}
+
 .card-header {
     display: flex;
     align-items: flex-start;
@@ -822,11 +877,7 @@ img {
 }
 
 .site-main:has(.use-detail) {
-    background: #fff;
-}
-
-body:has(.use-detail) .cat-bot {
-    display: none;
+    background: var(--white);
 }
 
 .post-header,
@@ -1158,7 +1209,7 @@ body:has(.use-detail) .cat-bot {
 }
 
 .command-panel {
-    width: min(100%, 560px);
+    width: min(100%, 720px);
     border: 1px solid var(--line);
     border-radius: var(--radius);
     background: var(--white);
@@ -1175,6 +1226,8 @@ body:has(.use-detail) .cat-bot {
 
 .command-output {
     min-height: 160px;
+    max-height: 50vh;
+    overflow: auto;
     padding: 18px 20px;
     color: var(--muted);
     font-size: 14px;
@@ -1190,15 +1243,21 @@ body:has(.use-detail) .cat-bot {
     display: flex;
     align-items: center;
     gap: 10px;
+    min-width: 0;
     padding: 14px 20px 18px;
     border-top: 1px solid var(--line);
 }
 
-.command-form label {
+.command-form label,
+.command-prompt {
+    flex: 0 0 auto;
+    max-width: none;
     color: var(--black);
+    white-space: nowrap;
 }
 
 .command-input {
+    min-width: 0;
     width: 100%;
     border: 0;
     outline: 0;
@@ -1427,6 +1486,25 @@ body:has(.use-detail) .cat-bot {
         font-size: 36px;
     }
 
+    .about-profile {
+        padding-bottom: 48px;
+    }
+
+    .about-row {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        padding: 22px 0;
+    }
+
+    .about-copy {
+        font-size: 17px;
+    }
+
+    .about-links a {
+        flex: 1 1 calc(50% - 5px);
+        justify-content: center;
+    }
+
     .hero h1 {
         font-size: 30px;
     }
@@ -1435,6 +1513,13 @@ body:has(.use-detail) .cat-bot {
     .profile-hero .subtitle,
     .research-hero .subtitle {
         font-size: 16px;
+    }
+
+    .command-prompt {
+        flex: 0 1 auto;
+        max-width: 45%;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .publication-links {

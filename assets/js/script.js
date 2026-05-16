@@ -6,19 +6,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const postCards = Array.from(document.querySelectorAll('[data-post-categories]'));
     const fragmentFilterRoot = document.querySelector('[data-fragment-filter]');
     const fragmentItems = Array.from(document.querySelectorAll('[data-fragment-item]'));
-    const commandPalette = document.getElementById('command-palette');
-    const commandForm = document.getElementById('command-form');
-    const commandInput = document.getElementById('command-input');
-    const commandOutput = document.getElementById('command-output');
+
+    function toggleTheme() {
+        const root = document.documentElement;
+        const current = root.getAttribute('data-theme') || 'light';
+        const next = current === 'dark' ? 'light' : 'dark';
+        root.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+    }
 
     if (themeToggle) {
-        themeToggle.addEventListener('click', function() {
-            const root = document.documentElement;
-            const current = root.getAttribute('data-theme') || 'light';
-            const next = current === 'dark' ? 'light' : 'dark';
-            root.setAttribute('data-theme', next);
-            localStorage.setItem('theme', next);
-        });
+        themeToggle.addEventListener('click', toggleTheme);
     }
 
     if (navToggle && navMenu) {
@@ -138,126 +136,6 @@ document.addEventListener('DOMContentLoaded', function() {
         applyFragmentFilter(params.get('type') || 'all', false);
     }
 
-    if (commandPalette && commandForm && commandInput && commandOutput) {
-        const postsData = JSON.parse(document.getElementById('site-posts-data').textContent || '[]');
-        const commands = {
-            help: 'show commands',
-            posts: 'open articles',
-            fragments: 'open fragments',
-            research: 'open research',
-            about: 'open about',
-            random: 'open random post',
-            clear: 'clear output'
-        };
-
-        function getHelpLines() {
-            return Object.keys(commands).map(function(key) {
-                return key.padEnd(10, ' ') + commands[key];
-            });
-        }
-
-        function writeCommandOutput(lines) {
-            commandOutput.innerHTML = '';
-            lines.forEach(function(line) {
-                const item = document.createElement('p');
-                item.textContent = line;
-                commandOutput.appendChild(item);
-            });
-        }
-
-        function openCommandPalette() {
-            commandPalette.classList.add('is-open');
-            commandPalette.setAttribute('aria-hidden', 'false');
-            commandInput.value = '';
-            writeCommandOutput(getHelpLines());
-            window.setTimeout(function() {
-                commandInput.focus();
-            }, 0);
-        }
-
-        function closeCommandPalette() {
-            commandPalette.classList.remove('is-open');
-            commandPalette.setAttribute('aria-hidden', 'true');
-        }
-
-        function runCommand(value) {
-            const command = value.trim().toLowerCase();
-
-            if (!command) {
-                return;
-            }
-
-            if (command === 'help') {
-                writeCommandOutput(getHelpLines());
-                return;
-            }
-
-            if (command === 'clear') {
-                writeCommandOutput(getHelpLines());
-                return;
-            }
-
-            if (command === 'posts') {
-                window.location.href = '/posts/';
-                return;
-            }
-
-            if (command === 'fragments') {
-                window.location.href = '/fragments/';
-                return;
-            }
-
-            if (command === 'research') {
-                window.location.href = '/research/';
-                return;
-            }
-
-            if (command === 'about') {
-                window.location.href = '/introduction/';
-                return;
-            }
-
-            if (command === 'random') {
-                if (!postsData.length) {
-                    writeCommandOutput(['no posts found']);
-                    return;
-                }
-
-                const post = postsData[Math.floor(Math.random() * postsData.length)];
-                window.location.href = post.url;
-                return;
-            }
-
-            writeCommandOutput(['unknown command: ' + command, 'type "help"']);
-        }
-
-        document.addEventListener('keydown', function(event) {
-            const target = event.target;
-            const isTyping = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target.isContentEditable;
-
-            if (event.key === '/' && !isTyping && !commandPalette.classList.contains('is-open')) {
-                event.preventDefault();
-                openCommandPalette();
-            }
-
-            if (event.key === 'Escape' && commandPalette.classList.contains('is-open')) {
-                closeCommandPalette();
-            }
-        });
-
-        commandPalette.addEventListener('click', function(event) {
-            if (event.target === commandPalette) {
-                closeCommandPalette();
-            }
-        });
-
-        commandForm.addEventListener('submit', function(event) {
-            event.preventDefault();
-            runCommand(commandInput.value);
-            commandInput.value = '';
-        });
-    }
-
     // Timeline filter
     var timelineFilterRoot = document.querySelector('[data-timeline-filter]');
     var timeline = document.querySelector('[data-timeline]');
@@ -300,6 +178,371 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         applyTimelineFilter('all');
+    }
+
+    const catBotWrap = document.querySelector('[data-cat-bot]');
+    const catBot = catBotWrap ? catBotWrap.querySelector('.cat-bot') : null;
+    const catMenu = catBotWrap ? catBotWrap.querySelector('.cat-bot-menu') : null;
+    const catExpression = catBotWrap ? catBotWrap.querySelector('.cat-bot-expression') : null;
+    const catAiPanel = catBotWrap ? catBotWrap.querySelector('[data-cat-ai-panel]') : null;
+    const catAiForm = catBotWrap ? catBotWrap.querySelector('[data-cat-ai-form]') : null;
+    const catAiInput = catBotWrap ? catBotWrap.querySelector('.cat-ai-input') : null;
+    const catAiOutput = catBotWrap ? catBotWrap.querySelector('[data-cat-ai-output]') : null;
+    const catAiClose = catBotWrap ? catBotWrap.querySelector('[data-cat-ai-close]') : null;
+
+    if (catBotWrap && catBot && catMenu && catExpression) {
+        let clickCount = 0;
+        let clickTimer = null;
+        let singleClickTimer = null;
+        let resetExpressionTimer = null;
+        let aiStreamId = 0;
+
+        function setCatMenu(open) {
+            catBotWrap.classList.toggle('is-open', open);
+            catBot.classList.toggle('is-menu-open', open);
+            catBot.setAttribute('aria-expanded', String(open));
+            catMenu.setAttribute('aria-hidden', String(!open));
+        }
+
+        function setAiPanel(open) {
+            const askButton = catMenu.querySelector('[data-cat-action="ask-ai"]');
+
+            if (!catAiPanel) {
+                return;
+            }
+
+            if (!open) {
+                aiStreamId += 1;
+            }
+
+            catAiPanel.hidden = !open;
+            catAiPanel.setAttribute('aria-hidden', String(!open));
+            catBotWrap.classList.toggle('is-asking', open);
+
+            if (askButton) {
+                askButton.setAttribute('aria-expanded', String(open));
+            }
+
+            if (open && catAiInput) {
+                window.setTimeout(function() {
+                    catAiInput.focus();
+                }, 0);
+            }
+        }
+
+        function setExpression(value, duration) {
+            window.clearTimeout(resetExpressionTimer);
+            catExpression.textContent = value;
+            catBot.classList.add('is-surprised');
+            resetExpressionTimer = window.setTimeout(function() {
+                catBot.classList.remove('is-surprised');
+                catExpression.textContent = '^_^';
+            }, duration || 900);
+        }
+
+        function triggerEasterEgg() {
+            window.clearTimeout(resetExpressionTimer);
+            catExpression.textContent = '!!!';
+            catBot.classList.add('is-easter');
+            window.setTimeout(function() {
+                catBot.classList.remove('is-easter');
+                catExpression.textContent = '^_^';
+            }, 1200);
+        }
+
+        function scrollCatAiOutput() {
+            if (catAiOutput) {
+                catAiOutput.scrollTop = catAiOutput.scrollHeight;
+            }
+        }
+
+        function appendAiMessage(role) {
+            if (!catAiOutput) {
+                return null;
+            }
+
+            const message = document.createElement('div');
+            message.className = 'cat-ai-message cat-ai-message-' + role;
+            catAiOutput.appendChild(message);
+            scrollCatAiOutput();
+            return message;
+        }
+
+        function appendAiText(role, lines) {
+            const message = appendAiMessage(role);
+
+            if (!message) {
+                return;
+            }
+
+            lines.forEach(function(line) {
+                const item = document.createElement('p');
+                item.textContent = line;
+                message.appendChild(item);
+            });
+
+            scrollCatAiOutput();
+        }
+
+        function streamAiLines(lines) {
+            const message = appendAiMessage('assistant');
+            const streamId = aiStreamId + 1;
+            let lineIndex = 0;
+
+            aiStreamId = streamId;
+
+            if (!message) {
+                return;
+            }
+
+            function streamNextLine() {
+                if (streamId !== aiStreamId) {
+                    return;
+                }
+
+                if (lineIndex >= lines.length) {
+                    setExpression('OK', 700);
+                    return;
+                }
+
+                const item = document.createElement('p');
+                const line = lines[lineIndex];
+                let charIndex = 0;
+                lineIndex += 1;
+                message.appendChild(item);
+
+                function streamNextChar() {
+                    if (streamId !== aiStreamId) {
+                        return;
+                    }
+
+                    item.textContent = line.slice(0, charIndex);
+                    scrollCatAiOutput();
+
+                    if (charIndex <= line.length) {
+                        charIndex += 1;
+                        window.setTimeout(streamNextChar, 9);
+                        return;
+                    }
+
+                    window.setTimeout(streamNextLine, 80);
+                }
+
+                streamNextChar();
+            }
+
+            streamNextLine();
+        }
+
+        function askCatAi(question) {
+            const normalized = String(question || '').trim();
+
+            if (!normalized) {
+                setExpression('ASK', 900);
+                if (catAiInput) {
+                    catAiInput.focus();
+                }
+                return;
+            }
+
+            setCatMenu(false);
+            setAiPanel(true);
+            appendAiText('user', [normalized]);
+
+            if (window.siteAI && typeof window.siteAI.answer === 'function') {
+                setExpression('AI', 900);
+                streamAiLines(window.siteAI.answer(normalized));
+                return;
+            }
+
+            appendAiText('assistant', ['AI module unavailable']);
+            setExpression('404', 900);
+        }
+
+        async function copyUseConfig() {
+            const configBlock = document.querySelector('.use-content pre code') || document.querySelector('.use-content pre');
+            const configText = configBlock ? configBlock.textContent.trim() : '';
+
+            if (!configText) {
+                setExpression('404', 900);
+                return;
+            }
+
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(configText);
+                } else {
+                    const textarea = document.createElement('textarea');
+                    textarea.value = configText;
+                    textarea.setAttribute('readonly', '');
+                    textarea.style.position = 'fixed';
+                    textarea.style.top = '-999px';
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    document.execCommand('copy');
+                    textarea.remove();
+                }
+                setExpression('COPY', 1100);
+            } catch (error) {
+                setExpression('ERR', 1100);
+            }
+        }
+
+        function handleCatClick() {
+            clickCount += 1;
+            window.clearTimeout(clickTimer);
+
+            if (clickCount >= 5) {
+                clickCount = 0;
+                window.clearTimeout(singleClickTimer);
+                triggerEasterEgg();
+                return;
+            }
+
+            clickTimer = window.setTimeout(function() {
+                clickCount = 0;
+            }, 1200);
+
+            window.clearTimeout(singleClickTimer);
+            singleClickTimer = window.setTimeout(function() {
+                setCatMenu(!catBotWrap.classList.contains('is-open'));
+            }, 220);
+        }
+
+        catBot.addEventListener('click', handleCatClick);
+
+        catBot.addEventListener('dblclick', function(event) {
+            event.preventDefault();
+            window.clearTimeout(singleClickTimer);
+            setCatMenu(false);
+            setAiPanel(false);
+            setExpression('TOP', 700);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        catBot.addEventListener('mousemove', function(event) {
+            const rect = catBot.getBoundingClientRect();
+            const offsetX = Math.max(-3, Math.min(3, (event.clientX - (rect.left + rect.width / 2)) / 10));
+            const offsetY = Math.max(-2, Math.min(2, (event.clientY - (rect.top + rect.height / 2)) / 12));
+            catBot.style.setProperty('--eye-x', offsetX.toFixed(1) + 'px');
+            catBot.style.setProperty('--eye-y', offsetY.toFixed(1) + 'px');
+        });
+
+        catBot.addEventListener('mouseleave', function() {
+            catBot.style.removeProperty('--eye-x');
+            catBot.style.removeProperty('--eye-y');
+        });
+
+        catMenu.addEventListener('click', function(event) {
+            const actionButton = event.target.closest('[data-cat-action]');
+
+            if (!actionButton) {
+                if (event.target.closest('a')) {
+                    setCatMenu(false);
+                }
+                return;
+            }
+
+            const action = actionButton.dataset.catAction;
+
+            if (action === 'ask-ai') {
+                setCatMenu(false);
+                setAiPanel(true);
+                return;
+            }
+
+            setCatMenu(false);
+            setAiPanel(false);
+
+            if (action === 'terminal') {
+                if (window.siteTerminal && typeof window.siteTerminal.open === 'function') {
+                    window.siteTerminal.open();
+                    return;
+                }
+
+                setExpression('>_', 900);
+                return;
+            }
+
+            if (action === 'copy-use') {
+                copyUseConfig();
+                return;
+            }
+
+            if (action === 'random') {
+                if (!window.siteTerminal || typeof window.siteTerminal.randomPost !== 'function' || !window.siteTerminal.randomPost()) {
+                    setExpression('404', 900);
+                }
+                return;
+            }
+        });
+
+        if (catAiForm) {
+            catAiForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                askCatAi(catAiInput ? catAiInput.value : '');
+
+                if (catAiInput) {
+                    catAiInput.value = '';
+                }
+            });
+        }
+
+        if (catAiPanel) {
+            catAiPanel.addEventListener('click', function(event) {
+                const questionButton = event.target.closest('[data-cat-question]');
+
+                if (!questionButton) {
+                    return;
+                }
+
+                askCatAi(questionButton.dataset.catQuestion);
+            });
+        }
+
+        if (catAiClose) {
+            catAiClose.addEventListener('click', function() {
+                setAiPanel(false);
+            });
+        }
+
+        catMenu.addEventListener('click', function(event) {
+            const questionButton = event.target.closest('[data-cat-question]');
+
+            if (!questionButton) {
+                return;
+            }
+
+            askCatAi(questionButton.dataset.catQuestion);
+        });
+
+        document.addEventListener('command-palette:open', function() {
+            window.clearTimeout(resetExpressionTimer);
+            catExpression.textContent = '>_';
+            catBot.classList.add('is-surprised', 'is-listening');
+        });
+
+        document.addEventListener('command-palette:close', function() {
+            catBot.classList.remove('is-listening', 'is-surprised');
+            catExpression.textContent = '^_^';
+        });
+
+        document.addEventListener('click', function(event) {
+            if (!catBotWrap.contains(event.target)) {
+                setCatMenu(false);
+            }
+        });
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                if (catAiPanel && !catAiPanel.hidden) {
+                    setAiPanel(false);
+                    return;
+                }
+
+                setCatMenu(false);
+            }
+        });
     }
 });
 

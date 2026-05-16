@@ -63,7 +63,7 @@
     </main>
 
     <footer class="site-footer">
-        <p>&copy; {{ site.time | date: '%Y' }} {{ site.title }}. Built with GitHub Pages.</p>
+        <p>&copy; {{ site.time | date: '%Y' }} {{ site.title }} · Shaped with Codex.</p>
     </footer>
 
     <div id="command-palette" class="command-palette" aria-hidden="true">
@@ -73,7 +73,7 @@
                 <p>type "help"</p>
             </div>
             <form class="command-form" id="command-form">
-                <label for="command-input">&gt;</label>
+                <label for="command-input" id="command-prompt" class="command-prompt">/ &gt;</label>
                 <input id="command-input" class="command-input" type="text" autocomplete="off" spellcheck="false">
             </form>
         </div>
@@ -95,22 +95,95 @@
         </div>
     </div>
 
-    <script type="application/json" id="site-posts-data">
-        [
-            {% for post in site.posts %}
-            {
-                "title": {{ post.title | jsonify }},
-                "url": {{ post.url | relative_url | jsonify }}
-            }{% unless forloop.last %},{% endunless %}
-            {% endfor %}
-        ]
+    <script type="application/json" id="site-terminal-data">
+        {
+            "pages": [
+                { "name": "home", "title": "首页", "url": {{ '/' | relative_url | jsonify }}, "type": "file" },
+                { "name": "fragments", "title": "碎片流", "url": {{ '/fragments/' | relative_url | jsonify }}, "type": "dir" },
+                { "name": "research", "title": "学术研究", "url": {{ '/research/' | relative_url | jsonify }}, "type": "dir" },
+                { "name": "status", "title": "状态", "url": {{ '/status/' | relative_url | jsonify }}, "type": "file" },
+                { "name": "about.md", "title": "关于", "url": {{ '/introduction/' | relative_url | jsonify }}, "type": "file" }
+            ],
+            "posts": [
+                {% for post in site.posts %}
+                {
+                    "title": {{ post.title | jsonify }},
+                    "url": {{ post.url | relative_url | jsonify }},
+                    "content": {{ post.content | strip_html | strip | jsonify }}
+                }{% unless forloop.last %},{% endunless %}
+                {% endfor %}
+            ],
+            "uses": [
+                {% for use in site.uses %}
+                {
+                    "title": {{ use.title | jsonify }},
+                    "url": {{ use.url | relative_url | jsonify }},
+                    "content": {{ use.content | strip_html | strip | jsonify }}
+                }{% unless forloop.last %},{% endunless %}
+                {% endfor %}
+            ],
+            "publications": [
+                {% for publication in site.publications %}
+                {
+                    "title": {{ publication.title | jsonify }},
+                    "url": {{ publication.url | relative_url | jsonify }},
+                    "content": {{ publication.abstract | default: publication.content | strip_html | strip | jsonify }}
+                }{% unless forloop.last %},{% endunless %}
+                {% endfor %}
+            ]
+        }
     </script>
+    <script src="{{ '/assets/js/site-ai.js' | relative_url }}?v={{ site.time | date: '%s' }}"></script>
+    <script src="{{ '/assets/js/terminal.js' | relative_url }}?v={{ site.time | date: '%s' }}"></script>
     <script src="{{ '/assets/js/script.js' | relative_url }}?v={{ site.time | date: '%s' }}"></script>
 
-    <a class="cat-bot" href="{{ '/status/' | relative_url }}" aria-label="查看状态" title="查看状态">
-        <div class="cat-bot-antenna"></div>
-        <div class="cat-bot-face">^_^</div>
-        <div class="cat-bot-tail"></div>
-    </a>
+    <div class="cat-bot-wrap" data-cat-bot>
+        <button class="cat-bot" type="button" aria-label="打开机器人菜单" aria-expanded="false" aria-controls="cat-bot-menu" title="机器人菜单">
+            <div class="cat-bot-antenna"></div>
+            <div class="cat-bot-face">
+                <span class="cat-eye cat-eye-left"></span>
+                <span class="cat-eye cat-eye-right"></span>
+                <span class="cat-bot-expression">^_^</span>
+            </div>
+            <div class="cat-bot-tail"></div>
+        </button>
+        <div class="cat-bot-menu" id="cat-bot-menu" role="menu" aria-hidden="true">
+            <button type="button" data-cat-action="terminal" role="menuitem">Terminal</button>
+            <button type="button" data-cat-action="ask-ai" role="menuitem" aria-expanded="false">Ask AI</button>
+            {% if page.collection == 'uses' %}
+            <button type="button" data-cat-action="copy-use" role="menuitem">Copy config</button>
+            {% if page.official_url %}
+            <a href="{{ page.official_url }}" target="_blank" rel="noopener noreferrer" role="menuitem">Official site</a>
+            {% endif %}
+            {% endif %}
+            <a href="{{ '/status/' | relative_url }}" role="menuitem">Status</a>
+            <button type="button" data-cat-action="random" role="menuitem">Random post</button>
+        </div>
+        <section class="cat-ai-panel" data-cat-ai-panel role="dialog" aria-labelledby="cat-ai-title" aria-hidden="true" hidden>
+            <div class="cat-ai-header">
+                <div>
+                    <h2 id="cat-ai-title">Ask AI</h2>
+                    <span>demo mode</span>
+                </div>
+                <button class="cat-ai-close" type="button" data-cat-ai-close aria-label="关闭 AI 面板">&times;</button>
+            </div>
+            <div class="cat-ai-output" data-cat-ai-output aria-live="polite">
+                <div class="cat-ai-message cat-ai-message-assistant">
+                    <p>可以问我文章、研究、工具配置和这个站点。</p>
+                </div>
+            </div>
+            <div class="cat-ai-suggestions" aria-label="AI demo questions">
+                <button type="button" data-cat-question="你是谁？">你是谁？</button>
+                <button type="button" data-cat-question="你有哪些文章？">有哪些文章？</button>
+                <button type="button" data-cat-question="你的研究方向是什么？">研究方向？</button>
+                <button type="button" data-cat-question="ghostty 配置是什么？">Ghostty?</button>
+            </div>
+            <form class="cat-ai-form" data-cat-ai-form>
+                <label class="sr-only" for="cat-ai-input">Ask AI</label>
+                <input id="cat-ai-input" class="cat-ai-input" type="text" autocomplete="off" spellcheck="false" placeholder="Ask about this site">
+                <button class="cat-ai-submit" type="submit">Ask</button>
+            </form>
+        </section>
+    </div>
 </body>
 </html>

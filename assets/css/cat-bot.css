@@ -1,16 +1,22 @@
-.cat-bot {
+.cat-bot-wrap {
     position: fixed;
-    bottom: 32px;
     right: 32px;
-    width: 72px;
-    height: 52px;
-    background: #fd9f5d;
+    bottom: 32px;
     z-index: 100;
-    cursor: pointer;
-    transition: transform 0.12s steps(3);
 }
 
-/* 耳朵 — 头顶两个像素方块 */
+.cat-bot {
+    position: relative;
+    display: block;
+    width: 72px;
+    height: 52px;
+    padding: 0;
+    border: 0;
+    background: #fd9f5d;
+    cursor: pointer;
+    transition: transform 0.12s steps(3), filter 0.16s ease;
+}
+
 .cat-bot::before,
 .cat-bot::after {
     content: '';
@@ -30,15 +36,14 @@
     right: 8px;
 }
 
-/* 天线 — 粗线条 + 方块发光球 */
 .cat-bot-antenna {
     position: absolute;
     top: -32px;
     left: 50%;
-    transform: translateX(-50%);
     width: 4px;
     height: 24px;
     background: #9ca3af;
+    transform: translateX(-50%);
 }
 
 .cat-bot-antenna::after {
@@ -46,58 +51,69 @@
     position: absolute;
     top: -10px;
     left: 50%;
-    transform: translateX(-50%);
     width: 12px;
     height: 12px;
     background: #4ade80;
     box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.3);
+    transform: translateX(-50%);
     animation: antenna-blink 1s steps(1) infinite;
 }
 
-/* 脸 — 深色屏幕 */
 .cat-bot-face {
     position: absolute;
     top: 10px;
     left: 50%;
-    transform: translateX(-50%);
     width: 48px;
     height: 28px;
+    overflow: hidden;
     background: #1f2937;
-    font-size: 0;
+    transform: translateX(-50%);
 }
 
-/* 像素眼睛 — 白色方块 */
-.cat-bot-face::before,
-.cat-bot-face::after {
-    content: '';
+.cat-eye {
     position: absolute;
-    top: 6px;
+    top: 7px;
     width: 10px;
     height: 10px;
     background: #fff;
+    transform: translate(var(--eye-x, 0), var(--eye-y, 0));
+    transition: transform 0.12s steps(2), height 0.08s steps(1), top 0.08s steps(1);
+    animation: cat-blink 5.6s steps(1) infinite;
 }
 
-.cat-bot-face::before {
+.cat-eye-left {
     left: 10px;
 }
 
-.cat-bot-face::after {
+.cat-eye-right {
     right: 10px;
 }
 
-/* 尾巴 */
+.cat-bot-expression {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-family: var(--mono-font);
+    font-size: 13px;
+    font-weight: 800;
+    opacity: 0;
+}
+
 .cat-bot-tail {
     position: absolute;
-    bottom: 0;
     right: -12px;
+    bottom: 0;
     width: 10px;
     height: 28px;
     background: #fd9f5d;
-    transform-origin: bottom left;
     transform: rotate(15deg);
+    transform-origin: bottom left;
 }
 
-.cat-bot:hover {
+.cat-bot:hover,
+.cat-bot.is-menu-open {
     transform: translateY(-6px);
 }
 
@@ -106,8 +122,296 @@
     outline-offset: 6px;
 }
 
-.cat-bot:hover .cat-bot-tail {
+.cat-bot:hover .cat-bot-tail,
+.cat-bot.is-menu-open .cat-bot-tail {
     animation: tail-wag-pixel 0.25s steps(2) infinite;
+}
+
+.cat-bot.is-surprised .cat-eye,
+.cat-bot.is-easter .cat-eye {
+    opacity: 0;
+}
+
+.cat-bot.is-surprised .cat-bot-expression,
+.cat-bot.is-easter .cat-bot-expression {
+    opacity: 1;
+}
+
+.cat-bot.is-easter {
+    filter: saturate(1.35);
+    animation: cat-jump 0.16s steps(2) 6;
+}
+
+.cat-bot.is-easter .cat-bot-antenna::after {
+    background: #fbbf24;
+    box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.32);
+    animation-duration: 0.16s;
+}
+
+.cat-bot.is-listening .cat-bot-antenna::after {
+    background: #60a5fa;
+    box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.28);
+    animation-duration: 0.55s;
+}
+
+.cat-bot-menu {
+    position: absolute;
+    right: 0;
+    bottom: 78px;
+    display: grid;
+    gap: 4px;
+    width: 172px;
+    padding: 8px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--snow);
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.12);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(8px);
+    transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.cat-bot-menu::after {
+    content: '';
+    position: absolute;
+    right: 22px;
+    bottom: -7px;
+    width: 12px;
+    height: 12px;
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    background: var(--snow);
+    transform: rotate(45deg);
+}
+
+.cat-bot-wrap.is-open .cat-bot-menu {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+.cat-bot-menu a,
+.cat-bot-menu button {
+    position: relative;
+    z-index: 1;
+    min-height: 34px;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--near-black);
+    font: inherit;
+    font-size: 13px;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.cat-bot-menu a:hover,
+.cat-bot-menu button:hover,
+.cat-bot-menu a:focus-visible,
+.cat-bot-menu button:focus-visible {
+    background: var(--surface);
+    outline: 0;
+}
+
+.cat-bot-menu [data-cat-action="ask-ai"]::after {
+    content: 'ask';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    padding: 2px 6px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--muted);
+    font-family: var(--mono-font);
+    font-size: 10px;
+    text-transform: lowercase;
+    transform: translateY(-50%);
+}
+
+.cat-bot-wrap.is-asking .cat-bot-antenna::after {
+    background: #f472b6;
+    box-shadow: 0 0 0 4px rgba(244, 114, 182, 0.24);
+    animation-duration: 0.38s;
+}
+
+.cat-ai-panel {
+    position: absolute;
+    right: 0;
+    bottom: 78px;
+    z-index: 2;
+    display: grid;
+    gap: 10px;
+    width: min(360px, calc(100vw - 48px));
+    max-height: min(560px, calc(100vh - 116px));
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--white);
+    box-shadow: 0 22px 54px rgba(0, 0, 0, 0.16);
+}
+
+.cat-ai-panel::after {
+    content: '';
+    position: absolute;
+    right: 22px;
+    bottom: -7px;
+    width: 12px;
+    height: 12px;
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    background: var(--white);
+    transform: rotate(45deg);
+}
+
+.cat-ai-panel[hidden] {
+    display: none;
+}
+
+.cat-ai-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: start;
+}
+
+.cat-ai-header h2 {
+    margin: 0;
+    color: var(--near-black);
+    font-size: 15px;
+    line-height: 1.1;
+}
+
+.cat-ai-header span {
+    display: inline-block;
+    margin-top: 4px;
+    color: var(--muted);
+    font-family: var(--mono-font);
+    font-size: 11px;
+}
+
+.cat-ai-close {
+    width: 28px;
+    min-height: 28px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: var(--snow);
+    color: var(--near-black);
+    font-size: 18px;
+    line-height: 1;
+    text-align: center;
+}
+
+.cat-ai-output {
+    display: grid;
+    align-content: start;
+    gap: 8px;
+    min-height: 132px;
+    max-height: 278px;
+    overflow: auto;
+    padding: 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--snow);
+}
+
+.cat-ai-message {
+    max-width: 88%;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--white);
+    color: var(--near-black);
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.cat-ai-message p {
+    margin: 0;
+}
+
+.cat-ai-message p + p {
+    margin-top: 4px;
+}
+
+.cat-ai-message-user {
+    justify-self: end;
+    border-color: rgba(253, 159, 93, 0.44);
+    background: #fff4e8;
+}
+
+[data-theme="dark"] .cat-ai-message-user {
+    background: #34251a;
+}
+
+.cat-ai-message-assistant {
+    justify-self: start;
+}
+
+.cat-ai-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.cat-ai-suggestions button {
+    min-height: 28px;
+    padding: 5px 8px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--near-black);
+    font-size: 12px;
+}
+
+.cat-ai-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px;
+}
+
+.cat-ai-input {
+    min-width: 0;
+    height: 34px;
+    padding: 0 9px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: var(--snow);
+    color: var(--near-black);
+    font: inherit;
+    font-size: 13px;
+}
+
+.cat-ai-input:focus {
+    border-color: var(--focus);
+    outline: 0;
+}
+
+.cat-ai-submit {
+    min-height: 34px;
+    padding-inline: 11px;
+    border: 1px solid var(--line);
+    background: var(--near-black);
+    color: var(--white);
+}
+
+.cat-ai-submit:hover,
+.cat-ai-submit:focus-visible {
+    background: #111827;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }
 
 @keyframes antenna-blink {
@@ -115,7 +419,43 @@
     50% { opacity: 0.3; }
 }
 
+@keyframes cat-blink {
+    0%, 46%, 50%, 100% {
+        top: 7px;
+        height: 10px;
+    }
+    48% {
+        top: 11px;
+        height: 2px;
+    }
+}
+
 @keyframes tail-wag-pixel {
     0%, 100% { transform: rotate(15deg); }
     50% { transform: rotate(45deg); }
+}
+
+@keyframes cat-jump {
+    0%, 100% { transform: translateY(-6px); }
+    50% { transform: translateY(-12px); }
+}
+
+@media (max-width: 560px) {
+    .cat-bot-wrap {
+        right: 18px;
+        bottom: 18px;
+    }
+
+    .cat-bot-menu {
+        width: min(172px, calc(100vw - 36px));
+    }
+
+    .cat-ai-panel {
+        width: calc(100vw - 36px);
+        max-height: calc(100vh - 104px);
+    }
+
+    .cat-ai-output {
+        max-height: 42vh;
+    }
 }
