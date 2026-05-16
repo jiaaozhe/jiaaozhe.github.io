@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const input = document.getElementById('command-input');
     const output = document.getElementById('command-output');
     const prompt = document.getElementById('command-prompt');
-    const dataElement = document.getElementById('site-terminal-data');
+    const dataElement = document.getElementById('site-data');
 
     if (!palette || !form || !input || !output || !prompt || !dataElement) {
         return;

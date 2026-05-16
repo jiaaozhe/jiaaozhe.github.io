@@ -1,6 +1,6 @@
 (function() {
     function readSiteData() {
-        const dataElement = document.getElementById('site-terminal-data');
+        const dataElement = document.getElementById('site-data');
 
         if (!dataElement) {
             return {};
