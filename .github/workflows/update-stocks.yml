@@ -1,0 +1,35 @@
+name: Daily Stock Update
+
+on:
+  schedule:
+    - cron: '0 12 * * *'  # UTC 12:00 = Beijing 20:00
+  workflow_dispatch:       # Allow manual trigger
+
+jobs:
+  update-stocks:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Fetch stock data
+        run: uv run --with yfinance --with pyyaml python scripts/update_stocks.py
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add _data/stocks.yml
+          git diff --cached --quiet || git commit -m "chore: update stock prices [$(date -u +%Y-%m-%d)]"
+          git push

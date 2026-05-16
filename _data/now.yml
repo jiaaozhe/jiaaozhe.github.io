@@ -1,0 +1,66 @@
+status:
+  state: "OPTIMAL"
+  health: "100%"
+
+system:
+  birth_date: "1999-10-09"
+  core_temp: 42
+  load_average: [0.42, 0.30, 0.10]
+  log_messages:
+    - time: "14:32:01"
+      level: "INFO"
+      message: "Coffee intake sufficient. Cognitive functions nominal."
+    - time: "14:33:15"
+      level: "WARN"
+      message: "Procrastination daemon detected. Initiating focus protocol."
+    - time: "14:45:22"
+      level: "INFO"
+      message: "Agent Claude Code completed task #42. Reward: dopamine."
+    - time: "15:00:00"
+      level: "ERROR"
+      message: "Sleep not found. Retrying in 3h..."
+    - time: "15:12:08"
+      level: "INFO"
+      message: "Stock market volatility within acceptable parameters."
+    - time: "15:30:33"
+      level: "WARN"
+      message: "Twitter(X) engagement spike detected. Ignoring..."
+    - time: "16:00:00"
+      level: "INFO"
+      message: "Checkpoint reached. Saving state..."
+    - time: "16:45:17"
+      level: "INFO"
+      message: "Reinforcement learning training epoch #1337 complete. Loss: 0.042."
+
+focus:
+  label: "CORE_PROCESSES"
+  items:
+    - name: "reinforcement_learning"
+      display_name: "Reinforcement Learning"
+      progress: 10
+      pid: 1337
+      uptime_hours: 128
+      checkpoint_days: 14
+      wave_color: "#60a5fa"
+      cpu_percent: 15
+    - name: "digital_life"
+      display_name: "Digital life"
+      progress: 20
+      pid: 2048
+      uptime_hours: 256
+      checkpoint_days: 7
+      wave_color: "#4ade80"
+      cpu_percent: 35
+
+trying:
+  label: "RAM_TRIAL"
+  items:
+    - name: "hermes_agent"
+      display_name: "HERMES AGENT"
+      url: "https://hermes-agent.nousresearch.com/"
+      note: "替代 OpenClaw"
+      progress: 50
+      pid: 4096
+      allocated_memory: "512MB"
+      dependencies: ["openclaw", "nous-research"]
+      wave_color: "#fbbf24"

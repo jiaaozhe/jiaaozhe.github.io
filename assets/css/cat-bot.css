@@ -1,0 +1,121 @@
+.cat-bot {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    width: 72px;
+    height: 52px;
+    background: #fd9f5d;
+    z-index: 100;
+    cursor: pointer;
+    transition: transform 0.12s steps(3);
+}
+
+/* 耳朵 — 头顶两个像素方块 */
+.cat-bot::before,
+.cat-bot::after {
+    content: '';
+    position: absolute;
+    top: -16px;
+    width: 20px;
+    height: 20px;
+    background: #fd9f5d;
+    box-shadow: inset -4px -4px 0 0 #e07d3a;
+}
+
+.cat-bot::before {
+    left: 8px;
+}
+
+.cat-bot::after {
+    right: 8px;
+}
+
+/* 天线 — 粗线条 + 方块发光球 */
+.cat-bot-antenna {
+    position: absolute;
+    top: -32px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 24px;
+    background: #9ca3af;
+}
+
+.cat-bot-antenna::after {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 12px;
+    height: 12px;
+    background: #4ade80;
+    box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.3);
+    animation: antenna-blink 1s steps(1) infinite;
+}
+
+/* 脸 — 深色屏幕 */
+.cat-bot-face {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 48px;
+    height: 28px;
+    background: #1f2937;
+    font-size: 0;
+}
+
+/* 像素眼睛 — 白色方块 */
+.cat-bot-face::before,
+.cat-bot-face::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    width: 10px;
+    height: 10px;
+    background: #fff;
+}
+
+.cat-bot-face::before {
+    left: 10px;
+}
+
+.cat-bot-face::after {
+    right: 10px;
+}
+
+/* 尾巴 */
+.cat-bot-tail {
+    position: absolute;
+    bottom: 0;
+    right: -12px;
+    width: 10px;
+    height: 28px;
+    background: #fd9f5d;
+    transform-origin: bottom left;
+    transform: rotate(15deg);
+}
+
+.cat-bot:hover {
+    transform: translateY(-6px);
+}
+
+.cat-bot:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 6px;
+}
+
+.cat-bot:hover .cat-bot-tail {
+    animation: tail-wag-pixel 0.25s steps(2) infinite;
+}
+
+@keyframes antenna-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+@keyframes tail-wag-pixel {
+    0%, 100% { transform: rotate(15deg); }
+    50% { transform: rotate(45deg); }
+}

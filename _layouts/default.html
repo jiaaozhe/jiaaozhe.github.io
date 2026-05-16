@@ -14,6 +14,7 @@
     <title>{% if page.title %}{{ page.title }} - {{ site.title }}{% else %}{{ site.title }}{% endif %}</title>
     <link rel="icon" type="image/svg+xml" href="{{ '/favicon.svg' | relative_url }}">
     <link rel="stylesheet" href="{{ '/assets/css/styles.css' | relative_url }}?v={{ site.time | date: '%s' }}">
+    <link rel="stylesheet" href="{{ '/assets/css/cat-bot.css' | relative_url }}?v={{ site.time | date: '%s' }}">
     {% seo %}
 </head>
 <body>
@@ -105,5 +106,11 @@
         ]
     </script>
     <script src="{{ '/assets/js/script.js' | relative_url }}?v={{ site.time | date: '%s' }}"></script>
+
+    <a class="cat-bot" href="{{ '/status/' | relative_url }}" aria-label="查看状态" title="查看状态">
+        <div class="cat-bot-antenna"></div>
+        <div class="cat-bot-face">^_^</div>
+        <div class="cat-bot-tail"></div>
+    </a>
 </body>
 </html>

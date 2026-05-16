@@ -1,0 +1,29 @@
+- id: claude-code
+  name: "Claude Code"
+  url: "https://docs.anthropic.com/en/docs/claude-code"
+  status: active
+  desc: "李彦宏你做了什么！"
+  version: "v2025.04"
+  throughput: "98%"
+  latency: "0ms"
+  driver: "stable"
+
+- id: codex
+  name: "Codex"
+  url: "https://openai.com/codex/"
+  status: active
+  desc: "除了前端不行"
+  version: "v2025.04"
+  throughput: "94%"
+  latency: "1ms"
+  driver: "stable"
+
+- id: hermes-agent
+  name: "Hermes Agent"
+  url: "https://hermes-agent.nousresearch.com/"
+  status: trying
+  desc: "至少不会破坏式更新，你说对吧 OpenClaw?"
+  version: "v0.3-beta"
+  throughput: "65%"
+  latency: "120ms"
+  driver: "experimental"

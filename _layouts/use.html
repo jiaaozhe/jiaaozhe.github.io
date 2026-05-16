@@ -1,0 +1,39 @@
+---
+layout: default
+---
+<article class="use-detail">
+    <header class="use-header">
+        <div class="use-eyebrow">INPUT DEVICE</div>
+        <h1>{{ page.title }}</h1>
+        {% if page.summary %}
+        <p class="use-summary">{{ page.summary }}</p>
+        {% endif %}
+
+        <div class="use-meta-line">
+            {% if page.version %}
+            <span>Version {{ page.version }}</span>
+            {% endif %}
+            {% if page.role %}
+            <span>Role {{ page.role }}</span>
+            {% endif %}
+            {% if page.status %}
+            <span>Status {{ page.status }}</span>
+            {% endif %}
+        </div>
+
+        <div class="use-links">
+            <a href="{{ '/status/' | relative_url }}" class="publication-link">状态页</a>
+            {% if page.official_url %}
+            <a href="{{ page.official_url }}" class="publication-link" target="_blank" rel="noopener noreferrer">官方链接</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <div class="use-content post-content">
+        {{ content }}
+    </div>
+
+    <footer class="post-footer">
+        <a href="{{ '/status/' | relative_url }}" class="back-link">返回状态页</a>
+    </footer>
+</article>

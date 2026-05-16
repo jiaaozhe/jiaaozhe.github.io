@@ -21,6 +21,9 @@ collections:
   publications:
     output: true
     permalink: /publications/:title/
+  uses:
+    output: true
+    permalink: /uses/:title/
   fragments:
     output: false
 
@@ -36,6 +39,11 @@ defaults:
       type: "publications"
     values:
       layout: "publication"
+  - scope:
+      path: ""
+      type: "uses"
+    values:
+      layout: "use"
 
 # Exclude from processing
 exclude:

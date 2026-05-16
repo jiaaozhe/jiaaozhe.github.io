@@ -66,9 +66,4 @@ title: 个人主页
         {% endfor %}
     </div>
 
-    <div class="timeline-footer">
-        <a href="/posts/" class="view-all-link">所有文章</a>
-        <a href="/fragments/" class="view-all-link">所有碎片</a>
-        <a href="/research/" class="view-all-link">所有研究</a>
-    </div>
 </section>

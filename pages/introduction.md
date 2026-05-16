@@ -6,8 +6,8 @@ permalink: /introduction/
 
 <section class="profile-hero">
     <div class="hero-content">
-        <div class="profile-avatar">
-            <svg class="avatar-mark" viewBox="0 0 128 128" role="img" aria-label="Jiaaozhe identity mark">
+        <a class="profile-avatar" href="{{ '/status/' | relative_url }}" aria-label="查看我的状态" title="查看我的状态">
+            <svg class="avatar-mark" viewBox="0 0 128 128" role="img" aria-hidden="true">
                 <circle cx="64" cy="64" r="52"></circle>
                 <path d="M45 34v40c0 20 18 28 34 17l27-18-42-22 35-22"></path>
                 <circle cx="45" cy="34" r="5"></circle>
@@ -17,7 +17,7 @@ permalink: /introduction/
                 <path d="M37 96h18"></path>
                 <path d="M73 32h18"></path>
             </svg>
-        </div>
+        </a>
         <h1>关于</h1>
         <p class="subtitle">Code is cheap, show me your talk.</p>
         <div class="hero-tags">
