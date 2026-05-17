@@ -1,26 +1,33 @@
 ---
 layout: default
 ---
-<article class="post">
-    <header class="post-header">
-        <h2>{{ page.title }}</h2>
-        <p class="post-date">{{ page.date | date: "%Y年%-m月%-d日" }}</p>
+<article class="post" data-post>
+    <aside class="post-toc" data-post-toc aria-label="文章目录" hidden>
+        <div class="post-toc-title">Contents</div>
+        <nav class="post-toc-nav" data-post-toc-nav></nav>
+    </aside>
 
-        {% if page.categories %}
-        <div class="post-categories">
-            分类:
-            {% for category in page.categories %}
-            <a href="{{ '/posts/' | relative_url }}?category={{ category | uri_escape }}">{{ category }}</a>
-            {% endfor %}
+    <div class="post-main">
+        <header class="post-header">
+            <h2>{{ page.title }}</h2>
+            <p class="post-date">{{ page.date | date: "%Y年%-m月%-d日" }}</p>
+
+            {% if page.categories %}
+            <div class="post-categories">
+                分类:
+                {% for category in page.categories %}
+                <a href="{{ '/posts/' | relative_url }}?category={{ category | uri_escape }}">{{ category }}</a>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </header>
+
+        <div class="post-content">
+            {{ content }}
         </div>
-        {% endif %}
-    </header>
 
-    <div class="post-content">
-        {{ content }}
+        <footer class="post-footer">
+            <a href="{{ '/' | relative_url }}" class="back-link">返回首页</a>
+        </footer>
     </div>
-
-    <footer class="post-footer">
-        <a href="{{ '/' | relative_url }}" class="back-link">返回首页</a>
-    </footer>
 </article>

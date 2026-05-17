@@ -880,6 +880,82 @@ img {
     background: var(--white);
 }
 
+.post.has-toc {
+    display: grid;
+    grid-template-columns: 236px minmax(0, 860px);
+    gap: 48px;
+    max-width: 1180px;
+    align-items: start;
+}
+
+.post-main {
+    min-width: 0;
+}
+
+.post-toc {
+    position: sticky;
+    top: 96px;
+    max-height: calc(100vh - 180px);
+    overflow: auto;
+    padding: 4px 0 4px 18px;
+    border-left: 1px solid var(--line);
+}
+
+.post-toc[hidden] {
+    display: none;
+}
+
+.post-toc-title {
+    margin-bottom: 12px;
+    color: var(--muted);
+    font-family: var(--mono-font);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.post-toc-nav {
+    display: grid;
+    gap: 2px;
+}
+
+.post-toc-link {
+    position: relative;
+    display: block;
+    padding: 5px 0;
+    border: 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.35;
+    text-decoration: none;
+}
+
+.post-toc-link::before {
+    content: "";
+    position: absolute;
+    left: -19px;
+    top: 8px;
+    width: 2px;
+    height: calc(100% - 16px);
+    min-height: 12px;
+    background: transparent;
+}
+
+.post-toc-link:hover,
+.post-toc-link.is-active {
+    color: var(--black);
+}
+
+.post-toc-link.is-active::before {
+    background: var(--black);
+}
+
+.post-toc-link-h3 {
+    padding-left: 14px;
+    font-size: 12px;
+}
+
 .post-header,
 .publication-header,
 .use-header {
@@ -1010,6 +1086,11 @@ img {
 
 .post-content h3 {
     font-size: 24px;
+}
+
+.post-content h2,
+.post-content h3 {
+    scroll-margin-top: 96px;
 }
 
 .post-content p,
@@ -1552,6 +1633,15 @@ img {
     .publication-detail,
     .use-detail {
         padding-top: 40px;
+    }
+
+    .post.has-toc {
+        display: block;
+        max-width: 860px;
+    }
+
+    .post-toc {
+        display: none;
     }
 
     .post-content,
