@@ -2,16 +2,12 @@
   name: 苹果
   market: US
   currency: $
-  current: 297.37
-  change: -0.47
-  change_pct: -0.16
+  current: 299.23
+  change: 0.26
+  change_pct: 0.09
   status: active
   desc: 很稳
   history:
-  - o: 276.21
-    h: 276.54
-    l: 268.4
-    c: 269.61
   - o: 269.66
     h: 270.09
     l: 265.5
@@ -555,21 +551,21 @@
   - o: 296.97
     h: 300.51
     l: 296.35
-    c: 297.37
+    c: 298.97
+  - o: 298.18
+    h: 302.37
+    l: 298.09
+    c: 299.23
 - symbol: MSFT
   name: 微软
   market: US
   currency: $
-  current: 421.85
-  change: -1.69
-  change_pct: -0.4
+  current: 416.64
+  change: -0.78
+  change_pct: -0.19
   status: active
   desc: 不死不活
   history:
-  - o: 526.69
-    h: 527.13
-    l: 512.97
-    c: 515.67
   - o: 517.66
     h: 522.79
     l: 512.46
@@ -1110,24 +1106,24 @@
     h: 425.12
     l: 415.61
     c: 423.54
-  - o: 429.89
+  - o: 429.9
     h: 432.7
-    l: 420.81
-    c: 421.85
+    l: 416.49
+    c: 417.42
+  - o: 413.99
+    h: 418.0
+    l: 411.3
+    c: 416.64
 - symbol: QQQ
   name: 纳斯达克100 ETF
   market: US
   currency: $
-  current: 699.39
-  change: -6.49
-  change_pct: -0.92
+  current: 710.95
+  change: 9.41
+  change_pct: 1.34
   status: sold
   desc: 每当国内纳斯达克ETF不限额的时候，就是收割散户的时候
   history:
-  - o: 632.56
-    h: 632.59
-    l: 625.1
-    c: 627.47
   - o: 633.49
     h: 634.2
     l: 628.25
@@ -1669,23 +1665,23 @@
     l: 698.85
     c: 705.88
   - o: 699.81
-    h: 705.13
-    l: 695.27
-    c: 699.39
+    h: 706.49
+    l: 695.25
+    c: 701.53
+  - o: 705.32
+    h: 713.13
+    l: 703.79
+    c: 710.95
 - symbol: '512800'
   name: 中证银行 ETF
   market: SH
   currency: ¥
   current: 0.77
-  change: 0.0
-  change_pct: 0.52
+  change: -0.01
+  change_pct: -0.9
   status: active
   desc: 当存钱了
   history:
-  - o: 0.81
-    h: 0.81
-    l: 0.81
-    c: 0.81
   - o: 0.81
     h: 0.82
     l: 0.81
@@ -2199,6 +2195,10 @@
     l: 0.78
     c: 0.78
   - o: 0.78
+    h: 0.78
+    l: 0.77
+    c: 0.77
+  - o: 0.77
     h: 0.78
     l: 0.77
     c: 0.77
