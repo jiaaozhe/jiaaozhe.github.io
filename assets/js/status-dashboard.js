@@ -243,7 +243,7 @@ function initStockCharts() {
             const yClose = PAD + (1 - (day.c - minLow) / range) * (svgH - 2 * PAD);
 
             const isUp = day.c >= day.o;
-            const color = isUp ? '#5da979' : '#c97878';
+            const color = isUp ? 'var(--dash-chart-up)' : 'var(--dash-chart-down)';
 
             // Wick
             svgHTML += '<line x1="' + wickX.toFixed(1) + '" y1="' + yHigh.toFixed(1) + '" x2="' + wickX.toFixed(1) + '" y2="' + yLow.toFixed(1) + '" stroke="' + color + '" stroke-width="1"/>';
