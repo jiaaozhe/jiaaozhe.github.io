@@ -1,8 +1,17 @@
-# 个人博客
+# jiaaozhe.site
 
-基于 Jekyll 和 GitHub Pages 的个人网站。
+个人站点，用来放文章、研究记录、碎片流、工具配置和状态页。
 
-## 本地启动
+## Explore
+
+- 首页：按时间线聚合文章、碎片和研究
+- 文章：长文、源码阅读和技术记录，文章页可打开 Raw Markdown
+- 碎片流：短观察、论文笔记、工具记录和实验片段
+- 学术研究：论文与研究方向
+- 状态页：个人 dashboard、工具栈和股票关注列表
+- 站内终端：按 `/` 打开，用 `ls`、`cd`、`cat`、`less`、`grep` 浏览内容
+
+## Local
 
 ```bash
 bundle install
@@ -10,79 +19,3 @@ bundle exec jekyll serve
 ```
 
 打开 `http://localhost:4000`。
-
-文章页的 Raw 链接会直接指向 GitHub 上的 `_posts/` 原始 Markdown 文件，不需要额外生成 raw 文件。
-
-## 内容维护
-
-### 文章
-
-在 `_posts/` 新建 Markdown 文件，文件名格式：
-
-```text
-YYYY-MM-DD-title.md
-```
-
-示例：
-
-```markdown
----
-title: "文章标题"
-date: 2026-04-29
-excerpt: "文章摘要"
-categories: [技术]
----
-
-正文内容。
-```
-
-### 碎片流
-
-碎片流放在 `_fragments/`，每条一个 Markdown 文件。
-
-```text
-_fragments/YYYY-MM-DD-title.md
-```
-
-示例：
-
-```markdown
----
-date: 2026-04-29
-type: 观察
----
-
-这里写短记录内容。
-
-可以写多段、列表、链接或代码。
-```
-
-`type` 会自动生成顶部筛选按钮，不需要额外配置。
-
-### 学术成果
-
-学术成果放在 `_publications/`，每篇一个 Markdown 文件。
-
-## 目录结构
-
-```text
-├── _config.yml
-├── _fragments/
-├── _layouts/
-├── _posts/
-├── _publications/
-├── assets/
-│   ├── css/
-│   └── js/
-├── pages/
-│   ├── fragments.md
-│   ├── introduction.md
-│   ├── posts.md
-│   └── research.md
-├── index.md
-└── README.md
-```
-
-## 部署
-
-推送到 `main` 后由 GitHub Pages 自动构建。
