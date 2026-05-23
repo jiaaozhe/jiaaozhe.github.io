@@ -3,6 +3,8 @@ title: 我的博客
 description: 分享技术、生活和思考
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "" # the base hostname & protocol for your site, e.g. https://example.com
+repository: jiaaozhe/jiaaozhe.github.io
+raw_branch: main
 
 # Build settings
 markdown: kramdown

@@ -1186,6 +1186,13 @@ img {
     text-align: center;
 }
 
+.post-footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+}
+
 .modal {
     position: fixed;
     inset: 0;

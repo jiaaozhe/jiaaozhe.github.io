@@ -11,6 +11,8 @@ bundle exec jekyll serve
 
 打开 `http://localhost:4000`。
 
+文章页的 Raw 链接会直接指向 GitHub 上的 `_posts/` 原始 Markdown 文件，不需要额外生成 raw 文件。
+
 ## 内容维护
 
 ### 文章
