@@ -28,7 +28,7 @@ layout: default
 
         <footer class="post-footer">
             {% assign raw_branch = site.raw_branch | default: "main" %}
-            {% assign raw_url = "https://raw.githubusercontent.com/" | append: site.repository | append: "/" | append: raw_branch | append: "/" | append: page.path %}
+            {% assign raw_url = "https://raw.githubusercontent.com/" | append: site.source_repository | append: "/" | append: raw_branch | append: "/" | append: page.path %}
             <a href="{{ raw_url }}" class="back-link" target="_blank" rel="noopener noreferrer">Raw</a>
             <a href="{{ '/' | relative_url }}" class="back-link">返回首页</a>
         </footer>

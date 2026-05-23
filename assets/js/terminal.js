@@ -11,10 +11,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     const terminalData = JSON.parse(dataElement.textContent || '{}');
-    const storageKey = 'terminal.cwd';
+    const terminalConfig = terminalData.terminal || {};
+    const cwdStorageKey = 'terminal.cwd';
+    const historyStorageKey = 'terminal.history';
     const historyLimit = 80;
-    let commandHistory = [];
-    let historyIndex = 0;
+    const rawCache = {};
+    const textEncoder = window.TextEncoder ? new TextEncoder() : null;
+    let commandHistory = readHistory();
+    let historyIndex = commandHistory.length;
+    let lessState = null;
 
     function slugFromUrl(url) {
         return url.split('/').filter(Boolean).pop() || 'home';
@@ -26,18 +31,46 @@ document.addEventListener('DOMContentLoaded', function() {
             name: name,
             route: route || '',
             title: title || name,
-            children: {}
+            children: {},
+            aliases: {}
         };
     }
 
-    function createFile(name, route, title, content) {
+    function byteLength(value) {
+        const text = String(value || '');
+
+        if (textEncoder) {
+            return textEncoder.encode(text).length;
+        }
+
+        return unescape(encodeURIComponent(text)).length;
+    }
+
+    function createFile(name, route, title, content, meta) {
+        const details = meta || {};
+
         return {
             type: 'file',
             name: name,
+            displayName: details.displayName || name,
             route: route || '',
             title: title || name,
-            content: content || ''
+            content: content || '',
+            rawUrl: details.rawUrl || '',
+            sourcePath: details.sourcePath || '',
+            date: details.date || '',
+            size: details.size || byteLength(content || '')
         };
+    }
+
+    function addChild(parent, node, aliases) {
+        parent.children[node.name] = node;
+
+        (aliases || []).forEach(function(alias) {
+            if (alias && alias !== node.name) {
+                parent.aliases[alias] = node.name;
+            }
+        });
     }
 
     function buildVfs(data) {
@@ -48,26 +81,36 @@ document.addEventListener('DOMContentLoaded', function() {
 
         (data.posts || []).forEach(function(post) {
             const slug = slugFromUrl(post.url);
-            posts.children[slug] = createFile(slug, post.url, post.title, post.content);
+            const sourceName = post.path ? post.path.split('/').pop() : slug + '.md';
+            const displayName = sourceName.replace(/^\d{4}-\d{2}-\d{2}-/, '');
+            const file = createFile(displayName, post.url, post.title, post.content, {
+                displayName: displayName,
+                rawUrl: post.raw_url,
+                sourcePath: post.path,
+                date: post.date,
+                size: byteLength(post.content || '')
+            });
+
+            addChild(posts, file, [slug, sourceName]);
         });
 
         (data.uses || []).forEach(function(use) {
             const slug = slugFromUrl(use.url);
-            uses.children[slug] = createFile(slug, use.url, use.title, use.content);
+            addChild(uses, createFile(slug, use.url, use.title, use.content));
         });
 
         (data.publications || []).forEach(function(publication) {
             const slug = slugFromUrl(publication.url);
-            research.children[slug] = createFile(slug, publication.url, publication.title, publication.content);
+            addChild(research, createFile(slug, publication.url, publication.title, publication.content));
         });
 
-        root.children.posts = posts;
-        root.children.uses = uses;
-        root.children.research = research;
+        addChild(root, posts);
+        addChild(root, uses);
+        addChild(root, research);
 
         (data.pages || []).forEach(function(page) {
             if (page.name === 'home') {
-                root.children.home = createFile('home', page.url, page.title, page.title);
+                addChild(root, createFile('home', page.url, page.title, page.title));
                 return;
             }
 
@@ -78,11 +121,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             if (page.name === 'fragments') {
-                root.children[page.name] = createDir(page.name, page.url, page.title);
+                addChild(root, createDir(page.name, page.url, page.title));
                 return;
             }
 
-            root.children[page.name] = createFile(page.name, page.url, page.title, page.title);
+            addChild(root, createFile(page.name, page.url, page.title, page.title));
         });
 
         return root;
@@ -98,10 +141,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function readCwd() {
         try {
-            const stored = JSON.parse(sessionStorage.getItem(storageKey) || '[]');
+            const stored = JSON.parse(sessionStorage.getItem(cwdStorageKey) || '[]');
             return Array.isArray(stored) ? normalizePathParts(stored) : [];
         } catch (error) {
             return [];
+        }
+    }
+
+    function readHistory() {
+        try {
+            const stored = JSON.parse(localStorage.getItem(historyStorageKey) || '[]');
+            return Array.isArray(stored) ? stored.slice(-historyLimit).map(String) : [];
+        } catch (error) {
+            return [];
+        }
+    }
+
+    function writeHistory() {
+        try {
+            localStorage.setItem(historyStorageKey, JSON.stringify(commandHistory.slice(-historyLimit)));
+        } catch (error) {
+            return;
         }
     }
 
@@ -134,7 +194,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let cwd = inferCwdFromLocation() || readCwd();
 
     function writeCwd() {
-        sessionStorage.setItem(storageKey, JSON.stringify(cwd));
+        sessionStorage.setItem(cwdStorageKey, JSON.stringify(cwd));
     }
 
     writeCwd();
@@ -143,8 +203,16 @@ document.addEventListener('DOMContentLoaded', function() {
         return parts.length ? '/' + parts.join('/') : '/';
     }
 
+    function shellPath(parts) {
+        return parts.length ? '~/' + parts.join('/') : '~';
+    }
+
+    function promptText() {
+        return shellPath(cwd) + ' %';
+    }
+
     function updatePrompt() {
-        prompt.textContent = formatPath(cwd) + ' >';
+        prompt.textContent = promptText();
         prompt.setAttribute('title', formatPath(cwd));
     }
 
@@ -152,11 +220,14 @@ document.addEventListener('DOMContentLoaded', function() {
         let node = vfs;
 
         for (let index = 0; index < parts.length; index += 1) {
-            if (!node.children || !node.children[parts[index]]) {
+            const part = parts[index];
+            const canonical = node.aliases && node.aliases[part] ? node.aliases[part] : part;
+
+            if (!node.children || !node.children[canonical]) {
                 return null;
             }
 
-            node = node.children[parts[index]];
+            node = node.children[canonical];
         }
 
         return node;
@@ -199,11 +270,69 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 
+    function formatBytes(bytes) {
+        const value = Number(bytes) || 0;
+        const units = ['B', 'K', 'M'];
+        let size = value;
+        let unitIndex = 0;
+
+        while (size >= 1024 && unitIndex < units.length - 1) {
+            size /= 1024;
+            unitIndex += 1;
+        }
+
+        if (unitIndex === 0) {
+            return String(Math.round(size)) + units[unitIndex];
+        }
+
+        return size >= 10 ? Math.round(size) + units[unitIndex] : size.toFixed(1) + units[unitIndex];
+    }
+
+    function formatDate(value) {
+        if (!value) {
+            return '--- --';
+        }
+
+        const date = new Date(value + 'T00:00:00');
+
+        if (Number.isNaN(date.getTime())) {
+            return '--- --';
+        }
+
+        return date.toLocaleDateString('en-US', {
+            month: 'short',
+            day: '2-digit'
+        });
+    }
+
+    function nodeKind(node) {
+        if (!node) {
+            return 'text';
+        }
+
+        if (node.type === 'dir') {
+            return 'dir';
+        }
+
+        if (node.name && node.name.endsWith('.md')) {
+            return 'md';
+        }
+
+        return 'file';
+    }
+
+    function token(text, type) {
+        return {
+            text: String(text || ''),
+            type: type || 'text'
+        };
+    }
+
     function listDir(node, detailed) {
         const names = Object.keys(node.children || {}).sort();
 
         if (!names.length) {
-            return ['(empty)'];
+            return [[token('(empty)', 'muted')]];
         }
 
         return names.map(function(name) {
@@ -212,12 +341,22 @@ document.addEventListener('DOMContentLoaded', function() {
             const title = child.title && child.title !== name ? '  ' + child.title : '';
 
             if (detailed) {
-                const mode = child.type === 'dir' ? 'drwx' : '-rw-';
-                const size = child.type === 'dir' ? Object.keys(child.children || {}).length + ' items' : (child.content || '').length + ' chars';
-                return mode + '  ' + label.padEnd(18, ' ') + size.padEnd(12, ' ') + title.trim();
+                const mode = child.type === 'dir' ? 'drwxr-xr-x' : '-rw-r--r--';
+                const size = child.type === 'dir' ? Object.keys(child.children || {}).length * 32 : child.size;
+                return [
+                    token(mode + ' ', 'muted'),
+                    token('1 site site ', 'meta'),
+                    token(formatBytes(size).padStart(6, ' ') + ' ', 'meta'),
+                    token(formatDate(child.date) + ' ', 'meta'),
+                    token(label, nodeKind(child)),
+                    token(title ? '  ' + title.trim() : '', 'muted')
+                ];
             }
 
-            return label.padEnd(18, ' ') + title;
+            return [
+                token(label.padEnd(18, ' '), nodeKind(child)),
+                token(title, 'muted')
+            ];
         });
     }
 
@@ -225,35 +364,163 @@ document.addEventListener('DOMContentLoaded', function() {
         output.scrollTop = output.scrollHeight;
     }
 
-    function setLines(lines) {
-        output.innerHTML = '';
-        lines.forEach(function(line) {
-            const item = document.createElement('p');
-            item.textContent = line;
-            output.appendChild(item);
-        });
-        scrollOutput();
-    }
-
-    function writeLines(lines) {
-        lines.forEach(function(line) {
-            const item = document.createElement('p');
-            item.textContent = line;
-            output.appendChild(item);
-        });
-        scrollOutput();
-    }
-
-    function appendLine(line) {
+    function appendTokens(tokens, className) {
         const item = document.createElement('p');
-        item.textContent = line || '';
+
+        if (className) {
+            item.className = className;
+        }
+
+        tokens.forEach(function(part) {
+            const span = document.createElement('span');
+            span.textContent = part.text || '';
+
+            if (part.type && part.type !== 'text') {
+                span.className = 'term-' + part.type;
+            }
+
+            item.appendChild(span);
+        });
+
         output.appendChild(item);
         scrollOutput();
         return item;
     }
 
+    function appendOutput(line, className) {
+        if (Array.isArray(line)) {
+            return appendTokens(line, className);
+        }
+
+        const item = document.createElement('p');
+        item.textContent = line || '';
+
+        if (className) {
+            item.className = className;
+        }
+
+        output.appendChild(item);
+        scrollOutput();
+        return item;
+    }
+
+    function setLines(lines) {
+        output.innerHTML = '';
+        lines.forEach(function(line) {
+            appendOutput(line);
+        });
+        scrollOutput();
+    }
+
+    function writeTypedLines(lines, type) {
+        writeLines(lines.map(function(line) {
+            return [token(line, type)];
+        }));
+    }
+
+    function writeLines(lines) {
+        lines.forEach(function(line) {
+            appendOutput(line);
+        });
+        scrollOutput();
+    }
+
+    function appendLine(line, className) {
+        return appendOutput(line, className);
+    }
+
+    function appendHighlightedLine(prefix, line, term, extraClass) {
+        const item = document.createElement('p');
+        const value = String(line || '');
+        const query = String(term || '');
+        const lowerValue = value.toLowerCase();
+        const lowerQuery = query.toLowerCase();
+        let cursor = 0;
+        let index = lowerQuery ? lowerValue.indexOf(lowerQuery) : -1;
+
+        if (extraClass) {
+            item.className = extraClass;
+        }
+
+        if (prefix) {
+            const prefixParts = Array.isArray(prefix) ? prefix : [token(prefix, 'prefix')];
+
+            prefixParts.forEach(function(part) {
+                const label = document.createElement('span');
+                label.textContent = part.text || '';
+
+                if (part.type) {
+                    label.className = part.type === 'prefix' ? 'command-line-prefix' : 'term-' + part.type;
+                }
+
+                item.appendChild(label);
+            });
+        }
+
+        while (index >= 0) {
+            if (index > cursor) {
+                item.appendChild(document.createTextNode(value.slice(cursor, index)));
+            }
+
+            const mark = document.createElement('mark');
+            mark.className = 'command-hit';
+            mark.textContent = value.slice(index, index + query.length);
+            item.appendChild(mark);
+            cursor = index + query.length;
+            index = lowerValue.indexOf(lowerQuery, cursor);
+        }
+
+        item.appendChild(document.createTextNode(value.slice(cursor)));
+        output.appendChild(item);
+        scrollOutput();
+        return item;
+    }
+
+    function loadFileContent(node) {
+        if (!node.rawUrl || !window.fetch) {
+            return Promise.resolve({
+                text: node.content || '',
+                raw: false
+            });
+        }
+
+        if (rawCache[node.rawUrl]) {
+            return Promise.resolve({
+                text: rawCache[node.rawUrl],
+                raw: true
+            });
+        }
+
+        return fetch(node.rawUrl)
+            .then(function(response) {
+                if (!response.ok) {
+                    throw new Error(response.status + ' ' + response.statusText);
+                }
+
+                return response.text();
+            })
+            .then(function(text) {
+                rawCache[node.rawUrl] = text;
+                node.size = byteLength(text);
+                return {
+                    text: text,
+                    raw: true
+                };
+            })
+            .catch(function(error) {
+                return {
+                    text: node.content || '',
+                    raw: false,
+                    error: error.message
+                };
+            });
+    }
+
     function writePromptLine(commandLine) {
-        writeLines([formatPath(cwd) + ' > ' + commandLine]);
+        appendTokens([
+            token('% ', 'prompt'),
+            token(commandLine, 'command')
+        ], 'command-history-line');
     }
 
     function helpLines() {
@@ -263,11 +530,13 @@ document.addEventListener('DOMContentLoaded', function() {
             '  ls [path]            list directory contents',
             '  ls -l [path]         list details',
             '  tree [path]          print directory tree',
-            '  cd <path>            enter a directory or open a file',
+            '  cd <dir>             enter a directory',
             '  open <path>          open a page or file',
-            '  cat <file>           print file content',
-            '  grep <term> [path]   search file content',
+            '  cat <file>           print raw Markdown when available',
+            '  less <file>          read a file with paging',
+            '  grep [-n] [-C n] <term> [path]',
             '  find <term> [path]   search files and titles',
+            '  man <command>        show command manual',
             '  ask <question>       ask the site AI demo',
             '',
             'SHORTCUTS',
@@ -282,21 +551,23 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     const commandHelp = {
-        pwd: ['pwd', '  show current virtual directory'],
-        ls: ['ls [path]', 'ls -l [path]', '  list directory contents', '  example: ls posts'],
-        tree: ['tree [path]', '  print a compact virtual file tree', '  example: tree', '  example: tree posts'],
-        cd: ['cd <path>', '  enter a directory; files open directly', '  example: cd posts', '  example: cd first-post'],
-        open: ['open <path>', '  open a directory or file route', '  example: open .', '  example: open /uses/ghostty'],
-        cat: ['cat <file>', '  print file content in the terminal', '  example: cat posts/first-post'],
-        grep: ['grep <term> [path]', '  search file content under a file or directory', '  example: grep theme uses/ghostty', '  example: grep attention research'],
-        find: ['find <term> [path]', '  search names, titles, and content', '  example: find ghost', '  example: find attention research'],
-        ask: ['ask <question>', '  ask the site AI demo about this blog', '  example: ask 你有哪些文章？', '  example: ask ghostty 配置是什么？'],
-        clear: ['clear', '  clear terminal output'],
-        random: ['random', '  open a random post'],
-        whoami: ['whoami', '  print the site identity'],
-        date: ['date', '  print the current local date and time'],
-        uname: ['uname', '  print the terminal environment'],
-        help: ['help [command]', '  show all commands or one command']
+        pwd: ['NAME', '  pwd - show current virtual directory', '', 'SYNOPSIS', '  pwd'],
+        ls: ['NAME', '  ls - list directory contents', '', 'SYNOPSIS', '  ls [-l] [path]', '', 'EXAMPLES', '  ls posts', '  ls -l posts'],
+        tree: ['NAME', '  tree - print a compact virtual file tree', '', 'SYNOPSIS', '  tree [path]', '', 'EXAMPLES', '  tree', '  tree posts'],
+        cd: ['NAME', '  cd - change virtual directory', '', 'SYNOPSIS', '  cd <dir>', '', 'NOTES', '  cd only accepts directories. Use open <file> to navigate to an article.'],
+        open: ['NAME', '  open - open a route in the browser', '', 'SYNOPSIS', '  open <path>', '', 'EXAMPLES', '  open .', '  open posts/github-pages-guide.md'],
+        cat: ['NAME', '  cat - print file contents', '', 'SYNOPSIS', '  cat <file>', '', 'NOTES', '  Posts are fetched from their GitHub raw Markdown source when available.'],
+        less: ['NAME', '  less - read long files with paging', '', 'SYNOPSIS', '  less <file>', '', 'KEYS', '  j/down scroll down', '  k/up scroll up', '  / search', '  n next match', '  q quit'],
+        grep: ['NAME', '  grep - search file contents', '', 'SYNOPSIS', '  grep [-n] [-C n] <term> [path]', '', 'EXAMPLES', '  grep -n agent posts/hermes-agent-source-analysis.md', '  grep -C 2 theme uses/ghostty'],
+        find: ['NAME', '  find - search names, titles, and content', '', 'SYNOPSIS', '  find <term> [path]'],
+        ask: ['NAME', '  ask - ask the site AI demo about this blog', '', 'SYNOPSIS', '  ask <question>', '', 'EXAMPLES', '  ask 你有哪些文章？', '  ask ghostty 配置是什么？'],
+        clear: ['NAME', '  clear - clear terminal output'],
+        random: ['NAME', '  random - open a random post'],
+        whoami: ['NAME', '  whoami - print the site identity'],
+        date: ['NAME', '  date - print the current local date and time'],
+        uname: ['NAME', '  uname - print the terminal environment'],
+        help: ['NAME', '  help - show all commands or one command', '', 'SYNOPSIS', '  help [command]'],
+        man: ['NAME', '  man - show command manual', '', 'SYNOPSIS', '  man <command>']
     };
 
     const aliases = {
@@ -362,6 +633,120 @@ document.addEventListener('DOMContentLoaded', function() {
         return openRoute(posts[Math.floor(Math.random() * posts.length)]);
     }
 
+    function lessViewportSize() {
+        return Math.max(8, Math.floor(output.clientHeight / 24) - 2);
+    }
+
+    function lessMatches(lines, query) {
+        const term = String(query || '').toLowerCase();
+        const matches = [];
+
+        if (!term) {
+            return matches;
+        }
+
+        lines.forEach(function(line, index) {
+            if (String(line).toLowerCase().includes(term)) {
+                matches.push(index);
+            }
+        });
+
+        return matches;
+    }
+
+    function renderLess() {
+        if (!lessState) {
+            return;
+        }
+
+        const pageSize = lessViewportSize();
+        const maxOffset = Math.max(0, lessState.lines.length - pageSize);
+        lessState.offset = Math.max(0, Math.min(lessState.offset, maxOffset));
+        const end = Math.min(lessState.lines.length, lessState.offset + pageSize);
+        output.innerHTML = '';
+
+        for (let index = lessState.offset; index < end; index += 1) {
+            const line = lessState.lines[index];
+            const prefix = [token(String(index + 1).padStart(4, ' ') + '  ', 'line-number')];
+            appendHighlightedLine(prefix, line, lessState.query, 'less-line ' + markdownLineClass(line));
+        }
+
+        const percent = lessState.lines.length <= pageSize ? 100 : Math.round((end / lessState.lines.length) * 100);
+        const status = document.createElement('p');
+        status.className = 'less-status';
+        status.textContent = lessState.name + '  lines ' + (lessState.offset + 1) + '-' + end + '/' + lessState.lines.length + '  ' + percent + '%  q:quit j/k:scroll /:search n:next';
+        output.appendChild(status);
+        scrollOutput();
+    }
+
+    function markdownLineClass(line) {
+        const value = String(line || '');
+
+        if (/^#{1,6}\s/.test(value)) {
+            return 'term-md-heading';
+        }
+
+        if (/^---\s*$/.test(value) || /^[a-zA-Z0-9_-]+:\s/.test(value)) {
+            return 'term-md-meta-line';
+        }
+
+        if (/^```/.test(value)) {
+            return 'term-md-code-line';
+        }
+
+        return '';
+    }
+
+    function exitLess() {
+        const previousOutput = lessState && lessState.previousOutput;
+        lessState = null;
+        input.value = '';
+        updatePrompt();
+
+        if (previousOutput) {
+            output.innerHTML = previousOutput;
+            scrollOutput();
+            return;
+        }
+
+        setLines(welcomeLines());
+    }
+
+    function moveLess(delta) {
+        if (!lessState) {
+            return;
+        }
+
+        lessState.offset += delta;
+        renderLess();
+    }
+
+    function searchLess(query) {
+        if (!lessState) {
+            return;
+        }
+
+        lessState.query = query;
+        lessState.matches = lessMatches(lessState.lines, query);
+        lessState.matchIndex = 0;
+
+        if (lessState.matches.length) {
+            lessState.offset = lessState.matches[0];
+        }
+
+        renderLess();
+    }
+
+    function nextLessMatch() {
+        if (!lessState || !lessState.matches.length) {
+            return;
+        }
+
+        lessState.matchIndex = (lessState.matchIndex + 1) % lessState.matches.length;
+        lessState.offset = lessState.matches[lessState.matchIndex];
+        renderLess();
+    }
+
     function runLs(path) {
         const tokens = (path || '').split(/\s+/).filter(Boolean);
         const detailed = tokens.includes('-l');
@@ -371,20 +756,20 @@ document.addEventListener('DOMContentLoaded', function() {
         const resolved = target ? resolvePath(target) : { node: getNode(cwd), path: formatPath(cwd) };
 
         if (!resolved.node) {
-            writeLines(['ls: cannot access ' + target]);
+            writeLines([[token("ls: cannot access '" + target + "': No such file or directory", 'error')]]);
             return;
         }
 
         if (resolved.node.type !== 'dir') {
-            writeLines([resolved.node.name]);
+            writeLines([[token(resolved.node.name, nodeKind(resolved.node))]]);
             return;
         }
 
         writeLines(listDir(resolved.node, detailed));
     }
 
-    function treeLines(node, label, prefix) {
-        const lines = [label];
+    function treeLines(node, label, prefix, kind) {
+        const lines = [[token(label, kind || 'dir')]];
         const names = Object.keys(node.children || {}).sort();
 
         names.forEach(function(name, index) {
@@ -395,12 +780,15 @@ document.addEventListener('DOMContentLoaded', function() {
             const childLabel = child.type === 'dir' ? name + '/' : name;
 
             if (child.type === 'dir') {
-                const childLines = treeLines(child, prefix + branch + childLabel, nextPrefix);
+                const childLines = treeLines(child, prefix + branch + childLabel, nextPrefix, 'dir');
                 lines.push.apply(lines, childLines);
                 return;
             }
 
-            lines.push(prefix + branch + childLabel);
+            lines.push([
+                token(prefix + branch, 'muted'),
+                token(childLabel, nodeKind(child))
+            ]);
         });
 
         return lines;
@@ -411,17 +799,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const resolved = resolvePath(target);
 
         if (!resolved.node) {
-            writeLines(['tree: no such file or directory: ' + target]);
+            writeLines([[token("tree: '" + target + "': No such file or directory", 'error')]]);
             return;
         }
 
         if (resolved.node.type !== 'dir') {
-            writeLines([resolved.node.name]);
+            writeLines([[token(resolved.node.name, nodeKind(resolved.node))]]);
             return;
         }
 
         const label = resolved.path === '/' ? '/' : resolved.path.split('/').filter(Boolean).pop() + '/';
-        writeLines(treeLines(resolved.node, label, ''));
+        writeLines(treeLines(resolved.node, label, '', 'dir'));
     }
 
     function runCd(path) {
@@ -429,17 +817,17 @@ document.addEventListener('DOMContentLoaded', function() {
             cwd = [];
             writeCwd();
             updatePrompt();
-            writeLines([formatPath(cwd)]);
+            writeLines([[token(formatPath(cwd), 'muted')]]);
             return;
         }
 
         const resolved = resolvePath(path);
 
         if (!resolved.node) {
-            const hints = ['cd: no such file or directory: ' + path];
+            const hints = [[token('cd: no such file or directory: ' + path, 'error')]];
 
             if (!path.startsWith('/') && cwd.length && getNode([path])) {
-                hints.push('hint: try cd /' + path);
+                hints.push([token('hint: try cd /' + path, 'hint')]);
             }
 
             writeLines(hints);
@@ -450,11 +838,14 @@ document.addEventListener('DOMContentLoaded', function() {
             cwd = resolved.parts;
             writeCwd();
             updatePrompt();
-            writeLines([formatPath(cwd)]);
+            writeLines([[token(formatPath(cwd), 'muted')]]);
             return;
         }
 
-        openRoute(resolved.node);
+        writeLines([
+            [token('cd: not a directory: ' + path, 'error')],
+            [token('hint: use open ' + path, 'hint')]
+        ]);
     }
 
     function runOpen(path) {
@@ -462,35 +853,82 @@ document.addEventListener('DOMContentLoaded', function() {
         const resolved = resolvePath(target);
 
         if (!resolved.node) {
-            writeLines(['open: no such file or directory: ' + target]);
+            writeLines([[token("open: '" + target + "': No such file or directory", 'error')]]);
             return;
         }
 
         if (!openRoute(resolved.node)) {
-            writeLines(['open: no route for ' + target]);
+            writeLines([[token('open: no route for ' + target, 'error')]]);
         }
     }
 
     function runCat(path) {
         if (!path) {
-            writeLines(['cat: missing operand']);
+            writeLines([[token('cat: missing operand', 'error')]]);
             return;
         }
 
         const resolved = resolvePath(path);
 
         if (!resolved.node) {
-            writeLines(['cat: no such file or directory: ' + path]);
+            writeLines([[token('cat: no such file or directory: ' + path, 'error')]]);
             return;
         }
 
         if (resolved.node.type === 'dir') {
-            writeLines(['cat: ' + path + ' is a directory']);
+            writeLines([[token('cat: ' + path + ': Is a directory', 'error')]]);
             return;
         }
 
-        const lines = (resolved.node.content || '').split(/\r?\n/);
-        writeLines(lines.length && lines[0] ? lines : ['cat: ' + path + ' is empty']);
+        const loading = resolved.node.rawUrl ? appendLine([token('cat: fetching raw source...', 'muted')]) : null;
+
+        loadFileContent(resolved.node).then(function(result) {
+            if (loading) {
+                loading.remove();
+            }
+
+            const warnings = result.error ? [[token('cat: warning: raw source unavailable, using indexed text (' + result.error + ')', 'warning')]] : [];
+            const lines = (result.text || '').split(/\r?\n/);
+            writeLines(warnings.concat(lines.length && lines[0] ? lines : [[token('cat: ' + path + ' is empty', 'muted')]]));
+        });
+    }
+
+    function runLess(path) {
+        if (!path) {
+            writeLines([[token('less: missing filename', 'error')]]);
+            return;
+        }
+
+        const resolved = resolvePath(path);
+
+        if (!resolved.node) {
+            writeLines([[token("less: '" + path + "': No such file or directory", 'error')]]);
+            return;
+        }
+
+        if (resolved.node.type === 'dir') {
+            writeLines([[token('less: ' + path + ': Is a directory', 'error')]]);
+            return;
+        }
+
+        const loading = appendLine([token('less: loading ', 'muted'), token(resolved.node.name, nodeKind(resolved.node)), token('...', 'muted')]);
+
+        loadFileContent(resolved.node).then(function(result) {
+            loading.remove();
+            lessState = {
+                name: resolved.node.name,
+                lines: (result.text || '').split(/\r?\n/),
+                offset: 0,
+                query: '',
+                matches: [],
+                matchIndex: 0,
+                searching: false,
+                previousOutput: output.innerHTML
+            };
+            input.value = '';
+            prompt.textContent = ':';
+            renderLess();
+        });
     }
 
     function walkFiles(node, parts, callback) {
@@ -510,56 +948,156 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function parseSearchArgs(argument) {
         const tokens = argument.split(/\s+/).filter(Boolean);
-
-        return {
-            term: tokens[0] || '',
-            path: tokens.slice(1).join(' ')
+        const result = {
+            term: '',
+            path: '',
+            lineNumbers: false,
+            context: 0
         };
+
+        for (let index = 0; index < tokens.length; index += 1) {
+            const token = tokens[index];
+
+            if (token === '-n') {
+                result.lineNumbers = true;
+                continue;
+            }
+
+            if (token === '-C') {
+                result.context = Math.max(0, Number.parseInt(tokens[index + 1] || '0', 10) || 0);
+                index += 1;
+                continue;
+            }
+
+            if (token.startsWith('-C') && token.length > 2) {
+                result.context = Math.max(0, Number.parseInt(token.slice(2), 10) || 0);
+                continue;
+            }
+
+            if (!result.term) {
+                result.term = token;
+                continue;
+            }
+
+            result.path = tokens.slice(index).join(' ');
+            break;
+        }
+
+        return result;
     }
 
     function runGrep(argument) {
         const args = parseSearchArgs(argument);
 
         if (!args.term) {
-            writeLines(['grep: missing pattern']);
+            writeLines([[token('grep: missing pattern', 'error')]]);
             return;
         }
 
         const resolved = args.path ? resolvePath(args.path) : { node: getNode(cwd), parts: cwd.slice(), path: formatPath(cwd) };
 
         if (!resolved.node) {
-            writeLines(['grep: no such file or directory: ' + args.path]);
+            writeLines([[token('grep: ' + args.path + ': No such file or directory', 'error')]]);
             return;
         }
 
         const term = args.term.toLowerCase();
-        const matches = [];
+        const files = [];
 
         walkFiles(resolved.node, resolved.parts, function(node, parts) {
-            const contentLines = (node.content || '').split(/\r?\n/);
-
-            contentLines.forEach(function(line, index) {
-                if (line.toLowerCase().includes(term)) {
-                    matches.push(formatPath(parts) + ':' + (index + 1) + ': ' + line);
-                }
+            files.push({
+                node: node,
+                parts: parts
             });
         });
 
-        writeLines(matches.length ? matches : ['grep: no matches']);
+        if (!files.length) {
+            writeLines([[token('grep: no files to search', 'muted')]]);
+            return;
+        }
+
+        Promise.all(files.map(function(file) {
+            return loadFileContent(file.node).then(function(result) {
+                return {
+                    file: file,
+                    text: result.text || ''
+                };
+            });
+        })).then(function(results) {
+            const rendered = [];
+            const seen = {};
+
+            results.forEach(function(result) {
+                const contentLines = result.text.split(/\r?\n/);
+                const filePath = formatPath(result.file.parts);
+
+                contentLines.forEach(function(line, index) {
+                    if (!line.toLowerCase().includes(term)) {
+                        return;
+                    }
+
+                    const start = Math.max(0, index - args.context);
+                    const end = Math.min(contentLines.length - 1, index + args.context);
+
+                    for (let contextIndex = start; contextIndex <= end; contextIndex += 1) {
+                        const key = filePath + ':' + contextIndex;
+
+                        if (seen[key]) {
+                            continue;
+                        }
+
+                        seen[key] = true;
+                        rendered.push({
+                            path: filePath,
+                            lineNumber: contextIndex + 1,
+                            line: contentLines[contextIndex],
+                            hit: contextIndex === index
+                        });
+                    }
+                });
+            });
+
+            if (!rendered.length) {
+                writeLines([[token('grep: no matches', 'muted')]]);
+                return;
+            }
+
+            rendered.forEach(function(match) {
+                const separator = match.hit ? ':' : '-';
+                const prefix = [
+                    token(match.path, 'path'),
+                    token(separator, 'muted')
+                ];
+
+                if (args.lineNumbers || args.context) {
+                    prefix.push(token(match.lineNumber, 'line-number'));
+                    prefix.push(token(separator + ' ', 'muted'));
+                } else {
+                    prefix.push(token(' ', 'muted'));
+                }
+
+                if (match.hit) {
+                    appendHighlightedLine(prefix, match.line, args.term, 'grep-line');
+                    return;
+                }
+
+                appendTokens(prefix.concat([token(match.line, 'context')]), 'grep-context-line');
+            });
+        });
     }
 
     function runFind(argument) {
         const args = parseSearchArgs(argument);
 
         if (!args.term) {
-            writeLines(['find: missing query']);
+            writeLines([[token('find: missing query', 'error')]]);
             return;
         }
 
         const resolved = args.path ? resolvePath(args.path) : { node: vfs, parts: [], path: '/' };
 
         if (!resolved.node) {
-            writeLines(['find: no such file or directory: ' + args.path]);
+            writeLines([[token('find: no such file or directory: ' + args.path, 'error')]]);
             return;
         }
 
@@ -570,11 +1108,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const haystack = [formatPath(parts), node.title || '', node.content || ''].join('\n').toLowerCase();
 
             if (haystack.includes(term)) {
-                matches.push(formatPath(parts).padEnd(24, ' ') + node.title);
+                matches.push([
+                    token(formatPath(parts).padEnd(24, ' '), nodeKind(node) === 'md' ? 'md' : 'path'),
+                    token(node.title, 'muted')
+                ]);
             }
         });
 
-        writeLines(matches.length ? matches : ['find: no matches']);
+        writeLines(matches.length ? matches : [[token('find: no matches', 'muted')]]);
     }
 
     function runAsk(question) {
@@ -584,7 +1125,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (!window.siteAI || typeof window.siteAI.answer !== 'function') {
-            writeLines(['ask: AI module unavailable']);
+            writeLines([[token('ask: AI module unavailable', 'error')]]);
             return;
         }
 
@@ -605,6 +1146,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const line = lines[lineIndex];
             const item = appendLine('');
+            item.className = 'term-ai';
             let charIndex = 0;
             lineIndex += 1;
 
@@ -657,9 +1199,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const command = parts[0].toLowerCase();
         const argument = expandedLine.slice(command.length).trim();
 
-        if (command === 'help' || command === '?') {
+        if (command === 'help' || command === '?' || command === 'man') {
             if (argument) {
-                writeLines(commandHelp[argument] || ['help: no entry for ' + argument]);
+                writeLines(commandHelp[argument] || [[token(command + ': no entry for ' + argument, 'error')]]);
                 return;
             }
 
@@ -673,7 +1215,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (command === 'pwd') {
-            writeLines([formatPath(cwd)]);
+            writeLines([[token(formatPath(cwd), 'path')]]);
             return;
         }
 
@@ -702,6 +1244,11 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        if (command === 'less') {
+            runLess(argument);
+            return;
+        }
+
         if (command === 'grep') {
             runGrep(argument);
             return;
@@ -719,7 +1266,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (command === 'random') {
             if (!randomPost()) {
-                writeLines(['random: no posts found']);
+                writeLines([[token('random: no posts found', 'error')]]);
             }
             return;
         }
@@ -743,7 +1290,22 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        writeLines(['unknown command: ' + commandLine, 'type "help"']);
+        writeLines([
+            [token('unknown command: ' + commandLine, 'error')],
+            [token('type "help"', 'hint')]
+        ]);
+    }
+
+    function rememberCommand(commandLine) {
+        if (commandHistory[commandHistory.length - 1] !== commandLine) {
+            commandHistory.push(commandLine);
+            if (commandHistory.length > historyLimit) {
+                commandHistory.shift();
+            }
+            writeHistory();
+        }
+
+        historyIndex = commandHistory.length;
     }
 
     function runExternalCommand(commandLine) {
@@ -755,14 +1317,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         open();
 
-        if (commandHistory[commandHistory.length - 1] !== trimmed) {
-            commandHistory.push(trimmed);
-            if (commandHistory.length > historyLimit) {
-                commandHistory.shift();
-            }
-        }
-
-        historyIndex = commandHistory.length;
+        rememberCommand(trimmed);
         writePromptLine(trimmed);
         runCommand(trimmed);
         input.value = '';
@@ -841,7 +1396,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function completeCommand() {
         const value = input.value;
-        const commandNames = ['help', 'pwd', 'ls', 'tree', 'cd', 'open', 'cat', 'grep', 'find', 'ask', 'clear', 'random', 'whoami', 'date', 'uname', 'll', 'la', '..', 'home', 'cls', 'posts', 'fragments', 'research', 'status', 'about', 'ghostty'];
+        const commandNames = ['help', 'man', 'pwd', 'ls', 'tree', 'cd', 'open', 'cat', 'less', 'grep', 'find', 'ask', 'clear', 'random', 'whoami', 'date', 'uname', 'll', 'la', '..', 'home', 'cls', 'posts', 'fragments', 'research', 'status', 'about', 'ghostty'];
         const parts = value.trimStart().split(/\s+/);
         const command = parts[0] || '';
 
@@ -850,7 +1405,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        if ((command === 'cd' || command === 'ls' || command === 'tree' || command === 'open' || command === 'cat') && value.includes(' ')) {
+        if ((command === 'cd' || command === 'ls' || command === 'tree' || command === 'open' || command === 'cat' || command === 'less') && value.includes(' ')) {
             completePath(command, value.slice(command.length).trimStart());
             return;
         }
@@ -889,6 +1444,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function open(initialValue) {
         palette.classList.add('is-open');
         palette.setAttribute('aria-hidden', 'false');
+        lessState = null;
         input.value = initialValue || '';
         updatePrompt();
         setLines(welcomeLines());
@@ -899,6 +1455,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function close() {
+        lessState = null;
         palette.classList.remove('is-open');
         palette.setAttribute('aria-hidden', 'true');
         document.dispatchEvent(new CustomEvent('command-palette:close'));
@@ -935,26 +1492,104 @@ document.addEventListener('DOMContentLoaded', function() {
 
     form.addEventListener('submit', function(event) {
         event.preventDefault();
+
+        if (lessState && lessState.searching) {
+            searchLess(input.value.trim());
+            lessState.searching = false;
+            input.value = '';
+            prompt.textContent = ':';
+            return;
+        }
+
         const commandLine = input.value.trim();
 
         if (!commandLine) {
             return;
         }
 
-        if (commandHistory[commandHistory.length - 1] !== commandLine) {
-            commandHistory.push(commandLine);
-            if (commandHistory.length > historyLimit) {
-                commandHistory.shift();
-            }
-        }
-
-        historyIndex = commandHistory.length;
+        rememberCommand(commandLine);
         writePromptLine(commandLine);
         runCommand(commandLine);
         input.value = '';
     });
 
+    function handleLessKey(event) {
+        if (!lessState) {
+            return false;
+        }
+
+        if (lessState.searching) {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                lessState.searching = false;
+                input.value = '';
+                prompt.textContent = ':';
+                return true;
+            }
+
+            return false;
+        }
+
+        const pageSize = lessViewportSize();
+
+        if (event.key === 'q' || event.key === 'Escape') {
+            event.preventDefault();
+            exitLess();
+            return true;
+        }
+
+        if (event.key === 'j' || event.key === 'ArrowDown') {
+            event.preventDefault();
+            moveLess(1);
+            return true;
+        }
+
+        if (event.key === 'k' || event.key === 'ArrowUp') {
+            event.preventDefault();
+            moveLess(-1);
+            return true;
+        }
+
+        if (event.key === 'PageDown' || event.key === ' ') {
+            event.preventDefault();
+            moveLess(pageSize);
+            return true;
+        }
+
+        if (event.key === 'PageUp') {
+            event.preventDefault();
+            moveLess(-pageSize);
+            return true;
+        }
+
+        if (event.key === 'n') {
+            event.preventDefault();
+            nextLessMatch();
+            return true;
+        }
+
+        if (event.key === '/') {
+            event.preventDefault();
+            lessState.searching = true;
+            input.value = '';
+            prompt.textContent = '/';
+            return true;
+        }
+
+        if (event.key.length === 1) {
+            event.preventDefault();
+            return true;
+        }
+
+        return false;
+    }
+
     input.addEventListener('keydown', function(event) {
+        if (handleLessKey(event)) {
+            event.stopPropagation();
+            return;
+        }
+
         if (event.key === 'Tab') {
             event.preventDefault();
             completeCommand();

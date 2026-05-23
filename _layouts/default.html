@@ -97,6 +97,10 @@
 
     <script type="application/json" id="site-data">
         {
+            "terminal": {
+                "user": {{ site.terminal_user | default: "jiaaozhe" | jsonify }},
+                "host": {{ site.terminal_host | default: "site" | jsonify }}
+            },
             "pages": [
                 { "name": "home", "title": "首页", "url": {{ '/' | relative_url | jsonify }}, "type": "file" },
                 { "name": "fragments", "title": "碎片流", "url": {{ '/fragments/' | relative_url | jsonify }}, "type": "dir" },
@@ -106,9 +110,14 @@
             ],
             "posts": [
                 {% for post in site.posts %}
+                {% assign raw_branch = site.raw_branch | default: "main" %}
+                {% assign raw_url = "https://raw.githubusercontent.com/" | append: site.source_repository | append: "/" | append: raw_branch | append: "/" | append: post.path %}
                 {
                     "title": {{ post.title | jsonify }},
                     "url": {{ post.url | relative_url | jsonify }},
+                    "path": {{ post.path | jsonify }},
+                    "raw_url": {{ raw_url | jsonify }},
+                    "date": {{ post.date | date: "%Y-%m-%d" | jsonify }},
                     "content": {{ post.content | strip_html | strip | jsonify }}
                 }{% unless forloop.last %},{% endunless %}
                 {% endfor %}

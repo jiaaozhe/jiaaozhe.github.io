@@ -9,6 +9,14 @@
     --surface: #f5f5f5;
     --focus: rgba(59, 130, 246, 0.5);
     --overlay: rgba(255, 255, 255, 0.92);
+    --term-dir: #2563eb;
+    --term-file: #047857;
+    --term-md: #0f766e;
+    --term-path: #6d28d9;
+    --term-error: #b42318;
+    --term-warning: #a16207;
+    --term-hint: #2563eb;
+    --term-hit-bg: #fff3a3;
     --container: 1280px;
     --radius: 12px;
     --pill: 9999px;
@@ -28,6 +36,14 @@
     --surface: #242424;
     --focus: rgba(96, 165, 250, 0.5);
     --overlay: rgba(23, 23, 23, 0.92);
+    --term-dir: #7aa2ff;
+    --term-file: #7ee787;
+    --term-md: #64d2c8;
+    --term-path: #d2a8ff;
+    --term-error: #ff7b72;
+    --term-warning: #f2cc60;
+    --term-hint: #79c0ff;
+    --term-hit-bg: rgba(255, 214, 10, 0.28);
 }
 
 * {
@@ -1325,6 +1341,91 @@ img {
 .command-output p {
     margin: 0;
     white-space: pre;
+}
+
+.command-history-line {
+    color: var(--black);
+}
+
+.term-prompt {
+    color: var(--muted);
+}
+
+.term-command {
+    color: var(--black);
+}
+
+.term-dir {
+    color: var(--term-dir);
+    font-weight: 600;
+}
+
+.term-file {
+    color: var(--term-file);
+}
+
+.term-md {
+    color: var(--term-md);
+    font-weight: 600;
+}
+
+.term-path {
+    color: var(--term-path);
+}
+
+.term-meta,
+.term-muted,
+.term-line-number,
+.term-context {
+    color: var(--muted);
+}
+
+.term-error {
+    color: var(--term-error);
+}
+
+.term-warning {
+    color: var(--term-warning);
+}
+
+.term-hint,
+.term-ai {
+    color: var(--term-hint);
+}
+
+.command-line-prefix {
+    color: var(--muted);
+}
+
+.command-hit {
+    padding: 0 2px;
+    border-radius: 3px;
+    background: var(--term-hit-bg);
+    color: var(--black);
+}
+
+.less-line {
+    color: var(--near-black);
+}
+
+.less-line.term-md-heading {
+    color: var(--term-dir);
+    font-weight: 700;
+}
+
+.less-line.term-md-meta-line,
+.less-line.term-md-code-line {
+    color: var(--muted);
+}
+
+.less-status {
+    position: sticky;
+    bottom: -18px;
+    margin-top: 12px !important;
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
+    background: var(--white);
+    color: var(--black);
 }
 
 .command-form {
