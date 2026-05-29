@@ -2,6 +2,7 @@
 """Fetch stock data from Yahoo Finance and update _data/stocks.yml."""
 
 from datetime import datetime, timedelta
+from math import isfinite
 from pathlib import Path
 
 import yaml
@@ -40,19 +41,41 @@ def fetch_stock(symbol: str, name: str, market: str, status: str, desc: str) -> 
         print(f"No data for {symbol}")
         return {}
 
+    hist = hist.dropna(subset=["Open", "High", "Low", "Close"])
+    if hist.empty:
+        print(f"No valid OHLC data for {symbol}")
+        return {}
+
     current = float(hist["Close"].iloc[-1])
     prev = float(hist["Close"].iloc[-2]) if len(hist) >= 2 else current
+    if not isfinite(current) or not isfinite(prev):
+        print(f"Non-finite price data for {symbol}")
+        return {}
+
     change = current - prev
     change_pct = (change / prev * 100) if prev != 0 else 0.0
 
     history = []
     for idx, row in hist.iterrows():
+        ohlc = [
+            float(row["Open"]),
+            float(row["High"]),
+            float(row["Low"]),
+            float(row["Close"]),
+        ]
+        if not all(isfinite(value) for value in ohlc):
+            continue
+
         history.append({
-            "o": round(float(row["Open"]), 2),
-            "h": round(float(row["High"]), 2),
-            "l": round(float(row["Low"]), 2),
-            "c": round(float(row["Close"]), 2),
+            "o": round(ohlc[0], 2),
+            "h": round(ohlc[1], 2),
+            "l": round(ohlc[2], 2),
+            "c": round(ohlc[3], 2),
         })
+
+    if not history:
+        print(f"No valid history for {symbol}")
+        return {}
 
     currency = "¥" if market in ("SH", "SZ") else "$"
 
