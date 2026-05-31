@@ -1,0 +1,55 @@
+---
+layout: default
+---
+<article class="photo-post">
+    <header class="photo-post-header">
+        <div class="use-eyebrow">PHOTO POST</div>
+        <h1>{{ page.title }}</h1>
+        <div class="photo-post-meta">
+            <time datetime="{{ page.date }}">{{ page.date | date: "%Y年%-m月%-d日" }}</time>
+            <span>{{ page.photos.size }} 张</span>
+            {% if page.camera %}
+            <span>{{ page.camera }}</span>
+            {% endif %}
+            {% if page.location %}
+            <span>{{ page.location }}</span>
+            {% endif %}
+        </div>
+
+        {% if page.tags %}
+        <div class="photo-post-tags" aria-label="摄影文章标签">
+            {% for tag in page.tags %}
+            <a class="tag" href="{{ '/photos/' | relative_url }}?tag={{ tag | uri_escape }}">{{ tag }}</a>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </header>
+
+    <div class="photo-post-body post-content">
+        {{ content }}
+    </div>
+
+    <section class="photo-story" aria-label="照片组">
+        {% for item in page.photos %}
+        <figure class="photo-story-item">
+            <a href="{{ item.image }}" target="_blank" rel="noopener noreferrer">
+                <img src="{{ item.image }}" alt="{{ item.alt | default: item.caption | default: page.title | escape }}" loading="lazy" decoding="async">
+            </a>
+            {% if item.caption or item.title %}
+            <figcaption>
+                {% if item.caption %}
+                {{ item.caption }}
+                {% else %}
+                {{ item.title }}
+                {% endif %}
+            </figcaption>
+            {% endif %}
+        </figure>
+        {% endfor %}
+    </section>
+
+    <footer class="post-footer">
+        <a href="{{ '/photos/' | relative_url }}" class="back-link">返回摄影</a>
+        <a href="{{ '/' | relative_url }}" class="back-link">返回首页</a>
+    </footer>
+</article>

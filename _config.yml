@@ -23,6 +23,9 @@ collections:
   publications:
     output: true
     permalink: /publications/:title/
+  photos:
+    output: true
+    permalink: /photos/:title/
   uses:
     output: true
     permalink: /uses/:title/
@@ -41,6 +44,11 @@ defaults:
       type: "publications"
     values:
       layout: "publication"
+  - scope:
+      path: ""
+      type: "photos"
+    values:
+      layout: "photo"
   - scope:
       path: ""
       type: "uses"

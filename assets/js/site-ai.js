@@ -100,6 +100,18 @@
         }));
     }
 
+    function answerPhotos(context) {
+        const photos = getChildren(context, 'photos');
+
+        if (!photos.length) {
+            return ['AI demo:', '目前还没有可列出的照片。'];
+        }
+
+        return ['AI demo:', '当前照片：'].concat(photos.map(function(photo) {
+            return '- ' + photo.title + ' (' + itemPath(context, 'photos', photo) + ')';
+        }));
+    }
+
     function answerUses(question, context) {
         const uses = getChildren(context, 'uses');
         const ghostty = uses.find(function(item) {
@@ -131,6 +143,7 @@
             '这个站点包含：',
             '- /posts：文章',
             '- /fragments：碎片流',
+            '- /photos：摄影',
             '- /research：学术研究',
             '- /uses：工具配置',
             '- /status：状态页'
@@ -142,6 +155,7 @@
             'AI demo questions:',
             '你是谁？',
             '你有哪些文章？',
+            '你有哪些照片？',
             'ghostty 配置是什么？',
             '你的研究方向是什么？',
             '这个网站有什么内容？'
@@ -172,6 +186,10 @@
 
         if (includesAny(q, ['文章', '博客', 'posts', '有哪些文章', '写了什么'])) {
             return answerPosts(context);
+        }
+
+        if (includesAny(q, ['照片', '摄影', 'photo', 'photos', '相机'])) {
+            return answerPhotos(context);
         }
 
         if (includesAny(q, ['研究', '论文', 'research', 'publication', 'attention', 'iioa'])) {

@@ -6,6 +6,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const postCards = Array.from(document.querySelectorAll('[data-post-categories]'));
     const fragmentFilterRoot = document.querySelector('[data-fragment-filter]');
     const fragmentItems = Array.from(document.querySelectorAll('[data-fragment-item]'));
+    const photoFilterRoot = document.querySelector('[data-photo-filter]');
+    const photoItems = Array.from(document.querySelectorAll('[data-photo-item]'));
 
     function toggleTheme() {
         const root = document.documentElement;
@@ -134,6 +136,48 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const params = new URLSearchParams(window.location.search);
         applyFragmentFilter(params.get('type') || 'all', false);
+    }
+
+    if (photoFilterRoot && photoItems.length) {
+        const photoButtons = Array.from(photoFilterRoot.querySelectorAll('[data-photo-tag]'));
+
+        function applyPhotoFilter(tag, updateUrl) {
+            const activeTag = photoButtons.some(function(button) {
+                return button.dataset.photoTag === tag;
+            }) ? tag : 'all';
+
+            photoButtons.forEach(function(button) {
+                const isActive = button.dataset.photoTag === activeTag;
+                button.classList.toggle('is-active', isActive);
+                button.setAttribute('aria-pressed', String(isActive));
+            });
+
+            photoItems.forEach(function(item) {
+                const tags = item.dataset.photoTags.split('|').filter(Boolean);
+                item.hidden = activeTag !== 'all' && !tags.includes(activeTag);
+            });
+
+            if (updateUrl) {
+                const url = new URL(window.location.href);
+
+                if (activeTag === 'all') {
+                    url.searchParams.delete('tag');
+                } else {
+                    url.searchParams.set('tag', activeTag);
+                }
+
+                window.history.replaceState({}, '', url);
+            }
+        }
+
+        photoButtons.forEach(function(button) {
+            button.addEventListener('click', function() {
+                applyPhotoFilter(button.dataset.photoTag, true);
+            });
+        });
+
+        const params = new URLSearchParams(window.location.search);
+        applyPhotoFilter(params.get('tag') || 'all', false);
     }
 
     // Timeline filter

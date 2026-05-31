@@ -76,6 +76,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function buildVfs(data) {
         const root = createDir('', '/', '/');
         const posts = createDir('posts', '/posts/', '文章');
+        const photos = createDir('photos', '/photos/', '摄影');
         const uses = createDir('uses', '/status/', '工具');
         const research = createDir('research', '/research/', '学术研究');
 
@@ -99,12 +100,21 @@ document.addEventListener('DOMContentLoaded', function() {
             addChild(uses, createFile(slug, use.url, use.title, use.content));
         });
 
+        (data.photos || []).forEach(function(photo) {
+            const slug = slugFromUrl(photo.url);
+            addChild(photos, createFile(slug, photo.url, photo.title, photo.content, {
+                date: photo.date,
+                size: byteLength(photo.content || '')
+            }));
+        });
+
         (data.publications || []).forEach(function(publication) {
             const slug = slugFromUrl(publication.url);
             addChild(research, createFile(slug, publication.url, publication.title, publication.content));
         });
 
         addChild(root, posts);
+        addChild(root, photos);
         addChild(root, uses);
         addChild(root, research);
 
@@ -122,6 +132,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (page.name === 'fragments') {
                 addChild(root, createDir(page.name, page.url, page.title));
+                return;
+            }
+
+            if (page.name === 'photos') {
+                photos.route = page.url;
+                photos.title = page.title;
                 return;
             }
 
@@ -178,6 +194,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (parts[0] === 'uses') {
             return ['uses'];
+        }
+
+        if (parts[0] === 'photos') {
+            return ['photos'];
         }
 
         if (parts[0] === 'research' || parts[0] === 'publications') {
@@ -540,7 +560,7 @@ document.addEventListener('DOMContentLoaded', function() {
             '  ask <question>       ask the site AI demo',
             '',
             'SHORTCUTS',
-            '  posts fragments research status about ghostty',
+            '  posts photos fragments research status about ghostty',
             '  ll la .. home cls',
             '',
             'TOOLS',
@@ -1172,6 +1192,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function runShortcut(command) {
         const shortcuts = {
             posts: '/posts/',
+            photos: '/photos/',
             fragments: '/fragments/',
             research: '/research/',
             status: '/status/',
@@ -1396,7 +1417,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function completeCommand() {
         const value = input.value;
-        const commandNames = ['help', 'man', 'pwd', 'ls', 'tree', 'cd', 'open', 'cat', 'less', 'grep', 'find', 'ask', 'clear', 'random', 'whoami', 'date', 'uname', 'll', 'la', '..', 'home', 'cls', 'posts', 'fragments', 'research', 'status', 'about', 'ghostty'];
+        const commandNames = ['help', 'man', 'pwd', 'ls', 'tree', 'cd', 'open', 'cat', 'less', 'grep', 'find', 'ask', 'clear', 'random', 'whoami', 'date', 'uname', 'll', 'la', '..', 'home', 'cls', 'posts', 'photos', 'fragments', 'research', 'status', 'about', 'ghostty'];
         const parts = value.trimStart().split(/\s+/);
         const command = parts[0] || '';
 
