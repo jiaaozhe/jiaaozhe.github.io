@@ -186,20 +186,49 @@
             <div class="cat-ai-header">
                 <div>
                     <h2 id="cat-ai-title">Ask AI</h2>
-                    <span>demo mode</span>
+                    <span data-cat-ai-mode>demo mode</span>
                 </div>
                 <button class="cat-ai-close" type="button" data-cat-ai-close aria-label="关闭 AI 面板">&times;</button>
             </div>
-            <div class="cat-ai-output" data-cat-ai-output aria-live="polite">
-                <div class="cat-ai-message cat-ai-message-assistant">
-                    <p>可以问我文章、研究、工具配置和这个站点。</p>
+            <div class="cat-ai-body">
+                <div class="cat-ai-output" data-cat-ai-output aria-live="polite">
+                    <div class="cat-ai-message cat-ai-message-assistant">
+                        <p>可以问我文章、研究、工具配置和这个站点。</p>
+                    </div>
                 </div>
-            </div>
-            <div class="cat-ai-suggestions" aria-label="AI demo questions">
-                <button type="button" data-cat-question="你是谁？">你是谁？</button>
-                <button type="button" data-cat-question="你有哪些文章？">有哪些文章？</button>
-                <button type="button" data-cat-question="你的研究方向是什么？">研究方向？</button>
-                <button type="button" data-cat-question="ghostty 配置是什么？">Ghostty?</button>
+                <div class="cat-ai-suggestions" aria-label="AI demo questions">
+                    <button type="button" data-cat-question="你是谁？">你是谁？</button>
+                    <button type="button" data-cat-question="你有哪些文章？">有哪些文章？</button>
+                    <button type="button" data-cat-question="有哪些摄影文章？">摄影？</button>
+                    <button type="button" data-cat-question="你的研究方向是什么？">研究方向？</button>
+                    <button type="button" data-cat-question="ghostty 配置是什么？">Ghostty?</button>
+                </div>
+                <div class="cat-ai-history-actions">
+                    <button type="button" data-cat-ai-clear-chat>Clear chat</button>
+                </div>
+                <details class="cat-ai-settings" data-cat-ai-settings>
+                    <summary>Settings</summary>
+                    <form class="cat-ai-config-form" data-cat-ai-config-form>
+                        <label>
+                            <span>Base URL</span>
+                            <input type="url" name="baseUrl" placeholder="http://localhost:11434/v1" autocomplete="off" spellcheck="false">
+                        </label>
+                        <label>
+                            <span>API Key</span>
+                            <input type="password" name="apiKey" placeholder="optional for local models" autocomplete="off" spellcheck="false">
+                        </label>
+                        <label>
+                            <span>Model</span>
+                            <input type="text" name="model" placeholder="qwen2.5:7b" autocomplete="off" spellcheck="false">
+                        </label>
+                        <div class="cat-ai-config-actions">
+                            <button type="submit">Save</button>
+                            <button type="button" data-cat-ai-test>Test</button>
+                            <button type="button" data-cat-ai-clear>Clear</button>
+                        </div>
+                        <p data-cat-ai-config-status>Key stays in this browser.</p>
+                    </form>
+                </details>
             </div>
             <form class="cat-ai-form" data-cat-ai-form>
                 <label class="sr-only" for="cat-ai-input">Ask AI</label>

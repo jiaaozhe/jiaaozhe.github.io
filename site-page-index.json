@@ -1,0 +1,111 @@
+---
+layout: null
+permalink: /site-page-index.json
+---
+{
+  "version": {{ site.time | date_to_xmlschema | jsonify }},
+  "profile": {
+    "name": "jiaaozhe",
+    "title": {{ site.title | jsonify }},
+    "description": {{ site.description | jsonify }},
+    "focus": "Multimodal Representation / Automation",
+    "research": "Unified multimodal understanding, contrastive learning, and applied automation.",
+    "sections": [
+      { "title": "博客文章", "url": {{ "/posts/" | relative_url | jsonify }} },
+      { "title": "摄影", "url": {{ "/photos/" | relative_url | jsonify }} },
+      { "title": "碎片流", "url": {{ "/fragments/" | relative_url | jsonify }} },
+      { "title": "学术研究", "url": {{ "/research/" | relative_url | jsonify }} },
+      { "title": "工具配置", "url": {{ "/uses/ghostty/" | relative_url | jsonify }} }
+    ]
+  },
+  "pages": [
+    {% assign first_item = true %}
+    {% for page_item in site.pages %}
+    {% unless page_item.path contains ".json" or page_item.path contains ".xml" or page_item.path contains "404" %}
+    {% unless first_item %},{% endunless %}
+    {% assign first_item = false %}
+    {
+      "id": {{ page_item.url | relative_url | jsonify }},
+      "type": "page",
+      "title": {{ page_item.title | default: page_item.name | jsonify }},
+      "url": {{ page_item.url | relative_url | jsonify }},
+      "date": "",
+      "summary": {{ page_item.description | default: page_item.excerpt | default: page_item.content | strip_html | strip | truncate: 180 | jsonify }},
+      "tags": [],
+      "headings": []
+    }
+    {% endunless %}
+    {% endfor %}
+    {% for post in site.posts %}
+    {% unless first_item %},{% endunless %}
+    {% assign first_item = false %}
+    {
+      "id": {{ post.url | relative_url | jsonify }},
+      "type": "post",
+      "title": {{ post.title | jsonify }},
+      "url": {{ post.url | relative_url | jsonify }},
+      "date": {{ post.date | date: "%Y-%m-%d" | jsonify }},
+      "summary": {{ post.excerpt | strip_html | strip | truncate: 220 | jsonify }},
+      "tags": {{ post.categories | jsonify }},
+      "headings": []
+    }
+    {% endfor %}
+    {% assign fragments = site.fragments | sort: "date" | reverse %}
+    {% for fragment in fragments %}
+    {% unless first_item %},{% endunless %}
+    {% assign first_item = false %}
+    {
+      "id": {{ "/fragments/#" | append: fragment.slug | relative_url | jsonify }},
+      "type": "fragment",
+      "title": {{ fragment.title | default: fragment.type | default: "碎片" | jsonify }},
+      "url": {{ "/fragments/" | relative_url | jsonify }},
+      "date": {{ fragment.date | date: "%Y-%m-%d" | jsonify }},
+      "summary": {{ fragment.content | strip_html | strip | truncate: 180 | jsonify }},
+      "tags": [{{ fragment.type | default: "碎片" | jsonify }}],
+      "headings": []
+    }
+    {% endfor %}
+    {% for photo in site.photos %}
+    {% unless first_item %},{% endunless %}
+    {% assign first_item = false %}
+    {
+      "id": {{ photo.url | relative_url | jsonify }},
+      "type": "photo",
+      "title": {{ photo.title | jsonify }},
+      "url": {{ photo.url | relative_url | jsonify }},
+      "date": {{ photo.date | date: "%Y-%m-%d" | jsonify }},
+      "summary": {{ photo.summary | default: photo.content | strip_html | strip | truncate: 220 | jsonify }},
+      "tags": {{ photo.tags | default: empty | jsonify }},
+      "headings": []
+    }
+    {% endfor %}
+    {% for use in site.uses %}
+    {% unless first_item %},{% endunless %}
+    {% assign first_item = false %}
+    {
+      "id": {{ use.url | relative_url | jsonify }},
+      "type": "use",
+      "title": {{ use.title | jsonify }},
+      "url": {{ use.url | relative_url | jsonify }},
+      "date": "",
+      "summary": {{ use.summary | default: use.content | strip_html | strip | truncate: 220 | jsonify }},
+      "tags": ["uses"],
+      "headings": []
+    }
+    {% endfor %}
+    {% for publication in site.publications %}
+    {% unless first_item %},{% endunless %}
+    {% assign first_item = false %}
+    {
+      "id": {{ publication.url | relative_url | jsonify }},
+      "type": "publication",
+      "title": {{ publication.title | jsonify }},
+      "url": {{ publication.url | relative_url | jsonify }},
+      "date": {{ publication.year | default: "" | jsonify }},
+      "summary": {{ publication.abstract | default: publication.content | strip_html | strip | truncate: 220 | jsonify }},
+      "tags": ["research"],
+      "headings": []
+    }
+    {% endfor %}
+  ]
+}

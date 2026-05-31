@@ -1,0 +1,87 @@
+---
+layout: null
+permalink: /site-page-content.json
+---
+{
+  "version": {{ site.time | date_to_xmlschema | jsonify }},
+  "pages": {
+    {% assign first_item = true %}
+    {% for page_item in site.pages %}
+    {% unless page_item.path contains ".json" or page_item.path contains ".xml" or page_item.path contains "404" %}
+    {% unless first_item %},{% endunless %}
+    {% assign first_item = false %}
+    {{ page_item.url | relative_url | jsonify }}: {
+      "id": {{ page_item.url | relative_url | jsonify }},
+      "type": "page",
+      "title": {{ page_item.title | default: page_item.name | jsonify }},
+      "url": {{ page_item.url | relative_url | jsonify }},
+      "content": {{ page_item.content | markdownify | strip_html | strip | jsonify }}
+    }
+    {% endunless %}
+    {% endfor %}
+    {% for post in site.posts %}
+    {% unless first_item %},{% endunless %}
+    {% assign first_item = false %}
+    {{ post.url | relative_url | jsonify }}: {
+      "id": {{ post.url | relative_url | jsonify }},
+      "type": "post",
+      "title": {{ post.title | jsonify }},
+      "url": {{ post.url | relative_url | jsonify }},
+      "content": {{ post.content | markdownify | strip_html | strip | jsonify }}
+    }
+    {% endfor %}
+    {% assign fragments = site.fragments | sort: "date" | reverse %}
+    {% for fragment in fragments %}
+    {% unless first_item %},{% endunless %}
+    {% assign first_item = false %}
+    {{ "/fragments/#" | append: fragment.slug | relative_url | jsonify }}: {
+      "id": {{ "/fragments/#" | append: fragment.slug | relative_url | jsonify }},
+      "type": "fragment",
+      "title": {{ fragment.title | default: fragment.type | default: "碎片" | jsonify }},
+      "url": {{ "/fragments/" | relative_url | jsonify }},
+      "content": {{ fragment.content | markdownify | strip_html | strip | jsonify }}
+    }
+    {% endfor %}
+    {% for photo in site.photos %}
+    {% capture photo_text %}
+{{ photo.content | markdownify | strip_html | strip }}
+{% if photo.camera %}相机：{{ photo.camera }}{% endif %}
+{% if photo.summary %}摘要：{{ photo.summary }}{% endif %}
+{% for item in photo.photos %}
+照片：{{ item.caption | default: item.title | default: item.alt }}
+{% endfor %}
+    {% endcapture %}
+    {% unless first_item %},{% endunless %}
+    {% assign first_item = false %}
+    {{ photo.url | relative_url | jsonify }}: {
+      "id": {{ photo.url | relative_url | jsonify }},
+      "type": "photo",
+      "title": {{ photo.title | jsonify }},
+      "url": {{ photo.url | relative_url | jsonify }},
+      "content": {{ photo_text | strip | jsonify }}
+    }
+    {% endfor %}
+    {% for use in site.uses %}
+    {% unless first_item %},{% endunless %}
+    {% assign first_item = false %}
+    {{ use.url | relative_url | jsonify }}: {
+      "id": {{ use.url | relative_url | jsonify }},
+      "type": "use",
+      "title": {{ use.title | jsonify }},
+      "url": {{ use.url | relative_url | jsonify }},
+      "content": {{ use.content | markdownify | strip_html | strip | jsonify }}
+    }
+    {% endfor %}
+    {% for publication in site.publications %}
+    {% unless first_item %},{% endunless %}
+    {% assign first_item = false %}
+    {{ publication.url | relative_url | jsonify }}: {
+      "id": {{ publication.url | relative_url | jsonify }},
+      "type": "publication",
+      "title": {{ publication.title | jsonify }},
+      "url": {{ publication.url | relative_url | jsonify }},
+      "content": {{ publication.abstract | default: publication.content | markdownify | strip_html | strip | jsonify }}
+    }
+    {% endfor %}
+  }
+}

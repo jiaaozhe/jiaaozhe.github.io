@@ -2,7 +2,7 @@
     position: fixed;
     right: 32px;
     bottom: 32px;
-    z-index: 100;
+    z-index: 2100;
 }
 
 .cat-bot {
@@ -243,6 +243,7 @@
     bottom: 78px;
     z-index: 2;
     display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
     gap: 10px;
     width: min(360px, calc(100vw - 48px));
     max-height: min(560px, calc(100vh - 116px));
@@ -305,12 +306,20 @@
     text-align: center;
 }
 
+.cat-ai-body {
+    display: grid;
+    gap: 10px;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 2px;
+}
+
 .cat-ai-output {
     display: grid;
     align-content: start;
     gap: 8px;
-    min-height: 132px;
-    max-height: 278px;
+    min-height: 118px;
     overflow: auto;
     padding: 10px;
     border: 1px solid var(--line);
@@ -335,6 +344,18 @@
 
 .cat-ai-message p + p {
     margin-top: 4px;
+}
+
+.cat-ai-message a {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-color: var(--muted);
+    text-underline-offset: 3px;
+}
+
+.cat-ai-message a:hover,
+.cat-ai-message a:focus-visible {
+    text-decoration-color: currentColor;
 }
 
 .cat-ai-message-user {
@@ -365,6 +386,97 @@
     background: var(--surface);
     color: var(--near-black);
     font-size: 12px;
+}
+
+.cat-ai-history-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.cat-ai-history-actions button {
+    min-height: 28px;
+    padding: 5px 8px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.cat-ai-history-actions button:hover,
+.cat-ai-history-actions button:focus-visible {
+    color: var(--near-black);
+}
+
+.cat-ai-settings {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--snow);
+}
+
+.cat-ai-settings summary {
+    min-height: 32px;
+    padding: 8px 10px;
+    color: var(--near-black);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.cat-ai-config-form {
+    display: grid;
+    gap: 8px;
+    padding: 0 10px 10px;
+}
+
+.cat-ai-config-form label {
+    display: grid;
+    gap: 4px;
+}
+
+.cat-ai-config-form label span {
+    color: var(--muted);
+    font-family: var(--mono-font);
+    font-size: 11px;
+}
+
+.cat-ai-config-form input {
+    min-width: 0;
+    height: 32px;
+    padding: 0 8px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: var(--white);
+    color: var(--near-black);
+    font: inherit;
+    font-size: 12px;
+}
+
+.cat-ai-config-form input:focus {
+    border-color: var(--focus);
+    outline: 0;
+}
+
+.cat-ai-config-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.cat-ai-config-actions button {
+    min-height: 30px;
+    padding: 6px 10px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--white);
+    color: var(--near-black);
+    font-size: 12px;
+}
+
+.cat-ai-config-form p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.4;
 }
 
 .cat-ai-form {
@@ -456,6 +568,33 @@
     }
 
     .cat-ai-output {
-        max-height: 42vh;
+        min-height: 72px;
+    }
+
+    .cat-ai-body {
+        gap: 8px;
+    }
+
+    .cat-ai-settings summary {
+        min-height: 30px;
+        padding: 7px 10px;
+    }
+
+    .cat-ai-config-form {
+        gap: 6px;
+        padding-bottom: 8px;
+    }
+
+    .cat-ai-config-form label {
+        gap: 2px;
+    }
+
+    .cat-ai-config-form input {
+        height: 28px;
+    }
+
+    .cat-ai-config-actions button {
+        min-height: 28px;
+        padding-block: 4px;
     }
 }

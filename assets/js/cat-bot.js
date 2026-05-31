@@ -1,4 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
+    const AI_MESSAGES_KEY = 'cat-ai.messages';
+    const AI_MESSAGE_LIMIT = 30;
     const catBotWrap = document.querySelector('[data-cat-bot]');
     const catBot = catBotWrap ? catBotWrap.querySelector('.cat-bot') : null;
     const catMenu = catBotWrap ? catBotWrap.querySelector('.cat-bot-menu') : null;
@@ -8,6 +10,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const catAiInput = catBotWrap ? catBotWrap.querySelector('.cat-ai-input') : null;
     const catAiOutput = catBotWrap ? catBotWrap.querySelector('[data-cat-ai-output]') : null;
     const catAiClose = catBotWrap ? catBotWrap.querySelector('[data-cat-ai-close]') : null;
+    const catAiMode = catBotWrap ? catBotWrap.querySelector('[data-cat-ai-mode]') : null;
+    const catAiConfigForm = catBotWrap ? catBotWrap.querySelector('[data-cat-ai-config-form]') : null;
+    const catAiConfigStatus = catBotWrap ? catBotWrap.querySelector('[data-cat-ai-config-status]') : null;
+    const catAiTest = catBotWrap ? catBotWrap.querySelector('[data-cat-ai-test]') : null;
+    const catAiClear = catBotWrap ? catBotWrap.querySelector('[data-cat-ai-clear]') : null;
+    const catAiClearChat = catBotWrap ? catBotWrap.querySelector('[data-cat-ai-clear-chat]') : null;
 
     if (!catBotWrap || !catBot || !catMenu || !catExpression) {
         return;
@@ -18,6 +26,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let singleClickTimer = null;
     let resetExpressionTimer = null;
     let aiStreamId = 0;
+    let aiMessages = [];
 
     function setCatMenu(open) {
         catBotWrap.classList.toggle('is-open', open);
@@ -78,6 +87,98 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function readStoredAiMessages() {
+        try {
+            const parsed = JSON.parse(localStorage.getItem(AI_MESSAGES_KEY) || '[]');
+
+            if (!Array.isArray(parsed)) {
+                return [];
+            }
+
+            return parsed.filter(function(message) {
+                return message && (message.role === 'user' || message.role === 'assistant') && Array.isArray(message.lines);
+            }).map(function(message) {
+                return {
+                    role: message.role,
+                    lines: message.lines.map(function(line) {
+                        return String(line);
+                    }).filter(function(line) {
+                        return line.trim();
+                    })
+                };
+            }).filter(function(message) {
+                return message.lines.length;
+            }).slice(-AI_MESSAGE_LIMIT);
+        } catch (error) {
+            return [];
+        }
+    }
+
+    function saveAiMessages() {
+        localStorage.setItem(AI_MESSAGES_KEY, JSON.stringify(aiMessages.slice(-AI_MESSAGE_LIMIT)));
+    }
+
+    function rememberAiMessage(role, lines) {
+        const cleanLines = (lines || []).map(function(line) {
+            return String(line);
+        }).filter(function(line) {
+            return line.trim();
+        });
+
+        if (!cleanLines.length || (role !== 'user' && role !== 'assistant')) {
+            return;
+        }
+
+        aiMessages.push({ role: role, lines: cleanLines });
+        aiMessages = aiMessages.slice(-AI_MESSAGE_LIMIT);
+        saveAiMessages();
+    }
+
+    function resetAiOutput() {
+        if (!catAiOutput) {
+            return;
+        }
+
+        catAiOutput.textContent = '';
+        appendAiText('assistant', ['可以问我文章、研究、工具配置和这个站点。'], { skipCache: true });
+    }
+
+    function clearAiMessages() {
+        aiStreamId += 1;
+        aiMessages = [];
+        localStorage.removeItem(AI_MESSAGES_KEY);
+        resetAiOutput();
+        setExpression('CLR', 900);
+    }
+
+    function updateAiMode() {
+        if (!catAiMode || !window.siteAI || typeof window.siteAI.readConfig !== 'function') {
+            return;
+        }
+
+        const config = window.siteAI.readConfig();
+        const configured = window.siteAI.hasConfig && window.siteAI.hasConfig(config);
+        catAiMode.textContent = configured ? config.model : 'demo mode';
+    }
+
+    function setConfigStatus(text) {
+        if (catAiConfigStatus) {
+            catAiConfigStatus.textContent = text;
+        }
+    }
+
+    function loadConfigForm() {
+        if (!catAiConfigForm || !window.siteAI || typeof window.siteAI.readConfig !== 'function') {
+            return;
+        }
+
+        const config = window.siteAI.readConfig();
+        catAiConfigForm.elements.baseUrl.value = config.baseUrl || '';
+        catAiConfigForm.elements.apiKey.value = config.apiKey || '';
+        catAiConfigForm.elements.model.value = config.model || '';
+        updateAiMode();
+    }
+
     function appendAiMessage(role) {
         if (!catAiOutput) {
             return null;
@@ -90,7 +191,60 @@ document.addEventListener('DOMContentLoaded', function() {
         return message;
     }
 
-    function appendAiText(role, lines) {
+    function isSafeSiteUrl(url) {
+        return /^\/[A-Za-z0-9/_#.-]*(?:\?[A-Za-z0-9_=&%+.-]*)?$/.test(url || '');
+    }
+
+    function appendTextWithLinks(container, text) {
+        const pattern = /\[([^\]]+)\]\((\/[A-Za-z0-9/_#.?=&%+.-]+)\)|([^\n（]{1,80}?)（(\/[A-Za-z0-9/_#.?=&%+.-]+)）|(?<!\]\()((?:\/(?:posts|photos|fragments|research|publications|uses|status|introduction)[A-Za-z0-9/_#.?=&%+.-]*))/g;
+        let cursor = 0;
+        let match = null;
+
+        while ((match = pattern.exec(text)) !== null) {
+            const rawLabel = match[1] || match[3] || match[5];
+            const url = match[2] || match[4] || match[5];
+            const bullet = rawLabel.match(/^(\s*[-*]\s+)(.+)$/);
+            const prefix = bullet ? bullet[1] : '';
+            const label = bullet ? bullet[2] : rawLabel;
+
+            if (!isSafeSiteUrl(url)) {
+                continue;
+            }
+
+            if (match.index > cursor) {
+                container.appendChild(document.createTextNode(text.slice(cursor, match.index)));
+            }
+
+            if (prefix) {
+                container.appendChild(document.createTextNode(prefix));
+            }
+
+            const link = document.createElement('a');
+            link.href = url;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.textContent = label;
+            container.appendChild(link);
+            cursor = match.index + match[0].length;
+        }
+
+        if (cursor < text.length) {
+            container.appendChild(document.createTextNode(text.slice(cursor)));
+        }
+    }
+
+    function renderAiLine(item, line, role) {
+        item.textContent = '';
+
+        if (role === 'assistant') {
+            appendTextWithLinks(item, line);
+            return;
+        }
+
+        item.textContent = line;
+    }
+
+    function appendAiText(role, lines, options) {
         const message = appendAiMessage(role);
 
         if (!message) {
@@ -99,14 +253,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
         lines.forEach(function(line) {
             const item = document.createElement('p');
-            item.textContent = line;
+            renderAiLine(item, line, role);
             message.appendChild(item);
         });
 
         scrollCatAiOutput();
+
+        if (!options || !options.skipCache) {
+            rememberAiMessage(role, lines);
+        }
     }
 
-    function streamAiLines(lines) {
+    function streamAiLines(lines, options) {
         const message = appendAiMessage('assistant');
         const streamId = aiStreamId + 1;
         let lineIndex = 0;
@@ -124,6 +282,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (lineIndex >= lines.length) {
                 setExpression('OK', 700);
+                if (!options || !options.skipCache) {
+                    rememberAiMessage('assistant', lines);
+                }
                 return;
             }
 
@@ -138,7 +299,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
 
-                item.textContent = line.slice(0, charIndex);
+                renderAiLine(item, line.slice(0, charIndex), 'assistant');
                 scrollCatAiOutput();
 
                 if (charIndex <= line.length) {
@@ -156,7 +317,21 @@ document.addEventListener('DOMContentLoaded', function() {
         streamNextLine();
     }
 
-    function askCatAi(question) {
+    function restoreAiMessages() {
+        aiMessages = readStoredAiMessages();
+
+        if (!catAiOutput || !aiMessages.length) {
+            return;
+        }
+
+        catAiOutput.textContent = '';
+        aiMessages.forEach(function(message) {
+            appendAiText(message.role, message.lines, { skipCache: true });
+        });
+        scrollCatAiOutput();
+    }
+
+    async function askCatAi(question) {
         const normalized = String(question || '').trim();
 
         if (!normalized) {
@@ -170,6 +345,57 @@ document.addEventListener('DOMContentLoaded', function() {
         setCatMenu(false);
         setAiPanel(true);
         appendAiText('user', [normalized]);
+
+        if (window.siteAI && typeof window.siteAI.answerAsync === 'function') {
+            setExpression('AI', 900);
+            const streamId = aiStreamId + 1;
+            let statusMessage = null;
+
+            aiStreamId = streamId;
+
+            try {
+                const lines = await window.siteAI.answerAsync(normalized, {
+                    onStatus: function(status) {
+                        if (streamId !== aiStreamId) {
+                            return;
+                        }
+
+                        if (!statusMessage) {
+                            statusMessage = appendAiMessage('assistant');
+                            if (!statusMessage) {
+                                return;
+                            }
+                            statusMessage.classList.add('cat-ai-message-status');
+                            statusMessage.appendChild(document.createElement('p'));
+                        }
+
+                        statusMessage.querySelector('p').textContent = status + '...';
+                        scrollCatAiOutput();
+                    }
+                });
+
+                if (streamId !== aiStreamId) {
+                    return;
+                }
+
+                if (statusMessage) {
+                    statusMessage.remove();
+                }
+
+                streamAiLines(lines);
+                updateAiMode();
+            } catch (error) {
+                if (statusMessage) {
+                    statusMessage.remove();
+                }
+                appendAiText('assistant', [
+                    'AI request failed:',
+                    error && error.message ? error.message : String(error)
+                ]);
+                setExpression('ERR', 1100);
+            }
+            return;
+        }
 
         if (window.siteAI && typeof window.siteAI.answer === 'function') {
             setExpression('AI', 900);
@@ -309,6 +535,74 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    if (catAiConfigForm) {
+        catAiConfigForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            if (!window.siteAI || typeof window.siteAI.writeConfig !== 'function') {
+                setConfigStatus('AI config module unavailable.');
+                return;
+            }
+
+            window.siteAI.writeConfig({
+                baseUrl: catAiConfigForm.elements.baseUrl.value,
+                apiKey: catAiConfigForm.elements.apiKey.value,
+                model: catAiConfigForm.elements.model.value
+            });
+            setConfigStatus('Saved in this browser.');
+            updateAiMode();
+            setExpression('SAVE', 900);
+        });
+    }
+
+    if (catAiTest) {
+        catAiTest.addEventListener('click', async function() {
+            if (!window.siteAI || typeof window.siteAI.testConnection !== 'function') {
+                setConfigStatus('AI config module unavailable.');
+                return;
+            }
+
+            if (catAiConfigForm && typeof window.siteAI.writeConfig === 'function') {
+                window.siteAI.writeConfig({
+                    baseUrl: catAiConfigForm.elements.baseUrl.value,
+                    apiKey: catAiConfigForm.elements.apiKey.value,
+                    model: catAiConfigForm.elements.model.value
+                });
+            }
+
+            setConfigStatus('Testing connection...');
+            try {
+                await window.siteAI.testConnection();
+                setConfigStatus('Connection OK.');
+                updateAiMode();
+                setExpression('OK', 900);
+            } catch (error) {
+                setConfigStatus(error && error.message ? error.message : String(error));
+                setExpression('ERR', 1100);
+            }
+        });
+    }
+
+    if (catAiClear) {
+        catAiClear.addEventListener('click', function() {
+            if (window.siteAI && typeof window.siteAI.clearConfig === 'function') {
+                window.siteAI.clearConfig();
+            }
+
+            if (catAiConfigForm) {
+                catAiConfigForm.reset();
+            }
+
+            setConfigStatus('Cleared. Demo mode is active.');
+            updateAiMode();
+            setExpression('CLR', 900);
+        });
+    }
+
+    if (catAiClearChat) {
+        catAiClearChat.addEventListener('click', clearAiMessages);
+    }
+
     if (catAiPanel) {
         catAiPanel.addEventListener('click', function(event) {
             const questionButton = event.target.closest('[data-cat-question]');
@@ -352,4 +646,7 @@ document.addEventListener('DOMContentLoaded', function() {
             setCatMenu(false);
         }
     });
+
+    loadConfigForm();
+    restoreAiMessages();
 });
