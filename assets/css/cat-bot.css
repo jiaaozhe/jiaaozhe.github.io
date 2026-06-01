@@ -243,15 +243,33 @@
     bottom: 78px;
     z-index: 2;
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
     gap: 10px;
-    width: min(360px, calc(100vw - 48px));
-    max-height: min(560px, calc(100vh - 116px));
+    width: var(--cat-ai-panel-width, min(360px, calc(100vw - 48px)));
+    height: var(--cat-ai-panel-height, min(560px, calc(100vh - 116px)));
+    min-width: 320px;
+    min-height: 360px;
+    max-width: calc(100vw - 48px);
+    max-height: calc(100vh - 116px);
+    overflow: hidden;
     padding: 12px;
     border: 1px solid var(--line);
     border-radius: 10px;
     background: var(--white);
     box-shadow: 0 22px 54px rgba(0, 0, 0, 0.16);
+}
+
+.cat-ai-resize {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 1;
+    width: 28px;
+    min-height: 28px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: nwse-resize;
 }
 
 .cat-ai-panel::after {
@@ -308,6 +326,7 @@
 
 .cat-ai-body {
     display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
     gap: 10px;
     min-height: 0;
     overflow-y: auto;
@@ -375,11 +394,14 @@
 .cat-ai-suggestions {
     display: flex;
     flex-wrap: wrap;
+    align-items: flex-start;
+    align-content: flex-start;
     gap: 6px;
 }
 
 .cat-ai-suggestions button {
-    min-height: 28px;
+    flex: 0 0 auto;
+    height: 28px;
     padding: 5px 8px;
     border: 1px solid var(--line);
     border-radius: 999px;
@@ -388,23 +410,12 @@
     font-size: 12px;
 }
 
-.cat-ai-history-actions {
-    display: flex;
-    justify-content: flex-end;
-}
-
-.cat-ai-history-actions button {
-    min-height: 28px;
-    padding: 5px 8px;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    background: transparent;
+[data-cat-ai-clear-chat] {
     color: var(--muted);
-    font-size: 12px;
 }
 
-.cat-ai-history-actions button:hover,
-.cat-ai-history-actions button:focus-visible {
+[data-cat-ai-clear-chat]:hover,
+[data-cat-ai-clear-chat]:focus-visible {
     color: var(--near-black);
 }
 
@@ -564,7 +575,14 @@
 
     .cat-ai-panel {
         width: calc(100vw - 36px);
+        height: auto;
+        min-width: 0;
+        min-height: 0;
         max-height: calc(100vh - 104px);
+    }
+
+    .cat-ai-resize {
+        display: none;
     }
 
     .cat-ai-output {

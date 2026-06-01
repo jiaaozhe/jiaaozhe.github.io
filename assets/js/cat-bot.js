@@ -1,6 +1,8 @@
 document.addEventListener('DOMContentLoaded', function() {
     const AI_MESSAGES_KEY = 'cat-ai.messages';
     const AI_MESSAGE_LIMIT = 30;
+    const AI_PANEL_SIZE_KEY = 'cat-ai.panel-size';
+    const AI_PANEL_DESKTOP_QUERY = '(min-width: 561px)';
     const catBotWrap = document.querySelector('[data-cat-bot]');
     const catBot = catBotWrap ? catBotWrap.querySelector('.cat-bot') : null;
     const catMenu = catBotWrap ? catBotWrap.querySelector('.cat-bot-menu') : null;
@@ -16,6 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const catAiTest = catBotWrap ? catBotWrap.querySelector('[data-cat-ai-test]') : null;
     const catAiClear = catBotWrap ? catBotWrap.querySelector('[data-cat-ai-clear]') : null;
     const catAiClearChat = catBotWrap ? catBotWrap.querySelector('[data-cat-ai-clear-chat]') : null;
+    const catAiResize = catBotWrap ? catBotWrap.querySelector('[data-cat-ai-resize]') : null;
 
     if (!catBotWrap || !catBot || !catMenu || !catExpression) {
         return;
@@ -27,6 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let resetExpressionTimer = null;
     let aiStreamId = 0;
     let aiMessages = [];
+    let panelResizeTimer = null;
 
     function setCatMenu(open) {
         catBotWrap.classList.toggle('is-open', open);
@@ -85,6 +89,135 @@ document.addEventListener('DOMContentLoaded', function() {
         if (catAiOutput) {
             catAiOutput.scrollTop = catAiOutput.scrollHeight;
         }
+    }
+
+    function panelSizeLimits() {
+        return {
+            minWidth: 320,
+            minHeight: 360,
+            maxWidth: Math.max(320, window.innerWidth - 48),
+            maxHeight: Math.max(360, window.innerHeight - 116)
+        };
+    }
+
+    function clampPanelSize(size) {
+        const limits = panelSizeLimits();
+
+        return {
+            width: Math.min(limits.maxWidth, Math.max(limits.minWidth, Number(size.width) || 360)),
+            height: Math.min(limits.maxHeight, Math.max(limits.minHeight, Number(size.height) || limits.maxHeight))
+        };
+    }
+
+    function isDesktopPanel() {
+        return window.matchMedia(AI_PANEL_DESKTOP_QUERY).matches;
+    }
+
+    function readPanelSize() {
+        try {
+            const parsed = JSON.parse(localStorage.getItem(AI_PANEL_SIZE_KEY) || '{}');
+
+            if (!parsed.width || !parsed.height) {
+                return null;
+            }
+
+            return clampPanelSize(parsed);
+        } catch (error) {
+            return null;
+        }
+    }
+
+    function applyPanelSize(size) {
+        if (!catAiPanel) {
+            return;
+        }
+
+        if (!isDesktopPanel()) {
+            catAiPanel.style.removeProperty('--cat-ai-panel-width');
+            catAiPanel.style.removeProperty('--cat-ai-panel-height');
+            return;
+        }
+
+        const next = clampPanelSize(size || readPanelSize() || {
+            width: catAiPanel.offsetWidth || 360,
+            height: catAiPanel.offsetHeight || panelSizeLimits().maxHeight
+        });
+        catAiPanel.style.setProperty('--cat-ai-panel-width', next.width + 'px');
+        catAiPanel.style.setProperty('--cat-ai-panel-height', next.height + 'px');
+    }
+
+    function savePanelSize() {
+        if (!catAiPanel || catAiPanel.hidden || !isDesktopPanel()) {
+            return;
+        }
+
+        const rect = catAiPanel.getBoundingClientRect();
+        const size = clampPanelSize({
+            width: Math.round(rect.width),
+            height: Math.round(rect.height)
+        });
+        localStorage.setItem(AI_PANEL_SIZE_KEY, JSON.stringify(size));
+    }
+
+    function setupPanelResize() {
+        if (!catAiPanel || typeof ResizeObserver === 'undefined') {
+            return;
+        }
+
+        applyPanelSize(readPanelSize());
+
+        const observer = new ResizeObserver(function() {
+            window.clearTimeout(panelResizeTimer);
+            panelResizeTimer = window.setTimeout(savePanelSize, 120);
+        });
+        observer.observe(catAiPanel);
+
+        window.addEventListener('resize', function() {
+            applyPanelSize(readPanelSize());
+        });
+
+        window.matchMedia(AI_PANEL_DESKTOP_QUERY).addEventListener('change', function() {
+            applyPanelSize(readPanelSize());
+        });
+    }
+
+    function startPanelResize(event) {
+        if (!catAiPanel || !isDesktopPanel()) {
+            return;
+        }
+
+        event.preventDefault();
+
+        const rect = catAiPanel.getBoundingClientRect();
+        const startX = event.clientX;
+        const startY = event.clientY;
+        const startWidth = rect.width;
+        const startHeight = rect.height;
+        const previousSelect = document.body.style.userSelect;
+
+        document.body.style.userSelect = 'none';
+        catAiResize.setPointerCapture(event.pointerId);
+
+        function onPointerMove(moveEvent) {
+            const next = clampPanelSize({
+                width: startWidth + startX - moveEvent.clientX,
+                height: startHeight + startY - moveEvent.clientY
+            });
+            applyPanelSize(next);
+        }
+
+        function onPointerUp(upEvent) {
+            catAiResize.releasePointerCapture(upEvent.pointerId);
+            catAiResize.removeEventListener('pointermove', onPointerMove);
+            catAiResize.removeEventListener('pointerup', onPointerUp);
+            catAiResize.removeEventListener('pointercancel', onPointerUp);
+            document.body.style.userSelect = previousSelect;
+            savePanelSize();
+        }
+
+        catAiResize.addEventListener('pointermove', onPointerMove);
+        catAiResize.addEventListener('pointerup', onPointerUp);
+        catAiResize.addEventListener('pointercancel', onPointerUp);
     }
 
     function readStoredAiMessages() {
@@ -603,6 +736,10 @@ document.addEventListener('DOMContentLoaded', function() {
         catAiClearChat.addEventListener('click', clearAiMessages);
     }
 
+    if (catAiResize) {
+        catAiResize.addEventListener('pointerdown', startPanelResize);
+    }
+
     if (catAiPanel) {
         catAiPanel.addEventListener('click', function(event) {
             const questionButton = event.target.closest('[data-cat-question]');
@@ -649,4 +786,5 @@ document.addEventListener('DOMContentLoaded', function() {
 
     loadConfigForm();
     restoreAiMessages();
+    setupPanelResize();
 });
