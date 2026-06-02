@@ -3,6 +3,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const AI_MESSAGE_LIMIT = 30;
     const AI_PANEL_SIZE_KEY = 'cat-ai.panel-size';
     const AI_PANEL_DESKTOP_QUERY = '(min-width: 561px)';
+    const AI_KEY_EMPTY_PLACEHOLDER = 'optional for local models';
+    const AI_KEY_SAVED_PLACEHOLDER = 'saved key';
     const catBotWrap = document.querySelector('[data-cat-bot]');
     const catBot = catBotWrap ? catBotWrap.querySelector('.cat-bot') : null;
     const catMenu = catBotWrap ? catBotWrap.querySelector('.cat-bot-menu') : null;
@@ -284,14 +286,14 @@ document.addEventListener('DOMContentLoaded', function() {
         setExpression('CLR', 900);
     }
 
-    function updateAiMode() {
+    async function updateAiMode(config) {
         if (!catAiMode || !window.siteAI || typeof window.siteAI.readConfig !== 'function') {
             return;
         }
 
-        const config = window.siteAI.readConfig();
-        const configured = window.siteAI.hasConfig && window.siteAI.hasConfig(config);
-        catAiMode.textContent = configured ? config.model : 'demo mode';
+        const value = config || await window.siteAI.readConfig();
+        const configured = window.siteAI.hasConfig && window.siteAI.hasConfig(value);
+        catAiMode.textContent = configured ? value.model : 'demo mode';
     }
 
     function setConfigStatus(text) {
@@ -300,16 +302,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function loadConfigForm() {
+    async function loadConfigForm() {
         if (!catAiConfigForm || !window.siteAI || typeof window.siteAI.readConfig !== 'function') {
             return;
         }
 
-        const config = window.siteAI.readConfig();
+        const config = await window.siteAI.readConfig();
         catAiConfigForm.elements.baseUrl.value = config.baseUrl || '';
-        catAiConfigForm.elements.apiKey.value = config.apiKey || '';
+        catAiConfigForm.elements.apiKey.value = '';
+        catAiConfigForm.elements.apiKey.placeholder = config.hasSavedApiKey ? AI_KEY_SAVED_PLACEHOLDER : AI_KEY_EMPTY_PLACEHOLDER;
         catAiConfigForm.elements.model.value = config.model || '';
-        updateAiMode();
+        await updateAiMode(config);
     }
 
     function appendAiMessage(role) {
@@ -516,7 +519,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 streamAiLines(lines);
-                updateAiMode();
+                await updateAiMode();
             } catch (error) {
                 if (statusMessage) {
                     statusMessage.remove();
@@ -669,7 +672,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (catAiConfigForm) {
-        catAiConfigForm.addEventListener('submit', function(event) {
+        catAiConfigForm.addEventListener('submit', async function(event) {
             event.preventDefault();
 
             if (!window.siteAI || typeof window.siteAI.writeConfig !== 'function') {
@@ -677,14 +680,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            window.siteAI.writeConfig({
-                baseUrl: catAiConfigForm.elements.baseUrl.value,
-                apiKey: catAiConfigForm.elements.apiKey.value,
-                model: catAiConfigForm.elements.model.value
-            });
-            setConfigStatus('Saved in this browser.');
-            updateAiMode();
-            setExpression('SAVE', 900);
+            setConfigStatus('Saving...');
+            try {
+                await window.siteAI.writeConfig({
+                    baseUrl: catAiConfigForm.elements.baseUrl.value,
+                    apiKey: catAiConfigForm.elements.apiKey.value,
+                    model: catAiConfigForm.elements.model.value
+                });
+                catAiConfigForm.elements.apiKey.value = '';
+                await loadConfigForm();
+                setConfigStatus('Saved in this browser.');
+                setExpression('SAVE', 900);
+            } catch (error) {
+                setConfigStatus(error && error.message ? error.message : String(error));
+                setExpression('ERR', 1100);
+            }
         });
     }
 
@@ -696,18 +706,19 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             if (catAiConfigForm && typeof window.siteAI.writeConfig === 'function') {
-                window.siteAI.writeConfig({
+                await window.siteAI.writeConfig({
                     baseUrl: catAiConfigForm.elements.baseUrl.value,
                     apiKey: catAiConfigForm.elements.apiKey.value,
                     model: catAiConfigForm.elements.model.value
                 });
+                catAiConfigForm.elements.apiKey.value = '';
             }
 
             setConfigStatus('Testing connection...');
             try {
                 await window.siteAI.testConnection();
+                await loadConfigForm();
                 setConfigStatus('Connection OK.');
-                updateAiMode();
                 setExpression('OK', 900);
             } catch (error) {
                 setConfigStatus(error && error.message ? error.message : String(error));
@@ -717,17 +728,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (catAiClear) {
-        catAiClear.addEventListener('click', function() {
+        catAiClear.addEventListener('click', async function() {
             if (window.siteAI && typeof window.siteAI.clearConfig === 'function') {
-                window.siteAI.clearConfig();
+                await window.siteAI.clearConfig();
             }
 
             if (catAiConfigForm) {
                 catAiConfigForm.reset();
+                catAiConfigForm.elements.apiKey.placeholder = AI_KEY_EMPTY_PLACEHOLDER;
             }
 
             setConfigStatus('Cleared. Demo mode is active.');
-            updateAiMode();
+            await updateAiMode({ baseUrl: '', model: '' });
             setExpression('CLR', 900);
         });
     }
