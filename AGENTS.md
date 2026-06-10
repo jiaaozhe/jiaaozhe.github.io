@@ -1,73 +1,20 @@
-# AGENTS
+# Agent Guide
 
-## Python
+## Working Principles
 
-- Run Python via `uv`.
-- Use `pathlib.Path` for path operations.
+- Think from first principles. Start from real requirements, code facts, and verification results; if the goal is unclear, discuss it with the user first.
+- Treat code, not documentation, as the source of truth. Unless the user explicitly says otherwise, do not read ordinary Markdown just to understand the implementation.
+- Before making code changes, read the relevant code and the most recent constraints, and follow the nearest AGENTS.md in the directory tree.
+- Keep changes focused. Do not slip in unrelated refactors along the way.
 
-## Project Tree
+## Project Map
 
-Generated or local-only directories such as `_site`, `.jekyll-cache`, `.local`, and `raw` are intentionally omitted.
-
-```text
-.
-├── _config.yml
-├── _data
-│   ├── agents.yml
-│   ├── now.yml
-│   ├── stocks.yml
-│   └── uses.yml
-├── _fragments
-│   ├── .gitkeep
-│   └── 2026-04-29-xiaomi-marketing.md
-├── _layouts
-│   ├── default.html
-│   ├── photo.html
-│   ├── post.html
-│   ├── publication.html
-│   └── use.html
-├── _photos
-│   └── sony-6700.md
-├── _posts
-│   ├── 2025-01-01-first-post.md
-│   ├── 2025-01-02-github-pages-guide.md
-│   └── 2026-05-05-hermes-agent-source-analysis.md
-├── _publications
-│   └── iioa.md
-├── _uses
-│   ├── ghostty.md
-│   └── vscode.md
-├── .github
-│   └── workflows
-│       └── update-stocks.yml
-├── assets
-│   ├── css
-│   │   ├── cat-bot.css
-│   │   ├── status-dashboard.css
-│   │   └── styles.css
-│   └── js
-│       ├── cat-bot.js
-│       ├── post-toc.js
-│       ├── script.js
-│       ├── site-ai.js
-│       ├── status-dashboard.js
-│       └── terminal.js
-├── pages
-│   ├── fragments.md
-│   ├── introduction.md
-│   ├── photos.md
-│   ├── posts.md
-│   ├── research.md
-│   └── status.md
-├── scripts
-│   └── update_stocks.py
-├── AGENTS.md
-├── DESIGN.md
-├── favicon.svg
-├── Gemfile
-├── Gemfile.lock
-├── index.md
-├── README.md
-├── site-page-content.json
-└── site-page-index.json
-```
+- `_config.yml`: Jekyll configuration, collections, defaults, and build exclusions.
+- `_data/`: YAML data used by pages and dashboards.
+- `_layouts/`: Jekyll page templates for the site shell and collection detail pages.
+- `assets/`: Published CSS and JavaScript.
+- `content/`: Source collections for posts, photos, publications, uses, and fragments.
+- `pages/`: Fixed pages and JSON page templates.
+- `scripts/`: Build/data maintenance scripts used by automation; not published.
+- `.github/`: GitHub Actions workflows.
+- `DESIGN.md`: Design direction and visual system notes.

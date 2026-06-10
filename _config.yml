@@ -16,6 +16,7 @@ plugins:
 # theme: minima
 
 # Collections
+collections_dir: content
 collections:
   posts:
     output: true
@@ -65,3 +66,4 @@ exclude:
   - README.md
   - DESIGN.md
   - AGENTS.md
+  - scripts

@@ -122,6 +122,8 @@ Desktop.ini
 
 # Local development
 .local
+.claude/
+raw/
 
 # Jekyll
 _site/
