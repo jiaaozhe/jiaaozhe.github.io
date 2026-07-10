@@ -4,27 +4,17 @@
     const CRYPTO_DB_VERSION = 1;
     const CRYPTO_STORE = 'keys';
     const API_KEY_ID = 'api-key';
-    const INDEX_URL = '/site-page-index.json';
-    const CONTENT_URL = '/site-page-content.json';
     const MAX_PAGES = 5;
     const MAX_CHARS_PER_PAGE = 8000;
     const MAX_TOTAL_CHARS = 24000;
-    let indexCache = null;
-    let contentCache = null;
     let cryptoDbPromise = null;
 
-    function readSiteData() {
-        const dataElement = document.getElementById('site-data');
-
-        if (!dataElement) {
-            return {};
+    function getSiteData() {
+        if (!window.siteData) {
+            throw new Error('Site data module unavailable.');
         }
 
-        try {
-            return JSON.parse(dataElement.textContent || '{}');
-        } catch (error) {
-            return {};
-        }
+        return window.siteData;
     }
 
     function includesAny(text, terms) {
@@ -33,46 +23,14 @@
         });
     }
 
-    function nameFromUrl(url) {
-        const clean = String(url || '').replace(/^\/|\/$/g, '');
-        const parts = clean.split('/').filter(Boolean);
-        return parts[parts.length - 1] || 'item';
-    }
-
-    function formatUrl(url, fallback) {
-        const clean = String(url || '').replace(/\/$/g, '');
-        return clean || fallback || '/';
-    }
-
-    function getChildren(context, name) {
-        if (context && context.vfs && context.vfs.children) {
-            const node = context.vfs.children[name];
-
-            if (node && node.children) {
-                return Object.keys(node.children).sort().map(function(key) {
-                    return node.children[key];
-                });
-            }
-        }
-
-        const data = readSiteData();
-        const collection = name === 'research' ? 'publications' : name;
-        return (data[collection] || []).map(function(item) {
-            return {
-                name: nameFromUrl(item.url),
-                title: item.title || nameFromUrl(item.url),
-                url: item.url,
-                content: item.content || ''
-            };
+    function getRoutes(manifest, type) {
+        return (manifest.routes || []).filter(function(route) {
+            return route.type === type;
         });
     }
 
-    function itemPath(context, root, item) {
-        if (context && typeof context.formatPath === 'function' && item.name) {
-            return context.formatPath([root, item.name]);
-        }
-
-        return formatUrl(item.url, '/' + root + '/' + item.name);
+    function itemPath(item) {
+        return item.url || item.id || '/';
     }
 
     function getLine(content, prefix) {
@@ -81,64 +39,69 @@
         }) || '';
     }
 
-    function answerAbout() {
+    function answerAbout(manifest) {
+        const profile = manifest.profile || {};
+
         return [
             'AI demo:',
-            '这里是 jiaaozhe 的个人站点。',
-            'Focus: Multimodal Representation / Automation.',
-            'Research: Unified multimodal understanding, contrastive learning, and applied automation.'
+            '这里是 ' + (profile.name || 'jiaaozhe') + ' 的个人站点。',
+            'Focus: ' + (profile.focus || 'Multimodal Representation / Automation') + '.',
+            'Research: ' + (profile.research || '暂无研究简介')
         ];
     }
 
-    function answerPosts(context) {
-        const posts = getChildren(context, 'posts');
+    function answerPosts(manifest) {
+        const posts = getRoutes(manifest, 'post');
 
         if (!posts.length) {
             return ['AI demo:', '目前还没有可列出的文章。'];
         }
 
         return ['AI demo:', '当前文章：'].concat(posts.map(function(post) {
-            return '- ' + post.title + ' (' + itemPath(context, 'posts', post) + ')';
+            return '- ' + post.title + ' (' + itemPath(post) + ')';
         }));
     }
 
-    function answerResearch(context) {
-        const publications = getChildren(context, 'research');
+    function answerResearch(manifest) {
+        const publications = getRoutes(manifest, 'publication');
 
         if (!publications.length) {
             return ['AI demo:', '研究内容在 /research，目前没有注入论文条目。'];
         }
 
         return ['AI demo:', '研究内容在 /research。当前论文：'].concat(publications.map(function(publication) {
-            return '- ' + publication.title + ' (' + itemPath(context, 'research', publication) + ')';
+            return '- ' + publication.title + ' (' + itemPath(publication) + ')';
         }));
     }
 
-    function answerPhotos(context) {
-        const photos = getChildren(context, 'photos');
+    function answerPhotos(manifest) {
+        const photos = getRoutes(manifest, 'photo');
 
         if (!photos.length) {
             return ['AI demo:', '目前还没有可列出的摄影文章。'];
         }
 
         return ['AI demo:', '当前摄影文章：'].concat(photos.map(function(photo) {
-            return '- ' + photo.title + ' (' + itemPath(context, 'photos', photo) + ')';
+            return '- ' + photo.title + ' (' + itemPath(photo) + ')';
         }));
     }
 
-    function answerUses(question, context) {
-        const uses = getChildren(context, 'uses');
+    async function answerUses(question, manifest) {
+        const uses = getRoutes(manifest, 'use');
         const ghostty = uses.find(function(item) {
             return item.name === 'ghostty' || String(item.title || '').toLowerCase().includes('ghostty');
         });
 
         if (question.includes('ghostty') && ghostty) {
+            const page = await getSiteData().getContent(ghostty.id);
+            const content = page ? page.content : '';
+
             return [
                 'AI demo:',
                 'Ghostty 是 uses 目录里的终端配置。',
-                getLine(ghostty.content, 'font-family') || 'font-family: not found',
-                getLine(ghostty.content, 'font-size') || 'font-size: not found',
-                getLine(ghostty.content, 'theme') || 'theme: not found'
+                getLine(content, 'font-family') || 'font-family: not found',
+                getLine(content, 'font-size') || 'font-size: not found',
+                getLine(content, 'theme') || 'theme: not found'
             ];
         }
 
@@ -147,21 +110,19 @@
         }
 
         return ['AI demo:', 'uses 目录记录常用工具：'].concat(uses.map(function(use) {
-            return '- ' + use.title + ' (' + itemPath(context, 'uses', use) + ')';
+            return '- ' + use.title + ' (' + itemPath(use) + ')';
         }));
     }
 
-    function answerSite() {
+    function answerSite(manifest) {
+        const sections = (manifest.sections || []).map(function(section) {
+            return '- ' + section.url + '：' + section.title;
+        });
+
         return [
             'AI demo:',
-            '这个站点包含：',
-            '- /posts：文章',
-            '- /fragments：碎片流',
-            '- /photos：摄影',
-            '- /research：学术研究',
-            '- /uses：工具配置',
-            '- /status：状态页'
-        ];
+            '这个站点包含：'
+        ].concat(sections);
     }
 
     function answerDemoQuestions() {
@@ -187,7 +148,7 @@
         ];
     }
 
-    function demoAnswer(question, context) {
+    async function demoAnswer(question, manifest) {
         const q = String(question || '').toLowerCase();
 
         if (includesAny(q, ['demo', '示例', '问题', '怎么问'])) {
@@ -195,27 +156,27 @@
         }
 
         if (includesAny(q, ['你是谁', 'about', '介绍', '个人', 'jiaaozhe'])) {
-            return answerAbout(context);
+            return answerAbout(manifest);
         }
 
         if (includesAny(q, ['照片', '摄影', 'photo', 'photos', '相机'])) {
-            return answerPhotos(context);
+            return answerPhotos(manifest);
         }
 
         if (includesAny(q, ['文章', '博客', 'posts', '有哪些文章', '写了什么'])) {
-            return answerPosts(context);
+            return answerPosts(manifest);
         }
 
         if (includesAny(q, ['研究', '论文', 'research', 'publication', 'attention', 'iioa'])) {
-            return answerResearch(context);
+            return answerResearch(manifest);
         }
 
         if (includesAny(q, ['ghostty', '终端', 'terminal', '配置', 'uses', '工具', 'vscode'])) {
-            return answerUses(q, context);
+            return answerUses(q, manifest);
         }
 
         if (includesAny(q, ['网站', '站点', 'site', '目录', '有什么', '导航', '内容'])) {
-            return answerSite(context);
+            return answerSite(manifest);
         }
 
         return fallback();
@@ -442,34 +403,6 @@
         return Boolean(value.baseUrl && value.model);
     }
 
-    async function fetchJson(url) {
-        const response = await fetch(url + '?v=' + encodeURIComponent(Date.now()), {
-            cache: 'no-cache'
-        });
-
-        if (!response.ok) {
-            throw new Error('Cannot load ' + url + ': HTTP ' + response.status);
-        }
-
-        return response.json();
-    }
-
-    async function loadIndex() {
-        if (!indexCache) {
-            indexCache = await fetchJson(INDEX_URL);
-        }
-
-        return indexCache;
-    }
-
-    async function loadContent() {
-        if (!contentCache) {
-            contentCache = await fetchJson(CONTENT_URL);
-        }
-
-        return contentCache;
-    }
-
     async function chatCompletion(config, messages, options) {
         const body = {
             model: config.model,
@@ -524,9 +457,9 @@
         }
     }
 
-    function compactCatalog(index) {
-        const pages = Array.isArray(index.pages) ? index.pages : [];
-        return pages.map(function(page) {
+    function compactCatalog(manifest) {
+        const routes = Array.isArray(manifest.routes) ? manifest.routes : [];
+        return routes.map(function(page) {
             return {
                 id: page.id,
                 type: page.type,
@@ -534,14 +467,13 @@
                 url: page.url,
                 date: page.date,
                 summary: page.summary,
-                tags: page.tags || [],
-                headings: page.headings || []
+                tags: page.tags || []
             };
         });
     }
 
-    function cleanPlan(plan, index) {
-        const pages = Array.isArray(index.pages) ? index.pages : [];
+    function cleanPlan(plan, manifest) {
+        const pages = Array.isArray(manifest.routes) ? manifest.routes : [];
         const action = plan.action === 'read_pages' ? 'read_pages' : 'answer';
         const allowed = new Set(pages.map(function(page) {
             return page.id;
@@ -569,7 +501,7 @@
         });
     }
 
-    async function planAnswer(config, question, index) {
+    async function planAnswer(config, question, manifest) {
         const prompt = [
             '你会收到用户问题、站点简介和页面目录。',
             '先判断是否必须读取具体页面正文才能可靠回答。',
@@ -592,24 +524,24 @@
             question,
             '',
             '站点简介：',
-            JSON.stringify(index.profile || {}),
+            JSON.stringify(manifest.profile || {}),
             '',
             '页面目录：',
-            JSON.stringify(compactCatalog(index))
+            JSON.stringify(compactCatalog(manifest))
         ].join('\n');
         const response = await chatCompletion(config, [
             { role: 'system', content: '你是一个严谨的站点问答规划器，只返回符合要求的 JSON。' },
             { role: 'user', content: prompt }
         ], { temperature: 0 });
-        return cleanPlan(parseJsonObject(response), index);
+        return cleanPlan(parseJsonObject(response), manifest);
     }
 
-    function buildContext(ids, contentData, indexData) {
+    function buildContext(ids, contentData, manifest) {
         const contentPages = contentData.pages || {};
         const indexById = {};
         let total = 0;
 
-        (indexData.pages || []).forEach(function(page) {
+        (manifest.routes || []).forEach(function(page) {
             indexById[page.id] = page;
         });
 
@@ -638,16 +570,17 @@
     async function answerWithModel(question, options) {
         const config = await readConfig();
         const onStatus = options && typeof options.onStatus === 'function' ? options.onStatus : function() {};
-
-        if (!hasConfig(config)) {
-            return demoAnswer(question, options && options.context);
-        }
+        const siteData = getSiteData();
 
         onStatus('读取站点目录');
-        const index = await loadIndex();
+        const manifest = await siteData.loadManifest();
+
+        if (!hasConfig(config)) {
+            return demoAnswer(question, manifest);
+        }
 
         onStatus('分析问题');
-        const plan = await planAnswer(config, question, index);
+        const plan = await planAnswer(config, question, manifest);
 
         if (plan.action === 'answer') {
             return splitAnswer(plan.answer);
@@ -658,8 +591,8 @@
         }
 
         onStatus('读取页面内容');
-        const content = await loadContent();
-        const contextBlocks = buildContext(plan.pages, content, index);
+        const content = await siteData.loadContent();
+        const contextBlocks = buildContext(plan.pages, content, manifest);
 
         if (!contextBlocks.length) {
             return ['找到了相关页面，但没有可用正文内容。'];
@@ -707,8 +640,14 @@
         return true;
     }
 
+    function answer(question) {
+        return getSiteData().loadManifest().then(function(manifest) {
+            return demoAnswer(question, manifest);
+        });
+    }
+
     window.siteAI = {
-        answer: demoAnswer,
+        answer: answer,
         answerAsync: answerWithModel,
         clearConfig: clearConfig,
         hasConfig: hasConfig,

@@ -4,14 +4,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const input = document.getElementById('command-input');
     const output = document.getElementById('command-output');
     const prompt = document.getElementById('command-prompt');
-    const dataElement = document.getElementById('site-data');
+    const siteData = window.siteData;
 
-    if (!palette || !form || !input || !output || !prompt || !dataElement) {
+    if (!palette || !form || !input || !output || !prompt || !siteData) {
         return;
     }
 
-    const terminalData = JSON.parse(dataElement.textContent || '{}');
-    const terminalConfig = terminalData.terminal || {};
     const cwdStorageKey = 'terminal.cwd';
     const historyStorageKey = 'terminal.history';
     const historyLimit = 80;
@@ -20,6 +18,9 @@ document.addEventListener('DOMContentLoaded', function() {
     let commandHistory = readHistory();
     let historyIndex = commandHistory.length;
     let lessState = null;
+    let manifestReady = false;
+    let manifestError = null;
+    let shortcutRoutes = {};
 
     function slugFromUrl(url) {
         return url.split('/').filter(Boolean).pop() || 'home';
@@ -56,6 +57,7 @@ document.addEventListener('DOMContentLoaded', function() {
             route: route || '',
             title: title || name,
             content: content || '',
+            contentId: details.contentId || '',
             rawUrl: details.rawUrl || '',
             sourcePath: details.sourcePath || '',
             date: details.date || '',
@@ -74,80 +76,89 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function buildVfs(data) {
+        const defaultSections = [
+            { name: 'posts', title: '文章', url: '/posts/', types: ['post'] },
+            { name: 'fragments', title: '碎片流', url: '/fragments/', types: ['fragment'] },
+            { name: 'photos', title: '摄影', url: '/photos/', types: ['photo'] },
+            { name: 'research', title: '学术研究', url: '/research/', types: ['publication'] },
+            { name: 'uses', title: '工具', url: '/status/', types: ['use'] }
+        ];
+        const sections = Array.isArray(data.sections) && data.sections.length ? data.sections : defaultSections;
         const root = createDir('', '/', '/');
-        const posts = createDir('posts', '/posts/', '文章');
-        const photos = createDir('photos', '/photos/', '摄影');
-        const uses = createDir('uses', '/status/', '工具');
-        const research = createDir('research', '/research/', '学术研究');
+        const directories = {};
+        const sectionByType = {};
+        const nextShortcuts = {};
 
-        (data.posts || []).forEach(function(post) {
-            const slug = slugFromUrl(post.url);
-            const sourceName = post.path ? post.path.split('/').pop() : slug + '.md';
-            const displayName = sourceName.replace(/^\d{4}-\d{2}-\d{2}-/, '');
-            const file = createFile(displayName, post.url, post.title, post.content, {
-                displayName: displayName,
-                rawUrl: post.raw_url,
-                sourcePath: post.path,
-                date: post.date,
-                size: byteLength(post.content || '')
+        sections.forEach(function(section) {
+            const dir = createDir(section.name, section.url, section.title);
+            directories[section.name] = dir;
+            nextShortcuts[section.name] = section.url;
+            addChild(root, dir);
+
+            (section.types || []).forEach(function(type) {
+                sectionByType[type] = dir;
             });
-
-            addChild(posts, file, [slug, sourceName]);
         });
 
-        (data.uses || []).forEach(function(use) {
-            const slug = slugFromUrl(use.url);
-            addChild(uses, createFile(slug, use.url, use.title, use.content));
-        });
-
-        (data.photos || []).forEach(function(photo) {
-            const slug = slugFromUrl(photo.url);
-            addChild(photos, createFile(slug, photo.url, photo.title, photo.content, {
-                date: photo.date,
-                size: byteLength(photo.content || '')
-            }));
-        });
-
-        (data.publications || []).forEach(function(publication) {
-            const slug = slugFromUrl(publication.url);
-            addChild(research, createFile(slug, publication.url, publication.title, publication.content));
-        });
-
-        addChild(root, posts);
-        addChild(root, photos);
-        addChild(root, uses);
-        addChild(root, research);
-
-        (data.pages || []).forEach(function(page) {
-            if (page.name === 'home') {
-                addChild(root, createFile('home', page.url, page.title, page.title));
+        (data.routes || []).forEach(function(route) {
+            if (route.type === 'page' && directories[route.name]) {
+                directories[route.name].route = route.url;
+                directories[route.name].title = route.title;
                 return;
             }
 
-            if (page.name === 'research') {
-                research.route = page.url;
-                research.title = page.title;
-                return;
+            const parent = sectionByType[route.type] || root;
+            let name = route.name || slugFromUrl(route.url);
+
+            if (route.type === 'page' && route.url === '/') {
+                name = 'home';
+            } else if (route.type === 'page' && route.name === 'introduction') {
+                name = 'about.md';
             }
 
-            if (page.name === 'fragments') {
-                addChild(root, createDir(page.name, page.url, page.title));
-                return;
+            const file = createFile(name, route.url, route.title, '', {
+                contentId: route.id,
+                rawUrl: route.raw_url,
+                sourcePath: route.source_path,
+                date: route.date,
+                size: route.size
+            });
+            const aliases = [slugFromUrl(route.url)];
+
+            if (route.source_path) {
+                aliases.push(route.source_path.split('/').pop());
             }
 
-            if (page.name === 'photos') {
-                photos.route = page.url;
-                photos.title = page.title;
-                return;
-            }
+            addChild(parent, file, aliases);
 
-            addChild(root, createFile(page.name, page.url, page.title, page.title));
+            if (route.type === 'page') {
+                nextShortcuts[route.name] = route.url;
+                if (route.name === 'introduction') {
+                    nextShortcuts.about = route.url;
+                }
+            } else if (route.type === 'use' && route.name === 'ghostty') {
+                nextShortcuts.ghostty = route.url;
+            }
         });
 
+        shortcutRoutes = nextShortcuts;
         return root;
     }
 
-    const vfs = buildVfs(terminalData);
+    let vfs = buildVfs({});
+    const manifestPromise = siteData.loadManifest().then(function(manifest) {
+        vfs = buildVfs(manifest);
+        manifestReady = true;
+
+        if (palette.classList.contains('is-open') && !output.querySelector('.command-history-line')) {
+            setLines(welcomeLines());
+        }
+
+        return manifest;
+    }).catch(function(error) {
+        manifestError = error;
+        return null;
+    });
 
     function normalizePathParts(parts) {
         return parts.filter(function(part) {
@@ -182,7 +193,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function inferCwdFromLocation() {
-        const parts = window.location.pathname.split('/').filter(Boolean);
+        const baseUrl = String(document.documentElement.dataset.siteBaseurl || '').replace(/\/+$/, '');
+        const pathname = baseUrl && window.location.pathname.startsWith(baseUrl)
+            ? window.location.pathname.slice(baseUrl.length)
+            : window.location.pathname;
+        const parts = pathname.split('/').filter(Boolean);
 
         if (!parts.length) {
             return [];
@@ -211,7 +226,8 @@ document.addEventListener('DOMContentLoaded', function() {
         return [];
     }
 
-    let cwd = inferCwdFromLocation() || readCwd();
+    const inferredCwd = inferCwdFromLocation();
+    let cwd = inferredCwd.length ? inferredCwd : readCwd();
 
     function writeCwd() {
         sessionStorage.setItem(cwdStorageKey, JSON.stringify(cwd));
@@ -496,12 +512,26 @@ document.addEventListener('DOMContentLoaded', function() {
         return item;
     }
 
+    function loadIndexedContent(node) {
+        if (node.content) {
+            return Promise.resolve({ text: node.content, raw: false });
+        }
+
+        if (!node.contentId) {
+            return Promise.resolve({ text: '', raw: false });
+        }
+
+        return siteData.getContent(node.contentId).then(function(page) {
+            const text = page && page.content ? page.content : '';
+            node.content = text;
+            node.size = byteLength(text);
+            return { text: text, raw: false };
+        });
+    }
+
     function loadFileContent(node) {
         if (!node.rawUrl || !window.fetch) {
-            return Promise.resolve({
-                text: node.content || '',
-                raw: false
-            });
+            return loadIndexedContent(node);
         }
 
         if (rawCache[node.rawUrl]) {
@@ -528,11 +558,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 };
             })
             .catch(function(error) {
-                return {
-                    text: node.content || '',
-                    raw: false,
-                    error: error.message
-                };
+                return loadIndexedContent(node).then(function(result) {
+                    result.error = error.message;
+                    return result;
+                });
             });
     }
 
@@ -557,7 +586,7 @@ document.addEventListener('DOMContentLoaded', function() {
             '  grep [-n] [-C n] <term> [path]',
             '  find <term> [path]   search files and titles',
             '  man <command>        show command manual',
-            '  ask <question>       ask the site AI demo',
+            '  ask <question>       ask the site AI',
             '',
             'SHORTCUTS',
             '  posts photos fragments research status about ghostty',
@@ -580,7 +609,7 @@ document.addEventListener('DOMContentLoaded', function() {
         less: ['NAME', '  less - read long files with paging', '', 'SYNOPSIS', '  less <file>', '', 'KEYS', '  j/down scroll down', '  k/up scroll up', '  / search', '  n next match', '  q quit'],
         grep: ['NAME', '  grep - search file contents', '', 'SYNOPSIS', '  grep [-n] [-C n] <term> [path]', '', 'EXAMPLES', '  grep -n agent posts/hermes-agent-source-analysis.md', '  grep -C 2 theme uses/ghostty'],
         find: ['NAME', '  find - search names, titles, and content', '', 'SYNOPSIS', '  find <term> [path]'],
-        ask: ['NAME', '  ask - ask the site AI demo about this blog', '', 'SYNOPSIS', '  ask <question>', '', 'EXAMPLES', '  ask 你有哪些文章？', '  ask ghostty 配置是什么？'],
+        ask: ['NAME', '  ask - ask the site AI about this blog', '', 'SYNOPSIS', '  ask <question>', '', 'EXAMPLES', '  ask 你有哪些文章？', '  ask ghostty 配置是什么？'],
         clear: ['NAME', '  clear - clear terminal output'],
         random: ['NAME', '  random - open a random post'],
         whoami: ['NAME', '  whoami - print the site identity'],
@@ -1103,6 +1132,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 appendTokens(prefix.concat([token(match.line, 'context')]), 'grep-context-line');
             });
+        }).catch(function(error) {
+            writeLines([[token('grep: ' + error.message, 'error')]]);
         });
     }
 
@@ -1122,20 +1153,40 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const term = args.term.toLowerCase();
-        const matches = [];
+        const files = [];
 
         walkFiles(resolved.node, resolved.parts, function(node, parts) {
-            const haystack = [formatPath(parts), node.title || '', node.content || ''].join('\n').toLowerCase();
-
-            if (haystack.includes(term)) {
-                matches.push([
-                    token(formatPath(parts).padEnd(24, ' '), nodeKind(node) === 'md' ? 'md' : 'path'),
-                    token(node.title, 'muted')
-                ]);
-            }
+            files.push({ node: node, parts: parts });
         });
 
-        writeLines(matches.length ? matches : [[token('find: no matches', 'muted')]]);
+        const loading = appendLine([token('find: loading content index...', 'muted')]);
+
+        Promise.all(files.map(function(file) {
+            return loadIndexedContent(file.node).then(function(result) {
+                return { file: file, text: result.text || '' };
+            });
+        })).then(function(results) {
+            const matches = [];
+
+            loading.remove();
+            results.forEach(function(result) {
+                const node = result.file.node;
+                const parts = result.file.parts;
+                const haystack = [formatPath(parts), node.title || '', result.text].join('\n').toLowerCase();
+
+                if (haystack.includes(term)) {
+                    matches.push([
+                        token(formatPath(parts).padEnd(24, ' '), nodeKind(node) === 'md' ? 'md' : 'path'),
+                        token(node.title, 'muted')
+                    ]);
+                }
+            });
+
+            writeLines(matches.length ? matches : [[token('find: no matches', 'muted')]]);
+        }).catch(function(error) {
+            loading.remove();
+            writeLines([[token('find: ' + error.message, 'error')]]);
+        });
     }
 
     function runAsk(question) {
@@ -1144,67 +1195,63 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        if (!window.siteAI || typeof window.siteAI.answer !== 'function') {
+        if (!window.siteAI || typeof window.siteAI.answerAsync !== 'function') {
             writeLines([[token('ask: AI module unavailable', 'error')]]);
             return;
         }
 
-        const context = {
-            vfs: vfs,
-            cwd: cwd.slice(),
-            formatPath: formatPath,
-            listDir: listDir
-        };
-        const response = window.siteAI.answer(question, context);
-        const lines = Array.isArray(response) ? response : [String(response)];
-        let lineIndex = 0;
+        const status = appendLine([token('ask: loading site manifest...', 'muted')]);
 
-        function streamNextLine() {
-            if (lineIndex >= lines.length) {
-                return;
+        window.siteAI.answerAsync(question, {
+            onStatus: function(message) {
+                status.textContent = 'ask: ' + message + '...';
             }
+        }).then(function(response) {
+            const lines = Array.isArray(response) ? response : [String(response)];
+            let lineIndex = 0;
 
-            const line = lines[lineIndex];
-            const item = appendLine('');
-            item.className = 'term-ai';
-            let charIndex = 0;
-            lineIndex += 1;
+            status.remove();
 
-            function streamNextChar() {
-                item.textContent = line.slice(0, charIndex);
-                scrollOutput();
-
-                if (charIndex <= line.length) {
-                    charIndex += 1;
-                    window.setTimeout(streamNextChar, 8);
+            function streamNextLine() {
+                if (lineIndex >= lines.length) {
                     return;
                 }
 
-                window.setTimeout(streamNextLine, 80);
+                const line = lines[lineIndex];
+                const item = appendLine('');
+                item.className = 'term-ai';
+                let charIndex = 0;
+                lineIndex += 1;
+
+                function streamNextChar() {
+                    item.textContent = line.slice(0, charIndex);
+                    scrollOutput();
+
+                    if (charIndex <= line.length) {
+                        charIndex += 1;
+                        window.setTimeout(streamNextChar, 8);
+                        return;
+                    }
+
+                    window.setTimeout(streamNextLine, 80);
+                }
+
+                streamNextChar();
             }
 
-            streamNextChar();
-        }
-
-        streamNextLine();
+            streamNextLine();
+        }).catch(function(error) {
+            status.remove();
+            writeLines([[token('ask: ' + error.message, 'error')]]);
+        });
     }
 
     function runShortcut(command) {
-        const shortcuts = {
-            posts: '/posts/',
-            photos: '/photos/',
-            fragments: '/fragments/',
-            research: '/research/',
-            status: '/status/',
-            about: '/introduction/',
-            ghostty: '/uses/ghostty/'
-        };
-
-        if (!shortcuts[command]) {
+        if (!shortcutRoutes[command]) {
             return false;
         }
 
-        window.location.href = shortcuts[command];
+        window.location.href = shortcutRoutes[command];
         return true;
     }
 
@@ -1212,6 +1259,24 @@ document.addEventListener('DOMContentLoaded', function() {
         const commandLine = value.trim();
 
         if (!commandLine) {
+            return;
+        }
+
+        if (!manifestReady) {
+            if (manifestError) {
+                writeLines([[token('site data: ' + manifestError.message, 'error')]]);
+                return;
+            }
+
+            const loading = appendLine([token('loading site manifest...', 'muted')]);
+            manifestPromise.then(function() {
+                loading.remove();
+                if (manifestReady) {
+                    runCommand(value);
+                } else if (manifestError) {
+                    writeLines([[token('site data: ' + manifestError.message, 'error')]]);
+                }
+            });
             return;
         }
 

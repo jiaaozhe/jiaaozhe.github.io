@@ -535,7 +535,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (window.siteAI && typeof window.siteAI.answer === 'function') {
             setExpression('AI', 900);
-            streamAiLines(window.siteAI.answer(normalized));
+            Promise.resolve(window.siteAI.answer(normalized)).then(streamAiLines).catch(function(error) {
+                appendAiText('assistant', [error && error.message ? error.message : String(error)]);
+                setExpression('ERR', 1100);
+            });
             return;
         }
 

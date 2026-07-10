@@ -1,0 +1,76 @@
+<div class="cat-bot-wrap" data-cat-bot>
+    <button class="cat-bot" type="button" aria-label="打开机器人菜单" aria-expanded="false" aria-controls="cat-bot-menu" title="机器人菜单">
+        <div class="cat-bot-antenna"></div>
+        <div class="cat-bot-face">
+            <span class="cat-eye cat-eye-left"></span>
+            <span class="cat-eye cat-eye-right"></span>
+            <span class="cat-bot-expression">^_^</span>
+        </div>
+        <div class="cat-bot-tail"></div>
+    </button>
+    <div class="cat-bot-menu" id="cat-bot-menu" role="menu" aria-hidden="true">
+        <button type="button" data-cat-action="terminal" role="menuitem">Terminal</button>
+        <button type="button" data-cat-action="ask-ai" role="menuitem" aria-expanded="false">Ask AI</button>
+        {% if page.collection == 'uses' %}
+        <button type="button" data-cat-action="copy-use" role="menuitem">Copy config</button>
+        {% if page.official_url %}
+        <a href="{{ page.official_url }}" target="_blank" rel="noopener noreferrer" role="menuitem">Official site</a>
+        {% endif %}
+        {% endif %}
+        <a href="{{ '/status/' | relative_url }}" role="menuitem">Status</a>
+        <button type="button" data-cat-action="random" role="menuitem">Random post</button>
+    </div>
+    <section class="cat-ai-panel" data-cat-ai-panel role="dialog" aria-labelledby="cat-ai-title" aria-hidden="true" hidden>
+        <button class="cat-ai-resize" type="button" data-cat-ai-resize aria-label="调整 AI 面板大小" title="调整大小"></button>
+        <div class="cat-ai-header">
+            <div>
+                <h2 id="cat-ai-title">Ask AI</h2>
+                <span data-cat-ai-mode>demo mode</span>
+            </div>
+            <button class="cat-ai-close" type="button" data-cat-ai-close aria-label="关闭 AI 面板">&times;</button>
+        </div>
+        <div class="cat-ai-body">
+            <div class="cat-ai-output" data-cat-ai-output aria-live="polite">
+                <div class="cat-ai-message cat-ai-message-assistant">
+                    <p>可以问我文章、研究、工具配置和这个站点。</p>
+                </div>
+            </div>
+            <div class="cat-ai-suggestions" aria-label="AI demo questions">
+                <button type="button" data-cat-question="你是谁？">你是谁？</button>
+                <button type="button" data-cat-question="你有哪些文章？">有哪些文章？</button>
+                <button type="button" data-cat-question="有哪些摄影文章？">摄影？</button>
+                <button type="button" data-cat-question="你的研究方向是什么？">研究方向？</button>
+                <button type="button" data-cat-question="ghostty 配置是什么？">Ghostty?</button>
+                <button type="button" data-cat-ai-clear-chat>Clear chat</button>
+            </div>
+        </div>
+        <form class="cat-ai-form" data-cat-ai-form>
+            <label class="sr-only" for="cat-ai-input">Ask AI</label>
+            <input id="cat-ai-input" class="cat-ai-input" type="text" autocomplete="off" spellcheck="false" placeholder="Ask about this site">
+            <button class="cat-ai-submit" type="submit">Ask</button>
+        </form>
+        <details class="cat-ai-settings" data-cat-ai-settings>
+            <summary>Settings</summary>
+            <form class="cat-ai-config-form" data-cat-ai-config-form>
+                <label>
+                    <span>Base URL</span>
+                    <input type="url" name="baseUrl" placeholder="http://localhost:11434/v1" autocomplete="off" spellcheck="false">
+                </label>
+                <label>
+                    <span>API Key</span>
+                    <input type="password" name="apiKey" placeholder="optional for local models" autocomplete="off" spellcheck="false">
+                </label>
+                <label>
+                    <span>Model</span>
+                    <input type="text" name="model" placeholder="qwen2.5:7b" autocomplete="off" spellcheck="false">
+                </label>
+                <div class="cat-ai-config-actions">
+                    <button type="submit">Save</button>
+                    <button type="button" data-cat-ai-test>Test</button>
+                    <button type="button" data-cat-ai-clear>Clear</button>
+                </div>
+                <p data-cat-ai-config-status>Key stays in this browser.</p>
+            </form>
+        </details>
+    </section>
+</div>

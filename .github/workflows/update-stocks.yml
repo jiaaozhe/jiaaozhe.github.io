@@ -53,6 +53,12 @@ jobs:
       - name: Build Jekyll site
         run: bundle exec jekyll build
 
+      - name: Validate generated site
+        run: bundle exec ruby scripts/validate_site.rb
+
+      - name: Smoke test site AI
+        run: node scripts/smoke_site_ai.js
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:

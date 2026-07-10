@@ -172,8 +172,14 @@ permalink: /status/
         <div class="os-section-header" style="color: {{ group.color }}">{{ group.label }} <span class="header-sub">{{ group.display_label }}</span></div>
         <div class="os-components">
             {% for item in group.items %}
+            {% assign use_doc = site.uses | where: "slug", item.id | first %}
+            {% assign item_name = use_doc.title | default: item.name %}
+            {% assign item_url = use_doc.url | default: item.url %}
+            {% assign item_official_url = use_doc.official_url | default: item.official_url %}
+            {% assign item_version = use_doc.version | default: item.version %}
+            {% assign item_driver = use_doc.status | default: item.driver %}
             {% assign domain = '' %}
-            {% assign favicon_url = item.official_url | default: item.url %}
+            {% assign favicon_url = item_official_url | default: item_url %}
             {% if favicon_url contains "://" %}
             {% assign domain = favicon_url | remove: "https://" | remove: "http://" | split: "/" | first %}
             {% endif %}
@@ -183,23 +189,23 @@ permalink: /status/
                     <img class="component-favicon" src="https://www.google.com/s2/favicons?domain={{ domain }}&sz=32" alt="" loading="lazy">
                     {% endif %}
                     <div class="component-info">
-                        {% if item.url %}
-                        {% if item.url contains "://" %}
-                        <a href="{{ item.url }}" class="component-name" target="_blank" rel="noopener noreferrer">{{ item.name }}</a>
+                        {% if item_url %}
+                        {% if item_url contains "://" %}
+                        <a href="{{ item_url }}" class="component-name" target="_blank" rel="noopener noreferrer">{{ item_name }}</a>
                         {% else %}
-                        <a href="{{ item.url | relative_url }}" class="component-name">{{ item.name }}</a>
+                        <a href="{{ item_url | relative_url }}" class="component-name">{{ item_name }}</a>
                         {% endif %}
                         {% else %}
-                        <span class="component-name">{{ item.name }}</span>
+                        <span class="component-name">{{ item_name }}</span>
                         {% endif %}
-                        <span class="component-version">{{ item.version }}</span>
+                        <span class="component-version">{{ item_version }}</span>
                     </div>
                     <span class="component-led {{ item.status }}"></span>
                 </div>
                 <div class="component-params">
                     <span class="param"><span class="param-label">IO</span> {{ item.throughput }}</span>
                     <span class="param"><span class="param-label">LAT</span> {{ item.latency }}</span>
-                    <span class="param"><span class="param-label">DRV</span> {{ item.driver }}</span>
+                    <span class="param"><span class="param-label">DRV</span> {{ item_driver }}</span>
                 </div>
                 {% if item.desc %}
                 <div class="component-desc">{{ item.desc }}</div>

@@ -1,8 +1,9 @@
 ---
 layout: null
-permalink: /site-page-content.json
+permalink: /site-content.json
 ---
 {
+  "schema": 1,
   "version": {{ site.time | date_to_xmlschema | jsonify }},
   "pages": {
     {% assign first_item = true %}

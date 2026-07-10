@@ -23,7 +23,7 @@ permalink: /fragments/
 
 <section class="fragment-stream" aria-label="碎片流列表">
     {% for fragment in fragments %}
-    <article class="fragment-item" data-fragment-item data-fragment-type="{{ fragment.type | escape }}">
+    <article id="{{ fragment.slug }}" class="fragment-item" data-fragment-item data-fragment-type="{{ fragment.type | escape }}">
         <time class="fragment-date" datetime="{{ fragment.date }}">{{ fragment.date | date: "%Y.%m.%d" }}</time>
         <div class="fragment-content">
             {{ fragment.content }}

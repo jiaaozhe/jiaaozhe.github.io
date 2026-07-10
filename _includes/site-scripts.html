@@ -1,0 +1,8 @@
+<script src="{{ '/assets/js/site-data.js' | relative_url }}?v={{ site.time | date: '%s' }}"></script>
+<script src="{{ '/assets/js/site-ai.js' | relative_url }}?v={{ site.time | date: '%s' }}"></script>
+<script src="{{ '/assets/js/terminal.js' | relative_url }}?v={{ site.time | date: '%s' }}"></script>
+<script src="{{ '/assets/js/script.js' | relative_url }}?v={{ site.time | date: '%s' }}"></script>
+<script src="{{ '/assets/js/cat-bot.js' | relative_url }}?v={{ site.time | date: '%s' }}"></script>
+{% if page.collection == 'posts' %}
+<script src="{{ '/assets/js/post-toc.js' | relative_url }}?v={{ site.time | date: '%s' }}"></script>
+{% endif %}

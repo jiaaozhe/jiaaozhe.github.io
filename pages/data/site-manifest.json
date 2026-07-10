@@ -1,68 +1,87 @@
 ---
 layout: null
-permalink: /site-page-index.json
+permalink: /site-manifest.json
 ---
 {
+  "schema": 1,
   "version": {{ site.time | date_to_xmlschema | jsonify }},
   "profile": {
     "name": "jiaaozhe",
     "title": {{ site.title | jsonify }},
     "description": {{ site.description | jsonify }},
     "focus": "Multimodal Representation / Automation",
-    "research": "Unified multimodal understanding, contrastive learning, and applied automation.",
-    "sections": [
-      { "title": "博客文章", "url": {{ "/posts/" | relative_url | jsonify }} },
-      { "title": "摄影", "url": {{ "/photos/" | relative_url | jsonify }} },
-      { "title": "碎片流", "url": {{ "/fragments/" | relative_url | jsonify }} },
-      { "title": "学术研究", "url": {{ "/research/" | relative_url | jsonify }} },
-      { "title": "工具配置", "url": {{ "/uses/ghostty/" | relative_url | jsonify }} }
-    ]
+    "research": "Unified multimodal understanding, contrastive learning, and applied automation."
   },
-  "pages": [
+  "terminal": {
+    "user": {{ site.terminal_user | default: "jiaaozhe" | jsonify }},
+    "host": {{ site.terminal_host | default: "site" | jsonify }}
+  },
+  "sections": [
+    { "name": "posts", "title": "文章", "url": {{ "/posts/" | relative_url | jsonify }}, "types": ["post"] },
+    { "name": "fragments", "title": "碎片流", "url": {{ "/fragments/" | relative_url | jsonify }}, "types": ["fragment"] },
+    { "name": "photos", "title": "摄影", "url": {{ "/photos/" | relative_url | jsonify }}, "types": ["photo"] },
+    { "name": "research", "title": "学术研究", "url": {{ "/research/" | relative_url | jsonify }}, "types": ["publication"] },
+    { "name": "uses", "title": "工具配置", "url": {{ "/status/" | relative_url | jsonify }}, "types": ["use"] }
+  ],
+  "routes": [
     {% assign first_item = true %}
     {% for page_item in site.pages %}
     {% unless page_item.path contains ".json" or page_item.path contains ".xml" or page_item.path contains "404" %}
     {% unless first_item %},{% endunless %}
     {% assign first_item = false %}
+    {% assign page_name = page_item.name | split: "." | first %}
+    {% if page_item.url == "/" %}{% assign page_name = "home" %}{% endif %}
     {
       "id": {{ page_item.url | relative_url | jsonify }},
       "type": "page",
+      "name": {{ page_name | jsonify }},
       "title": {{ page_item.title | default: page_item.name | jsonify }},
       "url": {{ page_item.url | relative_url | jsonify }},
       "date": "",
       "summary": {{ page_item.description | default: page_item.excerpt | default: page_item.content | strip_html | strip | truncate: 180 | jsonify }},
       "tags": [],
-      "headings": []
+      "source_path": {{ page_item.path | jsonify }},
+      "raw_url": "",
+      "size": {{ page_item.content | size }}
     }
     {% endunless %}
     {% endfor %}
     {% for post in site.posts %}
+    {% assign raw_branch = site.raw_branch | default: "main" %}
+    {% assign raw_url = "https://raw.githubusercontent.com/" | append: site.source_repository | append: "/" | append: raw_branch | append: "/" | append: post.path %}
     {% unless first_item %},{% endunless %}
     {% assign first_item = false %}
     {
       "id": {{ post.url | relative_url | jsonify }},
       "type": "post",
+      "name": {{ post.slug | append: ".md" | jsonify }},
       "title": {{ post.title | jsonify }},
       "url": {{ post.url | relative_url | jsonify }},
       "date": {{ post.date | date: "%Y-%m-%d" | jsonify }},
       "summary": {{ post.excerpt | strip_html | strip | truncate: 220 | jsonify }},
       "tags": {{ post.categories | jsonify }},
-      "headings": []
+      "source_path": {{ post.path | jsonify }},
+      "raw_url": {{ raw_url | jsonify }},
+      "size": {{ post.content | size }}
     }
     {% endfor %}
     {% assign fragments = site.fragments | sort: "date" | reverse %}
     {% for fragment in fragments %}
+    {% assign fragment_id = "/fragments/#" | append: fragment.slug | relative_url %}
     {% unless first_item %},{% endunless %}
     {% assign first_item = false %}
     {
-      "id": {{ "/fragments/#" | append: fragment.slug | relative_url | jsonify }},
+      "id": {{ fragment_id | jsonify }},
       "type": "fragment",
+      "name": {{ fragment.slug | jsonify }},
       "title": {{ fragment.title | default: fragment.type | default: "碎片" | jsonify }},
-      "url": {{ "/fragments/" | relative_url | jsonify }},
+      "url": {{ fragment_id | jsonify }},
       "date": {{ fragment.date | date: "%Y-%m-%d" | jsonify }},
       "summary": {{ fragment.content | strip_html | strip | truncate: 180 | jsonify }},
       "tags": [{{ fragment.type | default: "碎片" | jsonify }}],
-      "headings": []
+      "source_path": {{ fragment.path | jsonify }},
+      "raw_url": "",
+      "size": {{ fragment.content | size }}
     }
     {% endfor %}
     {% for photo in site.photos %}
@@ -71,12 +90,15 @@ permalink: /site-page-index.json
     {
       "id": {{ photo.url | relative_url | jsonify }},
       "type": "photo",
+      "name": {{ photo.slug | jsonify }},
       "title": {{ photo.title | jsonify }},
       "url": {{ photo.url | relative_url | jsonify }},
       "date": {{ photo.date | date: "%Y-%m-%d" | jsonify }},
       "summary": {{ photo.summary | default: photo.content | strip_html | strip | truncate: 220 | jsonify }},
       "tags": {{ photo.tags | default: empty | jsonify }},
-      "headings": []
+      "source_path": {{ photo.path | jsonify }},
+      "raw_url": "",
+      "size": {{ photo.content | size }}
     }
     {% endfor %}
     {% for use in site.uses %}
@@ -85,12 +107,15 @@ permalink: /site-page-index.json
     {
       "id": {{ use.url | relative_url | jsonify }},
       "type": "use",
+      "name": {{ use.slug | jsonify }},
       "title": {{ use.title | jsonify }},
       "url": {{ use.url | relative_url | jsonify }},
       "date": "",
       "summary": {{ use.summary | default: use.content | strip_html | strip | truncate: 220 | jsonify }},
       "tags": ["uses"],
-      "headings": []
+      "source_path": {{ use.path | jsonify }},
+      "raw_url": "",
+      "size": {{ use.content | size }}
     }
     {% endfor %}
     {% for publication in site.publications %}
@@ -99,12 +124,15 @@ permalink: /site-page-index.json
     {
       "id": {{ publication.url | relative_url | jsonify }},
       "type": "publication",
+      "name": {{ publication.slug | jsonify }},
       "title": {{ publication.title | jsonify }},
       "url": {{ publication.url | relative_url | jsonify }},
       "date": {{ publication.year | default: "" | jsonify }},
       "summary": {{ publication.abstract | default: publication.content | strip_html | strip | truncate: 220 | jsonify }},
       "tags": ["research"],
-      "headings": []
+      "source_path": {{ publication.path | jsonify }},
+      "raw_url": "",
+      "size": {{ publication.content | size }}
     }
     {% endfor %}
   ]
