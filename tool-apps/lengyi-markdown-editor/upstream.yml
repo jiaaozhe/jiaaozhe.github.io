@@ -1,0 +1,11 @@
+repository: https://github.com/woyin2024/lengyi-markdown-editor
+commit: 0f437e23d3eeb5886b6f0ce561d15f281fdc73d9
+license: MIT
+author: 冷逸 / 沃垠AI
+adapted: true
+original_sha256:
+  index.html: bcc11e5f24ca3fea189979f997b02d1dbab17f6ca2c01d5bcc85ba230a866ed9
+  i18n.js: 39178b80e1c23d99b6ac77a261026d8ddfd247ea7129b864fe9aa45546168105
+  LICENSE: f57b0ec9d13a4228a8cc7feca8551ad980cfebe1157e50eb60926c3f15001e73
+  preview.png: efe04cc928593b4de65bb131cef16a238eba5a2c78100c2313273f4d464d6d6b
+  web-to-md-proxy.py: 2282a47481f0a6329b26e76dff6b542d821a908695348de8253e1f1097a1334c

@@ -38,6 +38,12 @@ async function main() {
     }));
     assert.equal(contentReads, 0, 'catalog questions must not load page content');
 
+    const tools = await window.siteAI.answerAsync('有哪些小工具？');
+    assert(tools.some(function(line) {
+        return line.includes('Markdown 编辑器');
+    }));
+    assert.equal(contentReads, 0, 'tool catalog questions must not load page content');
+
     const ghostty = await window.siteAI.answerAsync('ghostty 配置是什么？');
     assert(ghostty.some(function(line) {
         return line.includes('font-family = CaskaydiaMono Nerd Font Mono');

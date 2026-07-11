@@ -84,5 +84,16 @@ permalink: /site-content.json
       "content": {{ publication.abstract | default: publication.content | markdownify | strip_html | strip | jsonify }}
     }
     {% endfor %}
+    {% for tool in site.tools %}
+    {% unless first_item %},{% endunless %}
+    {% assign first_item = false %}
+    {{ tool.url | relative_url | jsonify }}: {
+      "id": {{ tool.url | relative_url | jsonify }},
+      "type": "tool",
+      "title": {{ tool.title | jsonify }},
+      "url": {{ tool.url | relative_url | jsonify }},
+      "content": {{ tool.summary | append: "\n" | append: tool.content | markdownify | strip_html | strip | jsonify }}
+    }
+    {% endfor %}
   }
 }

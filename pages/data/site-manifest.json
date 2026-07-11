@@ -21,6 +21,7 @@ permalink: /site-manifest.json
     { "name": "fragments", "title": "碎片流", "url": {{ "/fragments/" | relative_url | jsonify }}, "types": ["fragment"] },
     { "name": "photos", "title": "摄影", "url": {{ "/photos/" | relative_url | jsonify }}, "types": ["photo"] },
     { "name": "research", "title": "学术研究", "url": {{ "/research/" | relative_url | jsonify }}, "types": ["publication"] },
+    { "name": "tools", "title": "工具", "url": {{ "/tools/" | relative_url | jsonify }}, "types": ["tool"] },
     { "name": "uses", "title": "工具配置", "url": {{ "/status/" | relative_url | jsonify }}, "types": ["use"] }
   ],
   "routes": [
@@ -133,6 +134,23 @@ permalink: /site-manifest.json
       "source_path": {{ publication.path | jsonify }},
       "raw_url": "",
       "size": {{ publication.content | size }}
+    }
+    {% endfor %}
+    {% for tool in site.tools %}
+    {% unless first_item %},{% endunless %}
+    {% assign first_item = false %}
+    {
+      "id": {{ tool.url | relative_url | jsonify }},
+      "type": "tool",
+      "name": {{ tool.slug | jsonify }},
+      "title": {{ tool.title | jsonify }},
+      "url": {{ tool.url | relative_url | jsonify }},
+      "date": {{ tool.updated | default: "" | date: "%Y-%m-%d" | jsonify }},
+      "summary": {{ tool.summary | default: tool.content | strip_html | strip | truncate: 220 | jsonify }},
+      "tags": {{ tool.tags | default: empty | jsonify }},
+      "source_path": {{ tool.path | jsonify }},
+      "raw_url": "",
+      "size": {{ tool.content | size }}
     }
     {% endfor %}
   ]

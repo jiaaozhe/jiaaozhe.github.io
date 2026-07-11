@@ -59,6 +59,9 @@ jobs:
       - name: Smoke test site AI
         run: node scripts/smoke_site_ai.js
 
+      - name: Smoke test sandbox tool runtime
+        run: node scripts/smoke_tool_runtime.js
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:

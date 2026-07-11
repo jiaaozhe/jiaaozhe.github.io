@@ -30,6 +30,9 @@ collections:
   uses:
     output: true
     permalink: /uses/:title/
+  tools:
+    output: true
+    permalink: /tools/:title/
   fragments:
     output: false
 
@@ -55,6 +58,11 @@ defaults:
       type: "uses"
     values:
       layout: "use"
+  - scope:
+      path: ""
+      type: "tools"
+    values:
+      layout: "tool"
 
 # Exclude from processing
 exclude:

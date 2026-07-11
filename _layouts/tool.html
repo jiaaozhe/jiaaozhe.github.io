@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-site-baseurl="{{ site.baseurl }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        (function() {
+            const saved = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.documentElement.setAttribute('data-theme', saved || (prefersDark ? 'dark' : 'light'));
+        })();
+    </script>
+    <title>{{ page.title }} - {{ site.title }}</title>
+    <meta name="description" content="{{ page.summary | escape }}">
+    <link rel="icon" type="image/svg+xml" href="{{ '/favicon.svg' | relative_url }}">
+    <link rel="stylesheet" href="{{ '/assets/css/tool-runner.css' | relative_url }}?v={{ site.time | date: '%s' }}">
+</head>
+<body class="tool-runner-page">
+    <header class="tool-runner-bar">
+        <a class="tool-runner-back" href="{{ '/tools/' | relative_url }}"><span aria-hidden="true">←</span> 工具</a>
+        <div class="tool-runner-identity">
+            <span class="tool-runner-dot" data-state="loading"></span>
+            <div>
+                <strong>{{ page.title }}</strong>
+                <span data-tool-status aria-live="polite">正在建立隔离环境</span>
+            </div>
+        </div>
+        <div class="tool-runner-actions">
+            <a href="{{ page.source_url }}" target="_blank" rel="noopener noreferrer">源码</a>
+            <button type="button" data-tool-fullscreen aria-label="全屏显示工具" title="全屏">⛶</button>
+        </div>
+    </header>
+
+    <main class="tool-runner-stage" data-tool-stage>
+        <div class="tool-runner-loading" data-tool-loading>
+            <span></span>
+            <p>Loading {{ page.title }}</p>
+        </div>
+        {% assign capabilities = page.capabilities | default: empty %}
+        <iframe
+            data-tool-frame
+            title="{{ page.title | escape }}"
+            sandbox="allow-scripts{% if capabilities contains 'downloads' %} allow-downloads{% endif %}{% if capabilities contains 'modals' %} allow-modals{% endif %}{% if capabilities contains 'forms' %} allow-forms{% endif %}"
+            {% if capabilities contains 'fullscreen' %}allow="fullscreen" allowfullscreen{% endif %}
+            referrerpolicy="no-referrer"
+        ></iframe>
+        <section class="tool-runner-error" data-tool-error hidden>
+            <h1>工具未能启动</h1>
+            <p data-tool-error-message>无法加载运行文件。</p>
+            <button type="button" data-tool-retry>重试</button>
+        </section>
+    </main>
+
+    <script type="application/json" id="tool-runner-config">
+        {
+            "id": {{ page.slug | jsonify }},
+            "title": {{ page.title | jsonify }},
+            "entry": {{ page.entry | relative_url | jsonify }},
+            "storage": {{ page.storage | jsonify }},
+            "capabilities": {{ page.capabilities | jsonify }}
+        }
+    </script>
+    <script src="{{ '/assets/js/tool-runner.js' | relative_url }}?v={{ site.time | date: '%s' }}"></script>
+</body>
+</html>

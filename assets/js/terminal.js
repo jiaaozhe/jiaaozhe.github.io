@@ -81,6 +81,7 @@ document.addEventListener('DOMContentLoaded', function() {
             { name: 'fragments', title: '碎片流', url: '/fragments/', types: ['fragment'] },
             { name: 'photos', title: '摄影', url: '/photos/', types: ['photo'] },
             { name: 'research', title: '学术研究', url: '/research/', types: ['publication'] },
+            { name: 'tools', title: '工具', url: '/tools/', types: ['tool'] },
             { name: 'uses', title: '工具', url: '/status/', types: ['use'] }
         ];
         const sections = Array.isArray(data.sections) && data.sections.length ? data.sections : defaultSections;
@@ -589,7 +590,7 @@ document.addEventListener('DOMContentLoaded', function() {
             '  ask <question>       ask the site AI',
             '',
             'SHORTCUTS',
-            '  posts photos fragments research status about ghostty',
+            '  posts photos fragments research tools status about ghostty',
             '  ll la .. home cls',
             '',
             'TOOLS',
@@ -1482,7 +1483,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function completeCommand() {
         const value = input.value;
-        const commandNames = ['help', 'man', 'pwd', 'ls', 'tree', 'cd', 'open', 'cat', 'less', 'grep', 'find', 'ask', 'clear', 'random', 'whoami', 'date', 'uname', 'll', 'la', '..', 'home', 'cls', 'posts', 'photos', 'fragments', 'research', 'status', 'about', 'ghostty'];
+        const commandNames = ['help', 'man', 'pwd', 'ls', 'tree', 'cd', 'open', 'cat', 'less', 'grep', 'find', 'ask', 'clear', 'random', 'whoami', 'date', 'uname', 'll', 'la', '..', 'home', 'cls', 'posts', 'photos', 'fragments', 'research', 'tools', 'status', 'about', 'ghostty'];
         const parts = value.trimStart().split(/\s+/);
         const command = parts[0] || '';
 

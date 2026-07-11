@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require "date"
+require "digest"
 require "json"
 require "pathname"
 require "yaml"
@@ -50,7 +51,7 @@ end
 sections = manifest["sections"] || []
 routes = manifest["routes"] || []
 content_pages = content["pages"] || {}
-allowed_types = %w[page post fragment photo use publication]
+allowed_types = %w[page post fragment photo use publication tool]
 
 check.call(sections.is_a?(Array) && !sections.empty?, "manifest sections must be a non-empty array")
 check.call(routes.is_a?(Array) && !routes.empty?, "manifest routes must be a non-empty array")
@@ -132,7 +133,8 @@ requirements = {
   "content/_fragments" => %w[date type],
   "content/_photos" => %w[title date photos],
   "content/_publications" => %w[title authors venue year abstract],
-  "content/_uses" => %w[title version role status official_url summary]
+  "content/_uses" => %w[title version role status official_url summary],
+  "content/_tools" => %w[title summary category status runtime entry source_url license upstream_commit storage capabilities]
 }
 
 requirements.each do |directory, keys|
@@ -143,6 +145,80 @@ requirements.each do |directory, keys|
       present = value.is_a?(Array) ? !value.empty? : !value.nil? && value.to_s != ""
       check.call(present, "#{path.relative_path_from(ROOT)} requires #{key}")
     end
+  end
+end
+
+allowed_tool_capabilities = %w[scripts downloads modals fullscreen forms]
+ROOT.join("content/_tools").glob("*.md").each do |path|
+  data = front_matter(path, errors)
+  slug = path.basename(".md").to_s
+  entry = data["entry"].to_s.sub(%r{\A/}, "")
+  app_dir = ROOT.join(entry)
+  app_index = app_dir.directory? ? app_dir.join("index.html") : app_dir
+  capabilities = data["capabilities"] || []
+  network_hosts = data["network"] || []
+
+  check.call(capabilities.is_a?(Array), "tool #{slug} capabilities must be an array")
+  capabilities = [] unless capabilities.is_a?(Array)
+  check.call(network_hosts.is_a?(Array), "tool #{slug} network must be an array")
+  network_hosts = [] unless network_hosts.is_a?(Array)
+
+  check.call(data["runtime"] == "sandbox", "tool #{slug} must use sandbox runtime")
+  check.call(data["storage"] == "bridged", "tool #{slug} must use bridged storage")
+  check.call(capabilities.include?("scripts"), "tool #{slug} must declare scripts capability")
+  unknown_capabilities = capabilities - allowed_tool_capabilities
+  check.call(unknown_capabilities.empty?, "tool #{slug} has unknown capabilities: #{unknown_capabilities.join(', ')}")
+  check.call(!capabilities.include?("same-origin"), "tool #{slug} must not request same-origin")
+  check.call(data["upstream_commit"].to_s.match?(/\A[0-9a-f]{40}\z/), "tool #{slug} must pin a full upstream commit")
+  check.call(app_index.file?, "tool #{slug} entry does not exist: #{app_index.relative_path_from(ROOT)}")
+  check.call(app_dir.join("LICENSE").file?, "tool #{slug} must include LICENSE")
+  check.call(app_dir.join("upstream.yml").file?, "tool #{slug} must include upstream.yml")
+
+  if app_dir.join("upstream.yml").file?
+    upstream = YAML.safe_load(app_dir.join("upstream.yml").read, aliases: true) || {}
+    check.call(upstream["commit"] == data["upstream_commit"], "tool #{slug} upstream commit metadata differs")
+    check.call(upstream["license"] == data["license"], "tool #{slug} license metadata differs")
+    (upstream["original_sha256"] || {}).each do |name, expected|
+      next if name == "index.html"
+      vendored_file = app_dir.join(name)
+      check.call(vendored_file.file?, "tool #{slug} is missing vendored file #{name}")
+      if vendored_file.file?
+        actual = Digest::SHA256.file(vendored_file).hexdigest
+        check.call(actual == expected, "tool #{slug} vendored file changed unexpectedly: #{name}")
+      end
+    end
+  end
+
+  thumbnail = data["thumbnail"].to_s.sub(%r{\A/}, "")
+  check.call(ROOT.join(thumbnail).file?, "tool #{slug} thumbnail does not exist")
+
+  if app_index.file?
+    source = app_index.read
+    check.call(source.include?("Content-Security-Policy"), "tool #{slug} must define a CSP")
+    check.call(source.include?("tool-runtime.js"), "tool #{slug} must load tool-runtime.js")
+    check.call(!source.include?("localStorage"), "tool #{slug} must not access localStorage directly")
+    check.call(source.include?("DOMPurify.sanitize"), "tool #{slug} must sanitize rendered HTML")
+    check.call(source.include?("securityLevel: 'strict'"), "tool #{slug} must use strict Mermaid security")
+    check.call(!source.include?("npm/marked/marked.min.js"), "tool #{slug} uses an unpinned Marked dependency")
+    check.call(!source.include?("npm/mermaid@10/dist"), "tool #{slug} uses an unpinned Mermaid dependency")
+    cdn_tags = source.scan(%r{<(?:script|link)\b[^>]*(?:src|href)="https://cdn\.jsdelivr\.net/[^"]+"[^>]*>})
+    cdn_tags.each do |tag|
+      check.call(tag.include?('integrity="sha384-'), "tool #{slug} CDN asset is missing SHA-384 integrity")
+      check.call(tag.include?('crossorigin="anonymous"'), "tool #{slug} CDN asset is missing anonymous CORS")
+    end
+    network_hosts.each do |host|
+      check.call(source.include?("https://#{host}"), "tool #{slug} CSP does not allow declared host #{host}")
+    end
+  end
+
+  runner = SITE.join("tools", slug, "index.html")
+  check.call(runner.file?, "tool #{slug} runner was not generated")
+  if runner.file?
+    runner_html = runner.read
+    sandbox = runner_html[/sandbox="([^"]*)"/, 1].to_s
+    check.call(sandbox.include?("allow-scripts"), "tool #{slug} runner must allow scripts")
+    check.call(!sandbox.include?("allow-same-origin"), "tool #{slug} runner must omit allow-same-origin")
+    check.call(!runner_html.include?("cat-bot.js"), "tool #{slug} runner must not load global site interactions")
   end
 end
 
