@@ -42,6 +42,9 @@ async function main() {
     assert(tools.some(function(line) {
         return line.includes('Markdown 编辑器');
     }));
+    assert(tools.some(function(line) {
+        return line.includes('图像工作台');
+    }));
     assert.equal(contentReads, 0, 'tool catalog questions must not load page content');
 
     const ghostty = await window.siteAI.answerAsync('ghostty 配置是什么？');

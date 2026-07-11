@@ -62,6 +62,9 @@ jobs:
       - name: Smoke test sandbox tool runtime
         run: node scripts/smoke_tool_runtime.js
 
+      - name: Smoke test image workbench
+        run: node scripts/smoke_image_workbench.js
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:

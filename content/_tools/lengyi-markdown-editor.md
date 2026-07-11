@@ -7,6 +7,7 @@ runtime: sandbox
 entry: /tool-apps/lengyi-markdown-editor/
 thumbnail: /tool-apps/lengyi-markdown-editor/preview.png
 source_url: https://github.com/woyin2024/lengyi-markdown-editor
+provenance: vendored
 license: MIT
 author: 冷逸 / 沃垠AI
 upstream_commit: 0f437e23d3eeb5886b6f0ce561d15f281fdc73d9

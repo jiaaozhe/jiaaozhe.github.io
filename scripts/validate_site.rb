@@ -134,7 +134,7 @@ requirements = {
   "content/_photos" => %w[title date photos],
   "content/_publications" => %w[title authors venue year abstract],
   "content/_uses" => %w[title version role status official_url summary],
-  "content/_tools" => %w[title summary category status runtime entry source_url license upstream_commit storage capabilities]
+  "content/_tools" => %w[title summary category status runtime entry source_url provenance storage capabilities]
 }
 
 requirements.each do |directory, keys|
@@ -157,6 +157,7 @@ ROOT.join("content/_tools").glob("*.md").each do |path|
   app_index = app_dir.directory? ? app_dir.join("index.html") : app_dir
   capabilities = data["capabilities"] || []
   network_hosts = data["network"] || []
+  provenance = data["provenance"].to_s
 
   check.call(capabilities.is_a?(Array), "tool #{slug} capabilities must be an array")
   capabilities = [] unless capabilities.is_a?(Array)
@@ -165,16 +166,22 @@ ROOT.join("content/_tools").glob("*.md").each do |path|
 
   check.call(data["runtime"] == "sandbox", "tool #{slug} must use sandbox runtime")
   check.call(data["storage"] == "bridged", "tool #{slug} must use bridged storage")
+  check.call(data["source_url"].to_s.start_with?("https://"), "tool #{slug} source_url must use HTTPS")
+  check.call(%w[native vendored].include?(provenance), "tool #{slug} must declare native or vendored provenance")
   check.call(capabilities.include?("scripts"), "tool #{slug} must declare scripts capability")
   unknown_capabilities = capabilities - allowed_tool_capabilities
   check.call(unknown_capabilities.empty?, "tool #{slug} has unknown capabilities: #{unknown_capabilities.join(', ')}")
   check.call(!capabilities.include?("same-origin"), "tool #{slug} must not request same-origin")
-  check.call(data["upstream_commit"].to_s.match?(/\A[0-9a-f]{40}\z/), "tool #{slug} must pin a full upstream commit")
   check.call(app_index.file?, "tool #{slug} entry does not exist: #{app_index.relative_path_from(ROOT)}")
-  check.call(app_dir.join("LICENSE").file?, "tool #{slug} must include LICENSE")
-  check.call(app_dir.join("upstream.yml").file?, "tool #{slug} must include upstream.yml")
 
-  if app_dir.join("upstream.yml").file?
+  if provenance == "vendored"
+    check.call(data["license"].to_s != "", "vendored tool #{slug} must declare a license")
+    check.call(data["upstream_commit"].to_s.match?(/\A[0-9a-f]{40}\z/), "tool #{slug} must pin a full upstream commit")
+    check.call(app_dir.join("LICENSE").file?, "tool #{slug} must include LICENSE")
+    check.call(app_dir.join("upstream.yml").file?, "tool #{slug} must include upstream.yml")
+  end
+
+  if provenance == "vendored" && app_dir.join("upstream.yml").file?
     upstream = YAML.safe_load(app_dir.join("upstream.yml").read, aliases: true) || {}
     check.call(upstream["commit"] == data["upstream_commit"], "tool #{slug} upstream commit metadata differs")
     check.call(upstream["license"] == data["license"], "tool #{slug} license metadata differs")
@@ -189,6 +196,39 @@ ROOT.join("content/_tools").glob("*.md").each do |path|
     end
   end
 
+  dependencies_path = app_dir.join("dependencies.yml")
+  check.call(dependencies_path.file?, "tool #{slug} vendor directory requires dependencies.yml") if app_dir.join("vendor").directory?
+  if dependencies_path.file?
+    dependencies = YAML.safe_load(dependencies_path.read, aliases: true) || {}
+    dependency_list = dependencies["dependencies"] || []
+    dependency_hashes = dependencies["sha256"] || {}
+    check.call(dependency_list.is_a?(Array) && !dependency_list.empty?, "tool #{slug} dependencies must be a non-empty array")
+    dependency_list = [] unless dependency_list.is_a?(Array)
+    dependency_list.each do |dependency|
+      unless dependency.is_a?(Hash)
+        check.call(false, "tool #{slug} dependency entries must be objects")
+        next
+      end
+      %w[name version license source].each do |key|
+        check.call(dependency[key].to_s != "", "tool #{slug} dependency requires #{key}")
+      end
+    end
+    check.call(dependency_hashes.is_a?(Hash) && !dependency_hashes.empty?, "tool #{slug} dependencies require SHA-256 hashes")
+    dependency_hashes = {} unless dependency_hashes.is_a?(Hash)
+    dependency_hashes.each do |name, expected|
+      relative = Pathname.new(name.to_s)
+      safe_path = !relative.absolute? && !relative.each_filename.include?("..")
+      check.call(safe_path, "tool #{slug} dependency path is unsafe: #{name}")
+      next unless safe_path
+      vendored_file = app_dir.join(relative)
+      check.call(vendored_file.file?, "tool #{slug} dependency is missing: #{name}")
+      if vendored_file.file?
+        actual = Digest::SHA256.file(vendored_file).hexdigest
+        check.call(actual == expected, "tool #{slug} dependency changed unexpectedly: #{name}")
+      end
+    end
+  end
+
   thumbnail = data["thumbnail"].to_s.sub(%r{\A/}, "")
   check.call(ROOT.join(thumbnail).file?, "tool #{slug} thumbnail does not exist")
 
@@ -197,8 +237,12 @@ ROOT.join("content/_tools").glob("*.md").each do |path|
     check.call(source.include?("Content-Security-Policy"), "tool #{slug} must define a CSP")
     check.call(source.include?("tool-runtime.js"), "tool #{slug} must load tool-runtime.js")
     check.call(!source.include?("localStorage"), "tool #{slug} must not access localStorage directly")
-    check.call(source.include?("DOMPurify.sanitize"), "tool #{slug} must sanitize rendered HTML")
-    check.call(source.include?("securityLevel: 'strict'"), "tool #{slug} must use strict Mermaid security")
+    if source.include?("marked.parse")
+      check.call(source.include?("DOMPurify.sanitize"), "tool #{slug} must sanitize rendered Markdown HTML")
+    end
+    if source.include?("mermaid.initialize")
+      check.call(source.include?("securityLevel: 'strict'"), "tool #{slug} must use strict Mermaid security")
+    end
     check.call(!source.include?("npm/marked/marked.min.js"), "tool #{slug} uses an unpinned Marked dependency")
     check.call(!source.include?("npm/mermaid@10/dist"), "tool #{slug} uses an unpinned Mermaid dependency")
     cdn_tags = source.scan(%r{<(?:script|link)\b[^>]*(?:src|href)="https://cdn\.jsdelivr\.net/[^"]+"[^>]*>})
@@ -208,6 +252,9 @@ ROOT.join("content/_tools").glob("*.md").each do |path|
     end
     network_hosts.each do |host|
       check.call(source.include?("https://#{host}"), "tool #{slug} CSP does not allow declared host #{host}")
+    end
+    if network_hosts.empty?
+      check.call(source.include?("connect-src 'none'"), "offline tool #{slug} must disable outbound connections")
     end
   end
 

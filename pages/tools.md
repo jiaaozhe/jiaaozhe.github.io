@@ -46,7 +46,7 @@ permalink: /tools/
             <div class="tool-card-body">
                 <div class="tool-card-meta">
                     <span>{{ tool.category }}</span>
-                    <span>{{ tool.license }}</span>
+                    {% if tool.provenance == "native" %}<span>原生</span>{% else %}<span>{{ tool.license }}</span>{% endif %}
                 </div>
                 <h2><a href="{{ tool.url | relative_url }}">{{ tool.title }}</a></h2>
                 <p>{{ tool.summary }}</p>

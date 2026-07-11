@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'none'; font-src 'none'; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; worker-src 'none'">
+    <title>图像工作台</title>
+    <link rel="stylesheet" href="vendor/cropper.min.css">
+    <link rel="stylesheet" href="app.css">
+</head>
+<body>
+    <div class="workbench" data-workbench>
+        <header class="command-bar">
+            <div class="workbench-mark" aria-label="图像工作台">
+                <span class="mark-block" aria-hidden="true"></span>
+                <span>IMAGE / LOCAL</span>
+            </div>
+
+            <button class="command-button command-button-primary" type="button" data-add-images>
+                <i data-lucide="image-plus" aria-hidden="true"></i>
+                <span>添加图片</span>
+            </button>
+            <input type="file" data-file-input accept="image/jpeg,image/png,image/webp" multiple hidden>
+
+            <span class="command-divider" aria-hidden="true"></span>
+            <button class="icon-button" type="button" data-undo aria-label="撤销" title="撤销" disabled>
+                <i data-lucide="undo-2" aria-hidden="true"></i>
+            </button>
+            <button class="icon-button" type="button" data-redo aria-label="重做" title="重做" disabled>
+                <i data-lucide="redo-2" aria-hidden="true"></i>
+            </button>
+
+            <div class="scope-control" role="group" aria-label="设置作用范围">
+                <button type="button" data-scope="current" aria-pressed="true">当前</button>
+                <button type="button" data-scope="selected" aria-pressed="false">选中</button>
+                <button type="button" data-scope="all" aria-pressed="false">全部</button>
+            </div>
+
+            <div class="command-spacer"></div>
+            <span class="local-status"><span aria-hidden="true"></span>本地处理</span>
+            <button class="command-button" type="button" data-preview-result disabled>
+                <i data-lucide="scan-eye" aria-hidden="true"></i>
+                <span>结果预览</span>
+            </button>
+            <button class="command-button command-button-export" type="button" data-export disabled>
+                <i data-lucide="download" aria-hidden="true"></i>
+                <span>导出</span>
+            </button>
+        </header>
+
+        <main class="workbench-grid">
+            <aside class="asset-panel" aria-label="图片队列">
+                <header class="panel-heading">
+                    <div>
+                        <span class="panel-label">图片</span>
+                        <strong data-asset-count>0</strong>
+                    </div>
+                    <button class="icon-button" type="button" data-add-images aria-label="添加图片" title="添加图片">
+                        <i data-lucide="plus" aria-hidden="true"></i>
+                    </button>
+                </header>
+                <label class="select-row">
+                    <input type="checkbox" data-select-all disabled>
+                    <span>全部选择</span>
+                    <span data-selected-count>0</span>
+                </label>
+                <div class="asset-list" data-asset-list></div>
+                <div class="asset-panel-empty" data-queue-empty>
+                    <i data-lucide="images" aria-hidden="true"></i>
+                    <span>JPEG · PNG · WebP</span>
+                </div>
+                <footer class="asset-panel-footer">
+                    <span data-session-size>0 B</span>
+                    <button class="icon-button" type="button" data-remove-selected aria-label="移除选中的图片" title="移除选中" disabled>
+                        <i data-lucide="trash-2" aria-hidden="true"></i>
+                    </button>
+                </footer>
+            </aside>
+
+            <section class="canvas-panel" data-drop-zone>
+                <header class="canvas-toolbar">
+                    <div class="active-file">
+                        <span data-active-name>未选择图片</span>
+                        <small data-active-meta>--</small>
+                    </div>
+                    <div class="view-control" role="group" aria-label="画布模式">
+                        <button type="button" data-view="edit" aria-pressed="true">编辑</button>
+                        <button type="button" data-view="compare" aria-pressed="false" disabled>对比</button>
+                    </div>
+                </header>
+
+                <div class="canvas-stage" data-canvas-stage>
+                    <div class="stage-empty" data-stage-empty>
+                        <div class="empty-glyph" aria-hidden="true">
+                            <i data-lucide="image-plus"></i>
+                        </div>
+                        <button class="command-button command-button-primary" type="button" data-add-images>添加图片</button>
+                        <span>JPEG · PNG · WebP</span>
+                    </div>
+
+                    <div class="crop-stage" data-crop-stage hidden>
+                        <img data-editor-image alt="当前编辑图片">
+                    </div>
+
+                    <div class="compare-stage" data-compare-stage hidden>
+                        <div class="compare-frame" data-compare-frame>
+                            <img class="compare-before" data-compare-before alt="编码前">
+                            <div class="compare-after" data-compare-after-wrap>
+                                <img data-compare-after alt="编码后">
+                            </div>
+                            <span class="compare-label compare-label-before">编码前</span>
+                            <span class="compare-label compare-label-after">编码后</span>
+                            <span class="compare-divider" data-compare-divider aria-hidden="true"></span>
+                        </div>
+                        <label class="compare-slider-label">
+                            <span class="sr-only">对比位置</span>
+                            <input type="range" min="0" max="100" value="50" data-compare-slider>
+                        </label>
+                    </div>
+
+                    <div class="drop-overlay" data-drop-overlay hidden>
+                        <i data-lucide="image-down" aria-hidden="true"></i>
+                        <strong>添加到队列</strong>
+                    </div>
+
+                    <div class="processing-overlay" data-processing hidden>
+                        <span class="processing-spinner" aria-hidden="true"></span>
+                        <strong data-processing-label>正在处理</strong>
+                        <div class="processing-track"><span data-processing-bar></span></div>
+                    </div>
+                </div>
+
+                <footer class="canvas-status">
+                    <span data-crop-size>-- × --</span>
+                    <span data-output-estimate>尚未生成预览</span>
+                    <span data-memory-note>会话内存 0 B</span>
+                </footer>
+            </section>
+
+            <aside class="inspector" aria-label="图像设置">
+                <div class="inspector-tabs" role="tablist" aria-label="设置类型">
+                    <button type="button" role="tab" aria-selected="true" data-inspector-tab="transform">变换</button>
+                    <button type="button" role="tab" aria-selected="false" data-inspector-tab="size">尺寸</button>
+                    <button type="button" role="tab" aria-selected="false" data-inspector-tab="export">导出</button>
+                </div>
+
+                <div class="inspector-body">
+                    <section class="inspector-section" data-inspector-panel="transform">
+                        <div class="control-group">
+                            <div class="control-label"><span>裁剪比例</span><output data-ratio-output>自由</output></div>
+                            <div class="ratio-grid" role="group" aria-label="裁剪比例">
+                                <button type="button" data-ratio="free" aria-pressed="true">自由</button>
+                                <button type="button" data-ratio="1">1:1</button>
+                                <button type="button" data-ratio="1.3333333333">4:3</button>
+                                <button type="button" data-ratio="1.7777777778">16:9</button>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <span class="control-label">旋转与翻转</span>
+                            <div class="transform-grid">
+                                <button type="button" data-transform="rotate-left" aria-label="向左旋转" title="向左旋转">
+                                    <i data-lucide="rotate-ccw" aria-hidden="true"></i>
+                                </button>
+                                <button type="button" data-transform="rotate-right" aria-label="向右旋转" title="向右旋转">
+                                    <i data-lucide="rotate-cw" aria-hidden="true"></i>
+                                </button>
+                                <button type="button" data-transform="flip-horizontal" aria-label="水平翻转" title="水平翻转">
+                                    <i data-lucide="flip-horizontal-2" aria-hidden="true"></i>
+                                </button>
+                                <button type="button" data-transform="flip-vertical" aria-label="垂直翻转" title="垂直翻转">
+                                    <i data-lucide="flip-vertical-2" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <button class="wide-button" type="button" data-reset-transform disabled>
+                            <i data-lucide="refresh-cw" aria-hidden="true"></i>
+                            <span>重置变换</span>
+                        </button>
+                    </section>
+
+                    <section class="inspector-section" data-inspector-panel="size" hidden>
+                        <div class="control-group">
+                            <span class="control-label">输出模式</span>
+                            <div class="mode-grid" role="group" aria-label="输出尺寸模式">
+                                <button type="button" data-size-mode="original">原始</button>
+                                <button type="button" data-size-mode="long-edge" aria-pressed="true">最长边</button>
+                                <button type="button" data-size-mode="custom">自定义</button>
+                            </div>
+                        </div>
+
+                        <label class="field-row" data-long-edge-row>
+                            <span>最长边</span>
+                            <span class="number-field"><input type="number" min="1" max="16384" step="1" value="1600" data-long-edge><small>px</small></span>
+                        </label>
+
+                        <div class="dimension-fields" data-custom-size hidden>
+                            <label>
+                                <span>宽度</span>
+                                <span class="number-field"><input type="number" min="1" max="16384" step="1" value="1200" data-output-width><small>px</small></span>
+                            </label>
+                            <button class="icon-button dimension-lock" type="button" data-dimension-lock aria-pressed="true" aria-label="锁定宽高比" title="锁定宽高比">
+                                <i data-lucide="link" aria-hidden="true"></i>
+                            </button>
+                            <label>
+                                <span>高度</span>
+                                <span class="number-field"><input type="number" min="1" max="16384" step="1" value="630" data-output-height><small>px</small></span>
+                            </label>
+                        </div>
+
+                        <div class="control-group" data-fit-control hidden>
+                            <span class="control-label">适配方式</span>
+                            <div class="mode-grid two-column" role="group" aria-label="适配方式">
+                                <button type="button" data-fit="contain" aria-pressed="true">适应</button>
+                                <button type="button" data-fit="cover">填充</button>
+                            </div>
+                        </div>
+
+                        <label class="check-row">
+                            <input type="checkbox" data-no-upscale checked>
+                            <span>禁止放大</span>
+                        </label>
+                    </section>
+
+                    <section class="inspector-section" data-inspector-panel="export" hidden>
+                        <div class="control-group">
+                            <span class="control-label">文件格式</span>
+                            <div class="format-grid" role="group" aria-label="文件格式">
+                                <button type="button" data-format="image/jpeg">JPEG</button>
+                                <button type="button" data-format="image/png">PNG</button>
+                                <button type="button" data-format="image/webp" aria-pressed="true">WebP</button>
+                            </div>
+                        </div>
+
+                        <label class="range-row" data-quality-row>
+                            <span class="control-label">质量 <output data-quality-output>82</output></span>
+                            <input type="range" min="10" max="100" step="1" value="82" data-quality>
+                        </label>
+
+                        <div class="background-control">
+                            <label class="check-row">
+                                <input type="checkbox" data-transparent checked>
+                                <span>保留透明</span>
+                            </label>
+                            <label class="color-field">
+                                <span>背景</span>
+                                <input type="color" value="#ffffff" data-background aria-label="背景颜色">
+                            </label>
+                        </div>
+
+                        <label class="field-stack">
+                            <span>文件名后缀</span>
+                            <input type="text" maxlength="40" value="-web" data-suffix>
+                        </label>
+
+                        <div class="control-group">
+                            <span class="control-label">快速预设</span>
+                            <div class="preset-list">
+                                <button type="button" data-preset="blog"><strong>博客图片</strong><small>最长边 1600 · WebP 82</small></button>
+                                <button type="button" data-preset="og"><strong>开放图谱</strong><small>1200 × 630 · JPEG 88</small></button>
+                                <button type="button" data-preset="avatar"><strong>头像</strong><small>512 × 512 · WebP 90</small></button>
+                            </div>
+                        </div>
+
+                        <button class="wide-button" type="button" data-save-default>
+                            <i data-lucide="bookmark" aria-hidden="true"></i>
+                            <span>设为默认</span>
+                        </button>
+                    </section>
+                </div>
+            </aside>
+        </main>
+
+        <div class="render-farm" data-render-farm aria-hidden="true"></div>
+        <div class="toast-region" data-toast-region aria-live="polite" aria-atomic="true"></div>
+    </div>
+
+    <script src="../../assets/js/tool-runtime.js" data-runner-url="../../tools/image-workbench/"></script>
+    <script src="vendor/lucide.min.js"></script>
+    <script src="vendor/cropper.min.js"></script>
+    <script src="vendor/pica.min.js"></script>
+    <script src="vendor/fflate.js"></script>
+    <script src="image-core.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
