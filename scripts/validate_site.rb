@@ -43,6 +43,16 @@ check.call(manifest["schema"] == 1, "site-manifest.json must use schema 1")
 check.call(content["schema"] == 1, "site-content.json must use schema 1")
 check.call(manifest["version"] == content["version"], "manifest/content versions differ")
 
+license = ROOT.join("LICENSE")
+content_license = ROOT.join("content/LICENSE")
+third_party_notices = ROOT.join("THIRD_PARTY_NOTICES")
+check.call(license.file? && license.read.start_with?("MIT License"), "root MIT License is required")
+check.call(content_license.file? && content_license.read.include?("creativecommons.org/licenses/by/4.0"), "CC BY 4.0 content license is required")
+check.call(third_party_notices.file?, "third-party notices are required")
+check.call(SITE.join("LICENSE").file?, "MIT License must be published with the site")
+check.call(SITE.join("content/LICENSE").file?, "content license must be published with the site")
+check.call(SITE.join("THIRD_PARTY_NOTICES").file?, "third-party notices must be published with the site")
+
 profile = manifest["profile"] || {}
 %w[name title description].each do |key|
   check.call(profile[key].is_a?(String) && !profile[key].empty?, "manifest profile.#{key} is required")
@@ -101,6 +111,7 @@ if index_html.exist?
   html = index_html.read
   script_order = %w[site-data.js site-ai.js terminal.js].map { |name| html.index(name) }
   check.call(script_order.all? && script_order == script_order.sort, "shared data and AI scripts load in the wrong order")
+  check.call(html.include?("代码 MIT") && html.include?("文字 CC BY 4.0"), "site footer must expose code and content licenses")
 end
 
 post_pages = SITE.glob("posts/*/index.html")

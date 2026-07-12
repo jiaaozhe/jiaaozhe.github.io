@@ -244,6 +244,9 @@ img {
 }
 
 .site-footer {
+    display: grid;
+    justify-items: center;
+    gap: 8px;
     width: min(100%, var(--container));
     margin: 96px auto 0;
     padding: 32px 24px 48px;
@@ -254,6 +257,26 @@ img {
 
 .site-footer p {
     margin: 0;
+}
+
+.site-footer-licenses {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px 7px;
+    font-family: var(--mono-font);
+    font-size: 11px;
+}
+
+.site-footer-licenses a {
+    text-decoration: underline;
+    text-decoration-color: var(--line);
+    text-underline-offset: 3px;
+}
+
+.site-footer-licenses a:hover {
+    color: var(--text);
+    text-decoration-color: currentColor;
 }
 
 .hero,

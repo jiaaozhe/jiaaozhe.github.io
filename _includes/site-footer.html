@@ -1,3 +1,10 @@
 <footer class="site-footer">
-    <p>&copy; {{ site.time | date: '%Y' }} {{ site.title }} · Shaped with Codex.</p>
+    <p>&copy; 2025-{{ site.time | date: '%Y' }} {{ site.author | default: site.title }} · Shaped with Codex.</p>
+    <p class="site-footer-licenses">
+        <a href="{{ '/LICENSE' | relative_url }}" rel="license">代码 MIT</a>
+        <span aria-hidden="true">·</span>
+        <a href="https://creativecommons.org/licenses/by/4.0/" rel="license">文字 CC BY 4.0</a>
+        <span aria-hidden="true">·</span>
+        <span>个人媒体保留版权</span>
+    </p>
 </footer>

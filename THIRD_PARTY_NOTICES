@@ -1,0 +1,50 @@
+Third-Party Software Notices
+
+This repository includes or loads the third-party software listed below. Each
+component remains subject to its original license. Nothing in the repository's
+MIT License changes those terms.
+
+Lengyi Markdown Editor
+
+- Lengyi Markdown Editor, upstream commit
+  0f437e23d3eeb5886b6f0ce561d15f281fdc73d9, MIT
+  https://github.com/woyin2024/lengyi-markdown-editor
+  License: tool-apps/lengyi-markdown-editor/LICENSE
+- DOMPurify 3.4.11, MPL-2.0 OR Apache-2.0
+  https://github.com/cure53/DOMPurify
+- Marked 15.0.12, MIT
+  https://github.com/markedjs/marked
+- dom-to-image-more 3.5.0, MIT
+  https://github.com/1904labs/dom-to-image-more
+- KaTeX 0.16.9, MIT; bundled fonts retain their respective notices
+  https://github.com/KaTeX/KaTeX
+- Mermaid 10.9.6, MIT
+  https://github.com/mermaid-js/mermaid
+
+Image Workbench
+
+- Cropper.js 1.6.2, MIT
+  https://github.com/fengyuanchen/cropperjs
+- Pica 10.0.2, MIT
+  https://github.com/nodeca/pica
+- fflate 0.8.3, MIT
+  https://github.com/101arrowz/fflate
+- Lucide 0.468.0, ISC
+  https://github.com/lucide-icons/lucide
+
+PDF Page Manager
+
+- PDF.js 5.7.284, Apache-2.0
+  https://github.com/mozilla/pdf.js
+- pdf-lib 1.17.1, MIT
+  https://github.com/Hopding/pdf-lib
+- SortableJS 1.15.6, MIT
+  https://github.com/SortableJS/Sortable
+- fflate 0.8.3, MIT
+  https://github.com/101arrowz/fflate
+- Lucide 0.468.0, ISC
+  https://github.com/lucide-icons/lucide
+
+Full license texts for vendored runtime files are stored alongside those files
+under tool-apps/*/vendor. PDF.js font, color profile, and codec notices are
+preserved in its vendored subdirectories.

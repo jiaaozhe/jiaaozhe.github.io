@@ -19,3 +19,10 @@ bundle exec jekyll serve
 ```
 
 打开 `http://localhost:4000`。
+
+## License
+
+- 站点代码、模板、样式、脚本和原生工具采用 [MIT License](LICENSE)。
+- 原创文章与文字内容采用 [CC BY 4.0](content/LICENSE)。
+- 个人照片、头像、Logo 和其他个人媒体默认保留版权，除非另有声明。
+- 第三方工具和依赖保留各自的原始许可，详见 [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES)。
