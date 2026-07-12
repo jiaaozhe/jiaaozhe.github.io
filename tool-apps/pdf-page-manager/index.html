@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; font-src 'self' data: blob:; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; worker-src 'none'">
+    <title>PDF 页管理器</title>
+    <link rel="stylesheet" href="app.css">
+</head>
+<body>
+    <div class="pdf-workbench" data-app data-density="medium">
+        <header class="command-bar">
+            <div class="workbench-mark" aria-label="PDF 页管理器">
+                <span class="mark-stack" aria-hidden="true"></span>
+                <span>PDF / LOCAL</span>
+            </div>
+
+            <button class="command-button command-button-primary" type="button" data-add-files>
+                <i data-lucide="file-plus-2" aria-hidden="true"></i>
+                <span>添加 PDF</span>
+            </button>
+            <input type="file" accept="application/pdf,.pdf" multiple hidden data-file-input>
+
+            <span class="command-divider" aria-hidden="true"></span>
+            <button class="icon-button" type="button" data-undo aria-label="撤销" title="撤销" disabled>
+                <i data-lucide="undo-2" aria-hidden="true"></i>
+            </button>
+            <button class="icon-button" type="button" data-redo aria-label="重做" title="重做" disabled>
+                <i data-lucide="redo-2" aria-hidden="true"></i>
+            </button>
+
+            <div class="command-spacer"></div>
+
+            <label class="density-control" title="缩略图大小">
+                <i data-lucide="gallery-horizontal" aria-hidden="true"></i>
+                <span class="sr-only">缩略图大小</span>
+                <input type="range" min="0" max="2" step="1" value="1" data-density-input>
+            </label>
+            <span class="local-status"><span aria-hidden="true"></span>本地处理</span>
+            <button class="command-button" type="button" data-open-preview disabled>
+                <i data-lucide="scan-eye" aria-hidden="true"></i>
+                <span>预览</span>
+            </button>
+            <button class="command-button command-button-export" type="button" data-export-trigger disabled>
+                <i data-lucide="download" aria-hidden="true"></i>
+                <span>导出</span>
+            </button>
+        </header>
+
+        <main class="workbench-grid">
+            <aside class="sources-panel" aria-label="PDF 文件">
+                <header class="panel-heading">
+                    <div>
+                        <span class="panel-label">文件</span>
+                        <strong data-source-count>0</strong>
+                    </div>
+                    <button class="icon-button" type="button" data-add-files aria-label="添加 PDF" title="添加 PDF">
+                        <i data-lucide="plus" aria-hidden="true"></i>
+                    </button>
+                </header>
+                <div class="source-list" role="list" data-source-list></div>
+                <div class="source-empty" data-source-empty>
+                    <i data-lucide="files" aria-hidden="true"></i>
+                    <span>PDF 文件</span>
+                </div>
+                <footer class="sources-footer">
+                    <span data-session-size>0 B</span>
+                    <button class="icon-button" type="button" data-clear-all aria-label="清空工作区" title="清空工作区" disabled>
+                        <i data-lucide="trash-2" aria-hidden="true"></i>
+                    </button>
+                </footer>
+            </aside>
+
+            <section class="pages-panel" data-drop-zone>
+                <header class="pages-toolbar">
+                    <div class="active-document">
+                        <span data-active-label>未选择页面</span>
+                        <small data-page-summary>0 页</small>
+                    </div>
+                    <div class="selection-tools">
+                        <span data-selection-summary>未选择</span>
+                        <button type="button" data-select-all disabled>全选</button>
+                        <button type="button" data-clear-selection disabled>清除</button>
+                    </div>
+                </header>
+
+                <div class="workspace-warning" data-workspace-warning hidden>
+                    <i data-lucide="triangle-alert" aria-hidden="true"></i>
+                    <span data-workspace-warning-text></span>
+                    <button class="icon-button" type="button" data-dismiss-warning aria-label="关闭提示" title="关闭">
+                        <i data-lucide="x" aria-hidden="true"></i>
+                    </button>
+                </div>
+
+                <div class="pages-scroll" data-pages-scroll>
+                    <div class="page-grid" role="list" aria-label="PDF 页面顺序" data-page-grid></div>
+                    <div class="workspace-empty" data-workspace-empty>
+                        <div class="empty-document" aria-hidden="true">
+                            <i data-lucide="file-stack"></i>
+                        </div>
+                        <button class="command-button command-button-primary" type="button" data-add-files>添加 PDF</button>
+                    </div>
+                </div>
+
+                <div class="drop-overlay" data-drop-overlay hidden>
+                    <i data-lucide="file-down" aria-hidden="true"></i>
+                    <strong>添加到工作区</strong>
+                    <span>松开以读取 PDF</span>
+                </div>
+            </section>
+
+            <aside class="inspector-panel" aria-label="页面操作和导出">
+                <div class="inspector-mobile-heading">
+                    <strong>页面与导出</strong>
+                    <button class="icon-button" type="button" data-close-inspector aria-label="关闭面板" title="关闭">
+                        <i data-lucide="x" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <section class="inspector-section selection-section">
+                    <header class="inspector-heading">
+                        <span>SELECTION</span>
+                        <strong data-inspector-count>0</strong>
+                    </header>
+                    <div class="operation-grid" role="group" aria-label="页面操作">
+                        <button type="button" data-move-left aria-label="向前移动" title="向前移动" disabled>
+                            <i data-lucide="arrow-left" aria-hidden="true"></i>
+                        </button>
+                        <button type="button" data-move-right aria-label="向后移动" title="向后移动" disabled>
+                            <i data-lucide="arrow-right" aria-hidden="true"></i>
+                        </button>
+                        <button type="button" data-rotate-left aria-label="向左旋转" title="向左旋转" disabled>
+                            <i data-lucide="rotate-ccw" aria-hidden="true"></i>
+                        </button>
+                        <button type="button" data-rotate-right aria-label="向右旋转" title="向右旋转" disabled>
+                            <i data-lucide="rotate-cw" aria-hidden="true"></i>
+                        </button>
+                        <button type="button" data-duplicate aria-label="复制页面" title="复制页面" disabled>
+                            <i data-lucide="copy-plus" aria-hidden="true"></i>
+                        </button>
+                        <button class="danger-action" type="button" data-delete-pages aria-label="删除页面" title="删除页面" disabled>
+                            <i data-lucide="trash-2" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <p class="selection-detail" data-selection-detail>当前没有选中页面。</p>
+                </section>
+
+                <section class="inspector-section export-section">
+                    <header class="inspector-heading">
+                        <span>EXPORT</span>
+                    </header>
+                    <div class="export-modes" role="group" aria-label="导出范围">
+                        <button type="button" data-export-mode="all" aria-pressed="true">全部</button>
+                        <button type="button" data-export-mode="selected" aria-pressed="false" disabled>选中</button>
+                        <button type="button" data-export-mode="split" aria-pressed="false" disabled>拆分</button>
+                    </div>
+                    <label class="field-label" for="output-name">文件名</label>
+                    <div class="filename-field">
+                        <input id="output-name" type="text" value="merged-document" maxlength="120" autocomplete="off" spellcheck="false" data-output-name>
+                        <span data-output-extension>.pdf</span>
+                    </div>
+                    <dl class="export-summary">
+                        <div><dt>页面</dt><dd data-export-pages>0</dd></div>
+                        <div><dt>来源</dt><dd data-export-sources>0</dd></div>
+                        <div><dt>输入</dt><dd data-export-size>0 B</dd></div>
+                    </dl>
+                    <p class="export-warning" data-export-warning hidden></p>
+                    <button class="wide-button wide-button-export" type="button" data-export disabled>
+                        <i data-lucide="download" aria-hidden="true"></i>
+                        <span data-export-label>导出 PDF</span>
+                    </button>
+                </section>
+
+                <footer class="privacy-note">
+                    <i data-lucide="shield-check" aria-hidden="true"></i>
+                    <span>文件仅在当前会话中处理</span>
+                </footer>
+            </aside>
+        </main>
+
+        <div class="mobile-actions" data-mobile-actions hidden>
+            <span data-mobile-selection>0 页</span>
+            <button class="icon-button" type="button" data-rotate-left aria-label="向左旋转" title="向左旋转">
+                <i data-lucide="rotate-ccw" aria-hidden="true"></i>
+            </button>
+            <button class="icon-button" type="button" data-rotate-right aria-label="向右旋转" title="向右旋转">
+                <i data-lucide="rotate-cw" aria-hidden="true"></i>
+            </button>
+            <button class="icon-button" type="button" data-duplicate aria-label="复制页面" title="复制页面">
+                <i data-lucide="copy-plus" aria-hidden="true"></i>
+            </button>
+            <button class="icon-button danger-action" type="button" data-delete-pages aria-label="删除页面" title="删除页面">
+                <i data-lucide="trash-2" aria-hidden="true"></i>
+            </button>
+        </div>
+
+        <section class="preview-dialog" role="dialog" aria-modal="true" aria-labelledby="preview-title" data-preview hidden>
+            <header class="preview-header">
+                <div>
+                    <strong id="preview-title" data-preview-title>页面预览</strong>
+                    <span data-preview-meta>--</span>
+                </div>
+                <div class="preview-actions">
+                    <button class="icon-button" type="button" data-preview-previous aria-label="上一页" title="上一页">
+                        <i data-lucide="chevron-left" aria-hidden="true"></i>
+                    </button>
+                    <button class="icon-button" type="button" data-preview-next aria-label="下一页" title="下一页">
+                        <i data-lucide="chevron-right" aria-hidden="true"></i>
+                    </button>
+                    <button class="icon-button" type="button" data-close-preview aria-label="关闭预览" title="关闭">
+                        <i data-lucide="x" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </header>
+            <div class="preview-stage" data-preview-stage>
+                <canvas data-preview-canvas></canvas>
+                <div class="preview-loading" data-preview-loading>
+                    <span aria-hidden="true"></span>
+                    <span>正在渲染页面</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="processing-overlay" role="status" aria-live="polite" data-processing hidden>
+            <div class="processing-panel">
+                <span class="processing-spinner" aria-hidden="true"></span>
+                <strong data-processing-label>正在处理</strong>
+                <span data-processing-detail>准备文件</span>
+                <div class="progress-track"><span data-processing-progress></span></div>
+            </div>
+        </section>
+
+        <div class="toast-region" aria-live="polite" aria-atomic="true" data-toast hidden></div>
+    </div>
+
+    <script src="../../assets/js/tool-runtime.js" data-runner-url="../../tools/pdf-page-manager/"></script>
+    <script src="compat.js"></script>
+    <script src="vendor/pdfjs-runtime.min.js"></script>
+    <script src="vendor/pdf-lib.min.js"></script>
+    <script src="vendor/sortable.min.js"></script>
+    <script src="vendor/fflate.js"></script>
+    <script src="vendor/lucide.min.js"></script>
+    <script src="pdf-core.js"></script>
+    <script src="pdf-engine.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

@@ -227,6 +227,13 @@ ROOT.join("content/_tools").glob("*.md").each do |path|
         check.call(actual == expected, "tool #{slug} dependency changed unexpectedly: #{name}")
       end
     end
+    if app_dir.join("vendor").directory?
+      vendor_files = app_dir.join("vendor").glob("**/*").select(&:file?).map do |vendor_file|
+        vendor_file.relative_path_from(app_dir).to_s
+      end
+      unhashed_files = vendor_files - dependency_hashes.keys.map(&:to_s)
+      check.call(unhashed_files.empty?, "tool #{slug} has unhashed vendor files: #{unhashed_files.join(', ')}")
+    end
   end
 
   thumbnail = data["thumbnail"].to_s.sub(%r{\A/}, "")
@@ -254,7 +261,10 @@ ROOT.join("content/_tools").glob("*.md").each do |path|
       check.call(source.include?("https://#{host}"), "tool #{slug} CSP does not allow declared host #{host}")
     end
     if network_hosts.empty?
-      check.call(source.include?("connect-src 'none'"), "offline tool #{slug} must disable outbound connections")
+      connect_sources = source[/connect-src\s+([^;\"]+)/, 1].to_s.split
+      local_only = connect_sources == ["'none'"] ||
+        (!connect_sources.empty? && (connect_sources - ["'self'", "blob:"]).empty?)
+      check.call(local_only, "offline tool #{slug} must limit connections to local assets")
     end
   end
 

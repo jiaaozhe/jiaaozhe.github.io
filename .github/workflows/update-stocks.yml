@@ -65,6 +65,9 @@ jobs:
       - name: Smoke test image workbench
         run: node scripts/smoke_image_workbench.js
 
+      - name: Smoke test PDF page manager
+        run: node scripts/smoke_pdf_page_manager.js
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:
