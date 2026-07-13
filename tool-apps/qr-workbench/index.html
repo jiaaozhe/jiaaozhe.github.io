@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'none'; font-src 'none'; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; worker-src 'none'">
+    <title>二维码工作台</title>
+    <link rel="stylesheet" href="app.css">
+</head>
+<body>
+    <div class="qr-workbench" data-app data-mode="generate">
+        <header class="command-bar">
+            <div class="workbench-mark" aria-label="二维码工作台">
+                <span class="mark-finder" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span>QR / LOCAL</span>
+            </div>
+
+            <div class="mode-switch" role="group" aria-label="工作模式">
+                <button type="button" data-mode-button="generate" aria-pressed="true">
+                    <i data-lucide="qr-code" aria-hidden="true"></i><span>生成</span>
+                </button>
+                <button type="button" data-mode-button="scan" aria-pressed="false">
+                    <i data-lucide="scan-line" aria-hidden="true"></i><span>识别</span>
+                </button>
+            </div>
+
+            <span class="command-divider" aria-hidden="true"></span>
+            <button class="icon-button generate-only" type="button" data-reset aria-label="重置二维码" title="重置">
+                <i data-lucide="rotate-ccw" aria-hidden="true"></i>
+            </button>
+            <button class="command-button scan-only" type="button" data-pick-scan>
+                <i data-lucide="image-plus" aria-hidden="true"></i><span>选择图片</span>
+            </button>
+
+            <div class="command-spacer"></div>
+            <span class="local-status"><span aria-hidden="true"></span>不上传</span>
+            <button class="command-button command-button-export generate-only" type="button" data-export-top disabled>
+                <i data-lucide="download" aria-hidden="true"></i><span data-export-top-label>下载 PNG</span>
+            </button>
+        </header>
+
+        <main class="workspace">
+            <section class="mode-panel generator-grid" data-mode-panel="generate">
+                <aside class="payload-panel panel-shell" aria-label="二维码内容">
+                    <header class="panel-heading">
+                        <div><span class="panel-index">01</span><strong>内容</strong></div>
+                        <span data-payload-bytes>0 B</span>
+                    </header>
+
+                    <div class="payload-types" role="tablist" aria-label="内容类型">
+                        <button type="button" role="tab" data-payload-type="text" aria-selected="false">
+                            <i data-lucide="text" aria-hidden="true"></i><span>文本</span>
+                        </button>
+                        <button type="button" role="tab" data-payload-type="url" aria-selected="true">
+                            <i data-lucide="link-2" aria-hidden="true"></i><span>网址</span>
+                        </button>
+                        <button type="button" role="tab" data-payload-type="wifi" aria-selected="false">
+                            <i data-lucide="wifi" aria-hidden="true"></i><span>Wi-Fi</span>
+                        </button>
+                        <button type="button" role="tab" data-payload-type="vcard" aria-selected="false">
+                            <i data-lucide="contact" aria-hidden="true"></i><span>联系人</span>
+                        </button>
+                        <button type="button" role="tab" data-payload-type="email" aria-selected="false">
+                            <i data-lucide="mail" aria-hidden="true"></i><span>邮件</span>
+                        </button>
+                        <button type="button" role="tab" data-payload-type="phone" aria-selected="false">
+                            <i data-lucide="phone" aria-hidden="true"></i><span>电话</span>
+                        </button>
+                    </div>
+
+                    <div class="payload-scroll">
+                        <section class="payload-form" data-payload-form="text" hidden>
+                            <label class="field-stack field-grow">
+                                <span>文本内容</span>
+                                <textarea data-field="text.text" maxlength="2900" rows="11" placeholder="输入需要写入二维码的文本"></textarea>
+                            </label>
+                        </section>
+
+                        <section class="payload-form" data-payload-form="url">
+                            <label class="field-stack">
+                                <span>完整网址</span>
+                                <input type="url" data-field="url.url" value="https://jiaaozhe.github.io/" placeholder="https://example.com">
+                            </label>
+                            <p class="field-hint"><i data-lucide="info" aria-hidden="true"></i>保留原始大小写和路径，不经过短链服务。</p>
+                        </section>
+
+                        <section class="payload-form" data-payload-form="wifi" hidden>
+                            <label class="field-stack">
+                                <span>网络名称 SSID</span>
+                                <input type="text" data-field="wifi.ssid" maxlength="128" autocomplete="off" placeholder="Guest Wi-Fi">
+                            </label>
+                            <label class="field-stack">
+                                <span>安全类型</span>
+                                <select data-field="wifi.security">
+                                    <option value="WPA">WPA / WPA2</option>
+                                    <option value="WEP">WEP</option>
+                                    <option value="nopass">无密码</option>
+                                </select>
+                            </label>
+                            <label class="field-stack" data-wifi-password-row>
+                                <span>密码</span>
+                                <span class="password-field">
+                                    <input type="password" data-field="wifi.password" maxlength="256" autocomplete="new-password" placeholder="不会被保存">
+                                    <button type="button" data-toggle-password aria-label="显示密码" title="显示密码"><i data-lucide="eye" aria-hidden="true"></i></button>
+                                </span>
+                            </label>
+                            <label class="check-row">
+                                <input type="checkbox" data-field="wifi.hidden"><span>隐藏网络</span>
+                            </label>
+                        </section>
+
+                        <section class="payload-form" data-payload-form="vcard" hidden>
+                            <label class="field-stack">
+                                <span>姓名 <b>必填</b></span>
+                                <input type="text" data-field="vcard.name" maxlength="120" autocomplete="off" placeholder="姓名">
+                            </label>
+                            <div class="field-pair">
+                                <label class="field-stack"><span>组织</span><input type="text" data-field="vcard.organization" maxlength="120"></label>
+                                <label class="field-stack"><span>职位</span><input type="text" data-field="vcard.title" maxlength="120"></label>
+                            </div>
+                            <label class="field-stack"><span>电话</span><input type="tel" data-field="vcard.phone" maxlength="60"></label>
+                            <label class="field-stack"><span>邮箱</span><input type="email" data-field="vcard.email" maxlength="160"></label>
+                            <label class="field-stack"><span>网址</span><input type="url" data-field="vcard.url" maxlength="500" placeholder="https://"></label>
+                        </section>
+
+                        <section class="payload-form" data-payload-form="email" hidden>
+                            <label class="field-stack"><span>收件邮箱</span><input type="email" data-field="email.address" maxlength="160" placeholder="name@example.com"></label>
+                            <label class="field-stack"><span>主题</span><input type="text" data-field="email.subject" maxlength="240"></label>
+                            <label class="field-stack"><span>正文</span><textarea data-field="email.body" maxlength="1500" rows="7"></textarea></label>
+                        </section>
+
+                        <section class="payload-form" data-payload-form="phone" hidden>
+                            <label class="field-stack">
+                                <span>电话号码</span>
+                                <input type="tel" data-field="phone.phone" maxlength="60" placeholder="+86 138 0000 0000">
+                            </label>
+                            <p class="field-hint"><i data-lucide="info" aria-hidden="true"></i>建议包含国家或地区代码。</p>
+                        </section>
+                    </div>
+
+                    <footer class="privacy-note">
+                        <i data-lucide="shield-check" aria-hidden="true"></i>
+                        <span><strong>内容只在当前页面内存中处理</strong>密码、联系人和正文不会进入本地存储。</span>
+                    </footer>
+                </aside>
+
+                <section class="preview-panel" aria-label="二维码预览">
+                    <header class="preview-toolbar">
+                        <div>
+                            <span data-preview-type>网址</span>
+                            <small data-preview-summary>等待有效内容</small>
+                        </div>
+                        <div class="density-readout"><span data-symbol-version>V-</span><span data-symbol-size>- × -</span></div>
+                    </header>
+
+                    <div class="scanner-stage" data-preview-stage>
+                        <div class="registration-mark registration-mark-a" aria-hidden="true"></div>
+                        <div class="registration-mark registration-mark-b" aria-hidden="true"></div>
+                        <div class="scan-beam" aria-hidden="true"></div>
+                        <div class="qr-sheet" data-qr-sheet>
+                            <canvas data-preview-canvas aria-label="生成的二维码预览"></canvas>
+                            <div class="preview-placeholder" data-preview-placeholder>
+                                <span class="placeholder-finder" aria-hidden="true"></span>
+                                <strong>输入有效内容</strong>
+                                <small>二维码会在这里实时生成并验证</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <footer class="preview-status">
+                        <div class="verification-signal" data-preview-signal="idle"><span aria-hidden="true"></span><strong data-preview-status>等待内容</strong></div>
+                        <span data-preview-detail>本地生成 · 独立回读</span>
+                    </footer>
+                </section>
+
+                <aside class="inspector-panel panel-shell" aria-label="二维码设置">
+                    <header class="panel-heading"><div><span class="panel-index">02</span><strong>输出</strong></div><span>LIVE</span></header>
+                    <div class="inspector-scroll">
+                        <section class="control-group">
+                            <div class="control-label"><span>配色</span><small data-contrast-value>21.0:1</small></div>
+                            <label class="color-row"><span><i class="color-chip dark-chip" data-dark-chip></i>前景</span><input type="color" value="#151814" data-setting="dark"><code data-dark-code>#151814</code></label>
+                            <label class="color-row"><span><i class="color-chip light-chip" data-light-chip></i>背景</span><input type="color" value="#ffffff" data-setting="light"><code data-light-code>#ffffff</code></label>
+                            <label class="check-row"><input type="checkbox" data-setting="transparent"><span>透明背景</span></label>
+                        </section>
+
+                        <section class="control-group">
+                            <span class="control-label">模块形状</span>
+                            <div class="segmented-control" role="group" aria-label="模块形状">
+                                <button type="button" data-setting-button="moduleStyle" data-value="square" aria-pressed="true">标准方形</button>
+                                <button type="button" data-setting-button="moduleStyle" data-value="soft" aria-pressed="false">轻微圆角</button>
+                            </div>
+                        </section>
+
+                        <section class="control-group">
+                            <div class="control-label"><span>纠错等级</span><small>默认 M</small></div>
+                            <div class="level-grid" role="group" aria-label="纠错等级">
+                                <button type="button" data-setting-button="errorLevel" data-value="L" aria-pressed="false"><strong>L</strong><small>7%</small></button>
+                                <button type="button" data-setting-button="errorLevel" data-value="M" aria-pressed="true"><strong>M</strong><small>15%</small></button>
+                                <button type="button" data-setting-button="errorLevel" data-value="Q" aria-pressed="false"><strong>Q</strong><small>25%</small></button>
+                                <button type="button" data-setting-button="errorLevel" data-value="H" aria-pressed="false"><strong>H</strong><small>30%</small></button>
+                            </div>
+                        </section>
+
+                        <section class="control-group">
+                            <span class="control-label">文件</span>
+                            <label class="field-row"><span>尺寸</span><select data-setting="outputSize"><option value="256">256 px</option><option value="512" selected>512 px</option><option value="1024">1024 px</option><option value="2048">2048 px</option></select></label>
+                            <div class="segmented-control" role="group" aria-label="导出格式">
+                                <button type="button" data-setting-button="outputFormat" data-value="png" aria-pressed="true">PNG</button>
+                                <button type="button" data-setting-button="outputFormat" data-value="svg" aria-pressed="false">SVG</button>
+                            </div>
+                        </section>
+
+                        <section class="verification-card" data-verification-state="idle">
+                            <header><span class="verification-icon"><i data-lucide="scan-search" aria-hidden="true"></i></span><div><small>READBACK</small><strong data-verification-title>等待自检</strong></div></header>
+                            <p data-verification-copy>生成后会使用独立识别器回读二维码。</p>
+                            <ul data-verification-warnings hidden></ul>
+                            <dl>
+                                <div><dt>留白</dt><dd>4 modules</dd></div>
+                                <div><dt>像素/模块</dt><dd data-module-pixels>-</dd></div>
+                            </dl>
+                        </section>
+
+                        <button class="wide-button wide-button-export" type="button" data-export disabled>
+                            <i data-lucide="download" aria-hidden="true"></i><span data-export-label>下载 PNG</span>
+                        </button>
+                    </div>
+                </aside>
+            </section>
+
+            <section class="mode-panel scanner-grid" data-mode-panel="scan" hidden>
+                <aside class="scan-source-panel panel-shell">
+                    <header class="panel-heading"><div><span class="panel-index">01</span><strong>来源</strong></div><span data-scan-file-size>0 B</span></header>
+                    <div class="scan-source-scroll">
+                        <button class="drop-card" type="button" data-scan-drop>
+                            <span class="drop-card-icon"><i data-lucide="scan-qr-code" aria-hidden="true"></i></span>
+                            <strong>选择二维码图片</strong>
+                            <small>也可以拖入或直接粘贴</small>
+                            <em>JPEG · PNG · WebP</em>
+                        </button>
+                        <input type="file" accept="image/jpeg,image/png,image/webp" data-scan-input hidden>
+                        <div class="source-file" data-source-file hidden>
+                            <span><i data-lucide="image" aria-hidden="true"></i></span>
+                            <div><strong data-source-name></strong><small data-source-meta></small></div>
+                            <button class="icon-button" type="button" data-clear-scan aria-label="移除图片" title="移除"><i data-lucide="x" aria-hidden="true"></i></button>
+                        </div>
+                        <div class="scan-instructions">
+                            <span>识别建议</span>
+                            <ol><li>保留二维码四周空白</li><li>避免过度模糊或反光</li><li>一次只放一个二维码</li></ol>
+                        </div>
+                    </div>
+                    <footer class="privacy-note"><i data-lucide="shield-check" aria-hidden="true"></i><span><strong>图片不会上传</strong>识别过程完全在当前浏览器内完成。</span></footer>
+                </aside>
+
+                <section class="scan-stage-panel">
+                    <header class="preview-toolbar"><div><span data-scan-stage-title>等待图片</span><small data-scan-stage-meta>拖入、粘贴或选择二维码图片</small></div></header>
+                    <div class="scanner-stage scan-image-stage" data-scan-stage>
+                        <div class="registration-mark registration-mark-a" aria-hidden="true"></div>
+                        <div class="registration-mark registration-mark-b" aria-hidden="true"></div>
+                        <canvas data-scan-canvas aria-label="二维码识别图片"></canvas>
+                        <div class="scan-empty" data-scan-empty><span class="reticle" aria-hidden="true"></span><strong>DROP IMAGE</strong><small>最大 24 MB</small></div>
+                        <div class="scan-progress" data-scan-progress hidden><span></span><strong>正在本地识别</strong></div>
+                    </div>
+                    <footer class="preview-status"><div class="verification-signal" data-scan-signal="idle"><span aria-hidden="true"></span><strong data-scan-status>尚未选择图片</strong></div><span>单码识别</span></footer>
+                </section>
+
+                <aside class="scan-result-panel panel-shell">
+                    <header class="panel-heading"><div><span class="panel-index">02</span><strong>结果</strong></div><span data-result-type>-</span></header>
+                    <div class="result-empty" data-result-empty><i data-lucide="scan-search" aria-hidden="true"></i><strong>等待识别结果</strong><span>原始内容和结构化字段会显示在这里。</span></div>
+                    <div class="result-content" data-result-content hidden>
+                        <div class="result-badge"><span data-result-badge-icon><i data-lucide="text" aria-hidden="true"></i></span><div><small>检测类型</small><strong data-result-label>纯文本</strong></div></div>
+                        <dl class="result-fields" data-result-fields></dl>
+                        <label class="field-stack raw-result"><span>原始内容</span><textarea readonly rows="7" data-result-raw></textarea></label>
+                        <div class="result-actions">
+                            <button class="wide-button" type="button" data-copy-result><i data-lucide="copy" aria-hidden="true"></i><span>复制内容</span></button>
+                            <button class="wide-button wide-button-primary" type="button" data-use-result><i data-lucide="wand-sparkles" aria-hidden="true"></i><span>重新生成</span></button>
+                        </div>
+                    </div>
+                </aside>
+            </section>
+        </main>
+
+        <div class="drop-overlay" data-drop-overlay hidden><span><i data-lucide="scan-qr-code" aria-hidden="true"></i></span><strong>释放图片开始识别</strong></div>
+        <div class="toast-region" data-toast-region aria-live="polite" aria-atomic="true"></div>
+    </div>
+
+    <script src="../../assets/js/tool-runtime.js" data-runner-url="../../tools/qr-workbench/"></script>
+    <script src="vendor/lucide.min.js"></script>
+    <script src="vendor/qrcode.js"></script>
+    <script src="vendor/jsqr.js"></script>
+    <script src="qr-core.js"></script>
+    <script src="qr-renderer.js"></script>
+    <script src="qr-decoder.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
