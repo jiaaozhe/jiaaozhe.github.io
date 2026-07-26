@@ -15,6 +15,10 @@ dependencies:
     version: 4.12.0
     license: MIT
     source: https://github.com/curlconverter/curlconverter
+  - name: "@cfworker/json-schema"
+    version: 4.1.1
+    license: MIT
+    source: https://github.com/cfworker/cfworker
   - name: jsesc
     version: 3.1.0
     license: MIT
@@ -37,11 +41,14 @@ build:
     version: 0.25.10
   config_entry: scripts/vendor_developer_converter_config.mjs
   curl_entry: scripts/vendor_developer_converter_curl.mjs
+  schema_entry: scripts/vendor_developer_converter_schema.mjs
   curl_browser_patch: Initialize the parser asynchronously and embed both tree-sitter WASM binaries in a classic-script bundle for the opaque sandbox.
 sha256:
   vendor/config-libs.js: 076c541cc1f33b17dd68ee84ac04394eecaeddd8a44890f547ea0c50a7220109
   vendor/curlconverter.LICENSE: 2064877fc32d394fcb2463c1a4b118fbf14a0a79277640c529d0f970e3ab646c
-  vendor/curlconverter.js: 19ede29efdffcfa14191d588b92d4107cf7749f48c08b1dd387faadd046d0189
+  vendor/curlconverter.js: 1e8a66c72e9bd9e16e1e2bdcbab10278b1073cce0de8cb7a4401743a41c415b7
+  vendor/json-schema.LICENSE: 376944252ab78ca6b41aee44ddea8894927ee67891e77e61eb9d59af63e35094
+  vendor/json-schema.js: 8792edb6b34350213ba126cfc15af2ae40d991d05d0842f8f51c5e1e5a3bc00f
   vendor/jsesc.LICENSE: 483acb265f182907d1caf6cff9c16c96f31325ed23792832cc5d8b12d5f88c8a
   vendor/lossless-json.LICENSE: 525f1b720bc4ba077eba7a82e3c357bfb55ebcfe1ae0aaa509ba6110a024a445
   vendor/smol-toml.LICENSE: fa5659948374d4f555594f47f6da073b40dc503e921aeeece30df4362b3051a5

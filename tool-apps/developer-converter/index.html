@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' data: blob:; connect-src 'none'; font-src 'none'; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; worker-src 'none'">
-    <title>开发者转换台</title>
+    <title>配置与请求转换台</title>
     <link rel="stylesheet" href="app.css">
 </head>
 <body>
     <div class="converter-shell" data-app data-mode="config">
         <header class="command-bar">
-            <div class="workbench-mark" aria-label="开发者转换台">
+            <div class="workbench-mark" aria-label="配置与请求转换台">
                 <span class="mark-glyph" aria-hidden="true"><i></i><i></i><i></i></span>
                 <span>DEV / TRANSFORM</span>
             </div>
@@ -20,7 +20,7 @@
                     <span class="mode-index">01</span><span>配置互转</span>
                 </button>
                 <button type="button" data-mode-button="request" aria-pressed="false">
-                    <span class="mode-index">02</span><span>cURL → Python</span>
+                    <span class="mode-index">02</span><span>cURL → 代码</span>
                 </button>
             </nav>
 
@@ -128,51 +128,158 @@
                     </article>
                 </div>
 
-                <div class="inspection-grid">
-                    <article class="inspection-card diagnostics-card">
-                        <header>
-                            <div><span class="card-index">A</span><strong>损失与语法诊断</strong></div>
-                            <span class="health-badge idle" data-config-health>待转换</span>
-                        </header>
-                        <div class="diagnostic-list" data-config-diagnostics>
-                            <p class="quiet-message">保真模式会在类型、注释或精度无法保留时停止导出。</p>
-                        </div>
-                    </article>
+                <nav class="lab-switch" aria-label="配置检查工具">
+                    <button type="button" data-config-lab="trace" aria-pressed="true">
+                        <span>01</span>转换检查
+                    </button>
+                    <button type="button" data-config-lab="structure" aria-pressed="false">
+                        <span>02</span>结构与查询
+                        <i data-structure-count>—</i>
+                    </button>
+                    <button type="button" data-config-lab="schema" aria-pressed="false">
+                        <span>03</span>Schema 验证
+                        <i data-schema-count>—</i>
+                    </button>
+                </nav>
 
-                    <article class="inspection-card">
-                        <header>
-                            <div><span class="card-index">B</span><strong>转换轨迹</strong></div>
-                        </header>
-                        <dl class="trace-list">
-                            <div><dt>识别</dt><dd data-trace-detected>—</dd></div>
-                            <div><dt>结构</dt><dd data-trace-structure>—</dd></div>
-                            <div><dt>回读</dt><dd data-trace-roundtrip>—</dd></div>
-                        </dl>
-                    </article>
+                <section class="config-lab-panel" data-config-lab-panel="trace">
+                    <div class="inspection-grid">
+                        <article class="inspection-card diagnostics-card">
+                            <header>
+                                <div><span class="card-index">A</span><strong>损失与语法诊断</strong></div>
+                                <span class="health-badge idle" data-config-health>待转换</span>
+                            </header>
+                            <div class="diagnostic-list" data-config-diagnostics>
+                                <p class="quiet-message">保真模式会在类型、注释或精度无法保留时停止导出。</p>
+                            </div>
+                        </article>
 
-                    <article class="inspection-card">
-                        <header>
-                            <div><span class="card-index">C</span><strong>输出规则</strong></div>
-                        </header>
-                        <div class="option-stack">
-                            <label class="select-option">
-                                <span>缩进</span>
-                                <select data-config-indent>
-                                    <option value="2">2 空格</option>
-                                    <option value="4">4 空格</option>
-                                </select>
-                            </label>
-                            <label class="check-option">
-                                <input type="checkbox" data-config-sort>
-                                <span><i></i>递归排序键</span>
-                            </label>
-                            <label class="check-option">
-                                <input type="checkbox" data-config-minify>
-                                <span><i></i>压缩 JSON</span>
-                            </label>
-                        </div>
-                    </article>
-                </div>
+                        <article class="inspection-card">
+                            <header>
+                                <div><span class="card-index">B</span><strong>转换轨迹</strong></div>
+                            </header>
+                            <dl class="trace-list">
+                                <div><dt>识别</dt><dd data-trace-detected>—</dd></div>
+                                <div><dt>结构</dt><dd data-trace-structure>—</dd></div>
+                                <div><dt>回读</dt><dd data-trace-roundtrip>—</dd></div>
+                            </dl>
+                        </article>
+
+                        <article class="inspection-card">
+                            <header>
+                                <div><span class="card-index">C</span><strong>输出规则</strong></div>
+                            </header>
+                            <div class="option-stack">
+                                <label class="select-option">
+                                    <span>缩进</span>
+                                    <select data-config-indent>
+                                        <option value="2">2 空格</option>
+                                        <option value="4">4 空格</option>
+                                    </select>
+                                </label>
+                                <label class="check-option">
+                                    <input type="checkbox" data-config-sort>
+                                    <span><i></i>递归排序键</span>
+                                </label>
+                                <label class="check-option">
+                                    <input type="checkbox" data-config-minify>
+                                    <span><i></i>压缩 JSON</span>
+                                </label>
+                            </div>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="config-lab-panel structure-lab" data-config-lab-panel="structure" hidden>
+                    <div class="structure-layout">
+                        <article class="lab-card structure-tree-card">
+                            <header class="lab-card-heading">
+                                <div>
+                                    <span class="panel-kicker">DOCUMENT MAP / 文档地图</span>
+                                    <strong>保真结构树</strong>
+                                </div>
+                                <div class="panel-tools">
+                                    <button type="button" data-structure-expand>展开</button>
+                                    <button type="button" data-structure-collapse>折叠</button>
+                                </div>
+                            </header>
+                            <div class="structure-tree" data-structure-tree>
+                                <p class="quiet-message">解析配置后显示节点、类型与路径。</p>
+                            </div>
+                        </article>
+
+                        <article class="lab-card query-card">
+                            <header class="lab-card-heading">
+                                <div>
+                                    <span class="panel-kicker">PATH PROBE / 路径探针</span>
+                                    <strong>Pointer 与 JSONPath</strong>
+                                </div>
+                                <span class="health-badge idle" data-query-health>待查询</span>
+                            </header>
+                            <div class="query-controls">
+                                <label>
+                                    <span>路径表达式</span>
+                                    <input type="text" value="$" spellcheck="false" autocomplete="off"
+                                           aria-label="JSON Pointer 或 JSONPath 查询" data-config-query>
+                                </label>
+                                <button class="primary-button compact" type="button" data-config-query-run>执行查询</button>
+                            </div>
+                            <p class="query-hint">支持 <code>/server/port</code>、<code>$.server.port</code>、<code>$..name</code> 和通配符；不会执行筛选脚本。</p>
+                            <div class="query-result-heading">
+                                <span data-query-summary>尚未执行</span>
+                                <button type="button" data-query-copy disabled>复制结果</button>
+                            </div>
+                            <div class="query-results" data-query-results aria-live="polite">
+                                <p class="quiet-message">查询结果会显示精确路径、类型和值预览。</p>
+                            </div>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="config-lab-panel schema-lab" data-config-lab-panel="schema" hidden>
+                    <div class="schema-layout">
+                        <article class="lab-card schema-editor-card">
+                            <header class="lab-card-heading">
+                                <div>
+                                    <span class="panel-kicker">CONTRACT / 约束</span>
+                                    <strong>JSON Schema · Draft 2020-12</strong>
+                                </div>
+                                <div class="panel-tools">
+                                    <button type="button" data-schema-sample>示例</button>
+                                    <button type="button" data-schema-import>导入</button>
+                                    <button type="button" data-schema-clear>清空</button>
+                                    <input type="file" accept=".json,.yaml,.yml,application/json,text/yaml,text/plain" hidden data-schema-file>
+                                </div>
+                            </header>
+                            <div class="code-field schema-code-field">
+                                <pre class="line-numbers" aria-hidden="true" data-schema-lines>1</pre>
+                                <textarea wrap="off" spellcheck="false" autocomplete="off" autocapitalize="off"
+                                          aria-label="JSON Schema 输入" data-schema-input></textarea>
+                            </div>
+                            <footer class="editor-status">
+                                <span data-schema-stats>0 B · 1 行</span>
+                                <span data-schema-format>JSON / YAML</span>
+                            </footer>
+                        </article>
+
+                        <article class="lab-card schema-results-card">
+                            <header class="lab-card-heading">
+                                <div>
+                                    <span class="panel-kicker">VALIDATION / 验证</span>
+                                    <strong>实例约束结果</strong>
+                                </div>
+                                <span class="health-badge idle" data-schema-health>待验证</span>
+                            </header>
+                            <div class="schema-action">
+                                <p>当前配置会作为实例验证；外部 <code>$ref</code> 在离线模式下会被阻止。</p>
+                                <button class="primary-button compact" type="button" data-schema-validate>验证当前配置</button>
+                            </div>
+                            <div class="diagnostic-list schema-diagnostics" data-schema-results aria-live="polite">
+                                <p class="quiet-message">点击“验证当前配置”查看约束结果。</p>
+                            </div>
+                        </article>
+                    </div>
+                </section>
             </section>
 
             <section class="mode-panel request-panel" data-mode-panel="request" hidden>
@@ -180,7 +287,16 @@
                     <div class="request-route">
                         <span class="route-tag">BASH</span>
                         <span class="route-arrow">→</span>
-                        <span class="route-tag active">PYTHON · REQUESTS</span>
+                        <label class="request-target">
+                            <span class="sr-only">输出目标</span>
+                            <select aria-label="请求代码输出目标" data-request-target>
+                                <option value="python">PYTHON · REQUESTS</option>
+                                <option value="node">JAVASCRIPT · FETCH</option>
+                                <option value="go">GO · NET/HTTP</option>
+                                <option value="http">RAW HTTP</option>
+                                <option value="har">HAR 1.2</option>
+                            </select>
+                        </label>
                     </div>
 
                     <label class="inline-toggle">
@@ -189,7 +305,7 @@
                     </label>
                     <label class="inline-toggle">
                         <input type="checkbox" checked data-request-response>
-                        <span><i></i>附加响应输出</span>
+                        <span><i></i>Python 响应处理</span>
                     </label>
 
                     <div class="control-spacer"></div>
@@ -197,7 +313,7 @@
                     <button class="text-button" type="button" data-request-import>导入文本</button>
                     <input type="file" accept=".txt,.sh,.bash,text/plain,application/x-sh" hidden data-request-file>
                     <button class="primary-button" type="button" data-request-convert>
-                        <span>生成 Python</span><kbd>⌘↵</kbd>
+                        <span data-request-action-label>生成 Python</span><kbd>⌘↵</kbd>
                     </button>
                 </div>
 
@@ -226,8 +342,8 @@
                     <article class="editor-panel output-panel">
                         <header class="panel-heading">
                             <div>
-                                <span class="panel-kicker">RESULT / Python</span>
-                                <strong>可执行 requests 脚本</strong>
+                                <span class="panel-kicker" data-request-output-kicker>RESULT / Python</span>
+                                <strong data-request-output-label>可执行 requests 脚本</strong>
                             </div>
                             <div class="panel-tools">
                                 <button type="button" data-request-copy disabled>复制</button>
@@ -238,8 +354,8 @@
                             <pre class="line-numbers" aria-hidden="true" data-request-output-lines>1</pre>
                             <textarea wrap="off" spellcheck="false" readonly aria-label="Python 转换结果" data-request-output></textarea>
                             <div class="empty-output" data-request-empty>
-                                <span>PY</span>
-                                <p>解析后生成完整 Python 脚本</p>
+                                <span data-request-empty-mark>PY</span>
+                                <p data-request-empty-label>解析后生成完整 Python 脚本</p>
                             </div>
                         </div>
                         <footer class="editor-status">
@@ -275,7 +391,7 @@
                             <div><span class="card-index">C</span><strong>运行准备</strong></div>
                         </header>
                         <div class="runtime-notes">
-                            <p><code>python -m pip install requests</code></p>
+                            <p><code data-request-runtime>python -m pip install requests</code></p>
                             <div data-request-environment>
                                 <span class="quiet-message">检测到凭据后显示变量名</span>
                             </div>
@@ -299,8 +415,10 @@
 
     <script src="../../assets/js/tool-runtime.js" data-runner-url="../../tools/developer-converter/"></script>
     <script src="vendor/config-libs.js"></script>
+    <script src="vendor/json-schema.js"></script>
     <script src="converter-core.js"></script>
     <script src="request-core.js"></script>
+    <script src="schema-core.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

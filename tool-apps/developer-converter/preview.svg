@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
-  <title id="title">开发者转换台预览</title>
-  <desc id="desc">双栏代码转换界面，展示 JSON 到 YAML 与 cURL 到 Python 两种工作模式。</desc>
+  <title id="title">配置与请求转换台预览</title>
+  <desc id="desc">浅色双栏配置工作台，展示 JSON 到 YAML 转换、结构查询与 Schema 验证入口。</desc>
   <rect width="1200" height="675" fill="#f1f3f6"/>
   <rect width="1200" height="62" fill="#ffffff"/>
   <line x1="0" y1="61.5" x2="1200" y2="61.5" stroke="#d9dfe7"/>
@@ -13,7 +13,7 @@
   <rect x="256" width="172" height="62" fill="#edf2fa"/>
   <rect x="256" y="58" width="172" height="4" fill="#4d70b8"/>
   <text x="283" y="37" fill="#253041" font-family="system-ui,sans-serif" font-size="15" font-weight="700">01　配置互转</text>
-  <text x="468" y="37" fill="#6f7a8a" font-family="system-ui,sans-serif" font-size="15" font-weight="700">02　cURL → Python</text>
+  <text x="468" y="37" fill="#6f7a8a" font-family="system-ui,sans-serif" font-size="15" font-weight="700">02　cURL → 代码</text>
   <circle cx="1064" cy="31" r="6" fill="none" stroke="#2f7d61" stroke-width="3"/>
   <text x="1080" y="35" fill="#6f7a8a" font-family="ui-monospace,monospace" font-size="11">LOCAL ONLY</text>
 
@@ -93,30 +93,26 @@
   </g>
 
   <g transform="translate(24 532)">
-    <rect width="1152" height="119" fill="#ffffff" stroke="#d9dfe7"/>
-    <line x1="585" y1="0" x2="585" y2="119" stroke="#d9dfe7"/>
-    <line x1="862" y1="0" x2="862" y2="119" stroke="#d9dfe7"/>
-    <rect x="13" y="13" width="21" height="21" fill="#edf2fa"/>
-    <text x="20" y="28" fill="#36578f" font-family="ui-monospace,monospace" font-size="9">A</text>
-    <text x="44" y="28" fill="#253041" font-family="system-ui,sans-serif" font-size="12" font-weight="700">损失与语法诊断</text>
-    <rect x="488" y="13" width="75" height="21" fill="#ffffff" stroke="#2f7d61"/>
-    <text x="504" y="27" fill="#2f7d61" font-family="ui-monospace,monospace" font-size="9" font-weight="700">可导出</text>
-    <rect x="14" y="50" width="550" height="45" fill="#f7f9fc" stroke="#d9dfe7"/>
-    <circle cx="31" cy="72" r="4" fill="#2f7d61"/>
-    <text x="44" y="76" fill="#253041" font-family="system-ui,sans-serif" font-size="11">目标格式回读后语义一致。</text>
-    <rect x="599" y="13" width="21" height="21" fill="#edf2fa"/>
-    <text x="606" y="28" fill="#36578f" font-family="ui-monospace,monospace" font-size="9">B</text>
-    <text x="630" y="28" fill="#253041" font-family="system-ui,sans-serif" font-size="12" font-weight="700">转换轨迹</text>
-    <text x="601" y="61" fill="#6f7a8a" font-family="ui-monospace,monospace" font-size="9">识别</text>
-    <text x="664" y="61" fill="#253041" font-family="system-ui,sans-serif" font-size="11" font-weight="700">JSON · HIGH</text>
-    <text x="601" y="83" fill="#6f7a8a" font-family="ui-monospace,monospace" font-size="9">回读</text>
-    <text x="664" y="83" fill="#2f7d61" font-family="system-ui,sans-serif" font-size="11" font-weight="700">PASS · 语义一致</text>
-    <rect x="876" y="13" width="21" height="21" fill="#edf2fa"/>
-    <text x="883" y="28" fill="#36578f" font-family="ui-monospace,monospace" font-size="9">C</text>
-    <text x="907" y="28" fill="#253041" font-family="system-ui,sans-serif" font-size="12" font-weight="700">输出规则</text>
-    <text x="878" y="63" fill="#6f7a8a" font-family="system-ui,sans-serif" font-size="10">缩进</text>
-    <text x="1108" y="63" fill="#253041" font-family="ui-monospace,monospace" font-size="10">2 空格</text>
-    <text x="878" y="87" fill="#6f7a8a" font-family="system-ui,sans-serif" font-size="10">递归排序键</text>
-    <rect x="1127" y="77" width="28" height="15" fill="#e7ebf0" stroke="#b8c1cd"/>
+    <rect width="1152" height="43" fill="#ffffff" stroke="#d9dfe7"/>
+    <rect x="182" y="0" width="190" height="43" fill="#f7f9fc"/>
+    <rect x="182" y="40" width="190" height="3" fill="#4d70b8"/>
+    <line x1="182" y1="0" x2="182" y2="43" stroke="#d9dfe7"/>
+    <line x1="372" y1="0" x2="372" y2="43" stroke="#d9dfe7"/>
+    <text x="40" y="27" fill="#6f7a8a" font-family="system-ui,sans-serif" font-size="11" font-weight="700">01　转换检查</text>
+    <text x="208" y="27" fill="#253041" font-family="system-ui,sans-serif" font-size="11" font-weight="700">02　结构与查询　14</text>
+    <text x="398" y="27" fill="#6f7a8a" font-family="system-ui,sans-serif" font-size="11" font-weight="700">03　Schema 验证　0</text>
+
+    <g transform="translate(0 55)">
+      <rect width="708" height="64" fill="#ffffff" stroke="#d9dfe7"/>
+      <text x="14" y="20" fill="#6f7a8a" font-family="ui-monospace,monospace" font-size="8" font-weight="700">DOCUMENT MAP / 文档地图</text>
+      <text x="14" y="40" fill="#253041" font-family="ui-monospace,monospace" font-size="10" font-weight="700">› $　 OBJECT　 5 keys</text>
+      <text x="38" y="57" fill="#36578f" font-family="ui-monospace,monospace" font-size="9">› retry　 OBJECT　 2 keys　 /retry</text>
+      <rect x="720" width="432" height="64" fill="#ffffff" stroke="#d9dfe7"/>
+      <text x="734" y="20" fill="#6f7a8a" font-family="ui-monospace,monospace" font-size="8" font-weight="700">PATH PROBE / 路径探针</text>
+      <rect x="734" y="29" width="290" height="24" fill="#fbfcfe" stroke="#b8c1cd"/>
+      <text x="745" y="45" fill="#253041" font-family="ui-monospace,monospace" font-size="9">$.retry.attempts</text>
+      <rect x="1033" y="29" width="104" height="24" fill="#4d70b8"/>
+      <text x="1054" y="45" fill="#ffffff" font-family="system-ui,sans-serif" font-size="9" font-weight="700">执行查询</text>
+    </g>
   </g>
 </svg>

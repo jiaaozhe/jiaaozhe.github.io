@@ -521,6 +521,364 @@
         throw new Error('无法序列化未知 JSON 节点。');
     }
 
+    function pointerToken(value) {
+        return String(value).replace(/~/g, '~0').replace(/\//g, '~1');
+    }
+
+    function pathProperty(value) {
+        const key = String(value);
+        return /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(key)
+            ? '.' + key
+            : '[' + JSON.stringify(key) + ']';
+    }
+
+    function nodePreview(node) {
+        if (!node) return '未知节点';
+        if (node.type === 'object') return '{ ' + node.entries.length + ' keys }';
+        if (node.type === 'array') return '[ ' + node.items.length + ' items ]';
+        if (node.type === 'string') {
+            const value = JSON.stringify(node.value);
+            return value.length > 120 ? JSON.stringify(node.value.slice(0, 110) + '…') : value;
+        }
+        if (node.type === 'boolean') return node.value ? 'true' : 'false';
+        if (node.type === 'null') return 'null';
+        if (node.type === 'datetime') return node.value;
+        if (node.type === 'integer' || node.type === 'number') return node.raw;
+        return node.type;
+    }
+
+    function serializeNode(node) {
+        return serializeJson(node, { indent: 2, minify: false }, 0);
+    }
+
+    function previewNodeValue(node, limit) {
+        const maximum = Math.max(256, Number(limit) || 12000);
+        let output = '';
+        let truncated = false;
+        function append(value) {
+            if (truncated) return;
+            const text = String(value);
+            const remaining = maximum - output.length;
+            if (text.length <= remaining) {
+                output += text;
+                return;
+            }
+            output += text.slice(0, Math.max(0, remaining));
+            truncated = true;
+        }
+        function write(current, level) {
+            if (truncated) return;
+            if (current.type === 'object') {
+                append('{');
+                current.entries.forEach(function(entry, index) {
+                    if (truncated) return;
+                    append((index ? ',' : '') + '\n' + '  '.repeat(level + 1));
+                    append(JSON.stringify(entry[0]) + ': ');
+                    write(entry[1], level + 1);
+                });
+                if (!truncated) append(current.entries.length ? '\n' + '  '.repeat(level) + '}' : '}');
+                return;
+            }
+            if (current.type === 'array') {
+                append('[');
+                current.items.forEach(function(item, index) {
+                    if (truncated) return;
+                    append((index ? ',' : '') + '\n' + '  '.repeat(level + 1));
+                    write(item, level + 1);
+                });
+                if (!truncated) append(current.items.length ? '\n' + '  '.repeat(level) + ']' : ']');
+                return;
+            }
+            if (current.type === 'string' || current.type === 'datetime') {
+                const remaining = Math.max(0, maximum - output.length - 4);
+                const raw = current.value;
+                append(JSON.stringify(raw.length > remaining ? raw.slice(0, remaining) + '…' : raw));
+                if (raw.length > remaining) truncated = true;
+                return;
+            }
+            append(serializeNode(current));
+        }
+        write(node, 0);
+        if (truncated) {
+            output = output.slice(0, Math.max(0, maximum - 1)) + '…';
+        }
+        return { value: output, truncated: truncated };
+    }
+
+    function childRecords(record) {
+        if (record.node.type === 'object') {
+            return record.node.entries.map(function(entry) {
+                return {
+                    node: entry[1],
+                    pointer: record.pointer + '/' + pointerToken(entry[0]),
+                    path: record.path + pathProperty(entry[0]),
+                    key: entry[0]
+                };
+            });
+        }
+        if (record.node.type === 'array') {
+            return record.node.items.map(function(item, index) {
+                return {
+                    node: item,
+                    pointer: record.pointer + '/' + index,
+                    path: record.path + '[' + index + ']',
+                    key: String(index)
+                };
+            });
+        }
+        return [];
+    }
+
+    function decodePointerToken(token) {
+        if (/~(?![01])/u.test(token)) throw new Error('JSON Pointer 包含无效的 ~ 转义。');
+        return token.replace(/~1/g, '/').replace(/~0/g, '~');
+    }
+
+    function queryPointer(root, expression) {
+        let pointer = expression;
+        if (pointer.startsWith('#')) {
+            try {
+                pointer = decodeURIComponent(pointer.slice(1));
+            } catch (_error) {
+                throw new Error('JSON Pointer URI 片段无法解码。');
+            }
+        }
+        if (pointer === '') return [{ node: root, pointer: '', path: '$', key: null }];
+        if (!pointer.startsWith('/')) throw new Error('JSON Pointer 必须为空或以 / 开头。');
+        const tokens = pointer.slice(1).split('/').map(decodePointerToken);
+        let current = { node: root, pointer: '', path: '$', key: null };
+        tokens.forEach(function(token) {
+            if (current.node.type === 'object') {
+                const entry = current.node.entries.find(function(item) { return item[0] === token; });
+                if (!entry) throw new Error('路径不存在：' + current.pointer + '/' + pointerToken(token));
+                current = {
+                    node: entry[1],
+                    pointer: current.pointer + '/' + pointerToken(token),
+                    path: current.path + pathProperty(token),
+                    key: token
+                };
+                return;
+            }
+            if (current.node.type === 'array') {
+                if (!/^(?:0|[1-9]\d*)$/.test(token)) throw new Error('数组路径必须使用非负整数索引。');
+                const index = Number(token);
+                if (index >= current.node.items.length) throw new Error('数组索引超出范围：' + token);
+                current = {
+                    node: current.node.items[index],
+                    pointer: current.pointer + '/' + index,
+                    path: current.path + '[' + index + ']',
+                    key: String(index)
+                };
+                return;
+            }
+            throw new Error('路径经过了一个标量节点：' + current.pointer);
+        });
+        return [current];
+    }
+
+    function readJsonPathQuoted(source, state) {
+        const quote = source[state.index];
+        state.index += 1;
+        let value = '';
+        while (state.index < source.length) {
+            const char = source[state.index];
+            state.index += 1;
+            if (char === quote) return value;
+            if (char !== '\\') {
+                value += char;
+                continue;
+            }
+            if (state.index >= source.length) throw new Error('JSONPath 字符串转义不完整。');
+            const escaped = source[state.index];
+            state.index += 1;
+            const simple = { b: '\b', f: '\f', n: '\n', r: '\r', t: '\t' };
+            if (Object.prototype.hasOwnProperty.call(simple, escaped)) value += simple[escaped];
+            else if (escaped === quote || escaped === '\\' || escaped === '/') value += escaped;
+            else if (escaped === 'u') {
+                const hex = source.slice(state.index, state.index + 4);
+                if (!/^[0-9A-Fa-f]{4}$/.test(hex)) throw new Error('JSONPath Unicode 转义无效。');
+                value += String.fromCharCode(Number.parseInt(hex, 16));
+                state.index += 4;
+            } else {
+                throw new Error('JSONPath 包含不支持的转义：\\' + escaped);
+            }
+        }
+        throw new Error('JSONPath 字符串缺少结束引号。');
+    }
+
+    function readJsonPathName(source, state) {
+        const start = state.index;
+        while (state.index < source.length && /[A-Za-z0-9_$-]/.test(source[state.index])) {
+            state.index += 1;
+        }
+        if (state.index === start) throw new Error('JSONPath 属性名为空；特殊键请使用方括号引号。');
+        return source.slice(start, state.index);
+    }
+
+    function parseJsonPath(expression) {
+        const source = String(expression || '').trim();
+        if (!source.startsWith('$')) throw new Error('JSONPath 必须以 $ 开头。');
+        const state = { index: 1 };
+        const tokens = [];
+        while (state.index < source.length) {
+            if (tokens.length >= 64) throw new Error('JSONPath 层级不能超过 64。');
+            if (source.startsWith('..', state.index)) {
+                state.index += 2;
+                if (source[state.index] === '*') {
+                    state.index += 1;
+                    tokens.push({ type: 'recursive', key: '*' });
+                } else {
+                    tokens.push({ type: 'recursive', key: readJsonPathName(source, state) });
+                }
+                continue;
+            }
+            if (source[state.index] === '.') {
+                state.index += 1;
+                if (source[state.index] === '*') {
+                    state.index += 1;
+                    tokens.push({ type: 'wildcard' });
+                } else {
+                    tokens.push({ type: 'property', key: readJsonPathName(source, state) });
+                }
+                continue;
+            }
+            if (source[state.index] === '[') {
+                state.index += 1;
+                while (/\s/.test(source[state.index] || '')) state.index += 1;
+                if (source[state.index] === '*') {
+                    state.index += 1;
+                    tokens.push({ type: 'wildcard' });
+                } else if (source[state.index] === '"' || source[state.index] === "'") {
+                    tokens.push({ type: 'property', key: readJsonPathQuoted(source, state) });
+                } else {
+                    const start = state.index;
+                    while (/\d/.test(source[state.index] || '')) state.index += 1;
+                    const rawIndex = source.slice(start, state.index);
+                    if (!/^(?:0|[1-9]\d*)$/.test(rawIndex)) {
+                        throw new Error('仅支持 [索引]、[*] 或 ["属性"]；筛选表达式不会执行。');
+                    }
+                    tokens.push({ type: 'index', index: Number(rawIndex) });
+                }
+                while (/\s/.test(source[state.index] || '')) state.index += 1;
+                if (source[state.index] !== ']') throw new Error('JSONPath 方括号缺少 ]。');
+                state.index += 1;
+                continue;
+            }
+            throw new Error('JSONPath 在第 ' + (state.index + 1) + ' 个字符附近无法解析。');
+        }
+        return tokens;
+    }
+
+    function queryJsonPath(root, expression) {
+        const tokens = parseJsonPath(expression);
+        let records = [{ node: root, pointer: '', path: '$', key: null }];
+        let visited = 0;
+        tokens.forEach(function(token) {
+            const next = [];
+            if (token.type === 'recursive') {
+                const visit = function(record) {
+                    childRecords(record).forEach(function(child) {
+                        visited += 1;
+                        if (visited > 10000) throw new Error('查询访问节点过多，请缩小路径范围。');
+                        if (token.key === '*' || child.key === token.key) next.push(child);
+                        visit(child);
+                    });
+                };
+                records.forEach(visit);
+            } else {
+                records.forEach(function(record) {
+                    const children = childRecords(record);
+                    visited += children.length;
+                    if (visited > 10000) throw new Error('查询访问节点过多，请缩小路径范围。');
+                    if (token.type === 'wildcard') {
+                        next.push.apply(next, children);
+                    } else if (token.type === 'property' && record.node.type === 'object') {
+                        const match = children.find(function(child) { return child.key === token.key; });
+                        if (match) next.push(match);
+                    } else if (token.type === 'index' && record.node.type === 'array' && children[token.index]) {
+                        next.push(children[token.index]);
+                    }
+                });
+            }
+            records = next;
+        });
+        return records;
+    }
+
+    function queryStructure(root, expression) {
+        if (!root) return { ok: false, results: [], error: '请先提供可解析的配置。' };
+        const source = String(expression === undefined ? '$' : expression).trim() || '$';
+        try {
+            const records = source.startsWith('$')
+                ? queryJsonPath(root, source)
+                : queryPointer(root, source);
+            const truncated = records.length > 200;
+            return {
+                ok: true,
+                mode: source.startsWith('$') ? 'jsonpath' : 'pointer',
+                truncated: truncated,
+                results: records.slice(0, 200).map(function(record) {
+                    const value = previewNodeValue(record.node, 12000);
+                    return {
+                        node: record.node,
+                        pointer: record.pointer,
+                        path: record.path,
+                        type: record.node.type,
+                        preview: nodePreview(record.node),
+                        value: value.value,
+                        valueTruncated: value.truncated
+                    };
+                })
+            };
+        } catch (error) {
+            return {
+                ok: false,
+                results: [],
+                error: String(error && error.message || error || '无法执行路径查询。')
+            };
+        }
+    }
+
+    function validationValue(root) {
+        const issues = [];
+        function convertNode(node, pointer) {
+            if (node.type === 'null') return null;
+            if (node.type === 'string' || node.type === 'datetime') return node.value;
+            if (node.type === 'boolean') return node.value;
+            if (node.type === 'integer') {
+                const value = Number(node.raw);
+                if (!Number.isSafeInteger(value)) {
+                    issues.push(issue('warning', 'schema-integer-precision', '高精度整数在 Schema 数值约束中按 Number 近似验证。', {
+                        path: pointer || '/'
+                    }));
+                }
+                return value;
+            }
+            if (node.type === 'number') {
+                const value = Number(node.raw);
+                if (!Number.isFinite(value)) {
+                    issues.push(issue('warning', 'schema-non-finite', node.raw + ' 不是 JSON Schema 的标准数值，验证时按字符串处理。', {
+                        path: pointer || '/'
+                    }));
+                    return node.raw;
+                }
+                return value;
+            }
+            if (node.type === 'array') {
+                return node.items.map(function(item, index) {
+                    return convertNode(item, pointer + '/' + index);
+                });
+            }
+            if (node.type === 'object') {
+                return Object.fromEntries(node.entries.map(function(entry) {
+                    return [entry[0], convertNode(entry[1], pointer + '/' + pointerToken(entry[0]))];
+                }));
+            }
+            return null;
+        }
+        return { value: convertNode(root, ''), issues: issues };
+    }
+
     function yamlNode(node) {
         if (node.type === 'null') return new YAML.Scalar(null);
         if (node.type === 'string') return new YAML.Scalar(node.value);
@@ -703,6 +1061,7 @@
         }
 
         let adapted = adaptForTarget(parsed.root, options.target, issues);
+        const structure = cloneNode(parsed.root);
         if (options.sortKeys) adapted = sortNode(adapted);
         const losses = issues.filter(function(item) { return item.lossy; });
         if (options.mode === 'safe' && losses.length) {
@@ -721,7 +1080,8 @@
                         message: '保真策略已阻止：' + item.message
                     });
                 }),
-                stats: statsFor(parsed.root)
+                stats: statsFor(parsed.root),
+                structure: structure
             };
         }
 
@@ -737,7 +1097,8 @@
                 targetFormat: options.target,
                 detection: detection,
                 issues: issues,
-                stats: statsFor(parsed.root)
+                stats: statsFor(parsed.root),
+                structure: structure
             };
         }
 
@@ -755,6 +1116,7 @@
             detection: detection,
             issues: issues,
             verification: verification,
+            structure: structure,
             stats: Object.assign(statsFor(parsed.root), {
                 inputBytes: byteLength(input),
                 outputBytes: byteLength(output)
@@ -778,6 +1140,9 @@
         normalizeFormat: normalizeFormat,
         outputFilename: outputFilename,
         parseByFormat: parseByFormat,
-        scanTomlComments: scanTomlComments
+        queryStructure: queryStructure,
+        scanTomlComments: scanTomlComments,
+        serializeNode: serializeNode,
+        validationValue: validationValue
     });
 });

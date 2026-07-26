@@ -2,19 +2,29 @@
     'use strict';
 
     const app = document.querySelector('[data-app]');
-    if (!app || !window.DeveloperConverterCore || !window.DeveloperRequestCore) return;
+    if (!app || !window.DeveloperConverterCore || !window.DeveloperRequestCore || !window.DeveloperSchemaCore) return;
 
     const configCore = window.DeveloperConverterCore;
     const requestCore = window.DeveloperRequestCore;
+    const schemaCore = window.DeveloperSchemaCore;
     const PREFERENCES_KEY = 'developer-converter.preferences.v1';
     const CONFIG_SAMPLE = '{\n  "service": "photo-api",\n  "enabled": true,\n  "retry": {\n    "attempts": 3,\n    "backoff": 1.5\n  },\n  "limits": {\n    "upload_bytes": 9007199254740993\n  },\n  "regions": ["cn-east", "eu-west"]\n}\n';
     const REQUEST_SAMPLE = "curl 'https://api.example.com/v1/photos?limit=12' \\\n  -X POST \\\n  -H 'Authorization: Bearer demo-token-replace-me' \\\n  -H 'Content-Type: application/json' \\\n  --data-raw '{\"album\":\"street\",\"private\":true}'";
 
+    const SCHEMA_SAMPLE = '{\n  "$schema": "https://json-schema.org/draft/2020-12/schema",\n  "type": "object",\n  "required": ["service", "enabled", "retry", "regions"],\n  "properties": {\n    "service": { "type": "string", "minLength": 2 },\n    "enabled": { "type": "boolean" },\n    "retry": {\n      "type": "object",\n      "required": ["attempts"],\n      "properties": {\n        "attempts": { "type": "integer", "minimum": 0 },\n        "backoff": { "type": "number", "exclusiveMinimum": 0 }\n      },\n      "additionalProperties": false\n    },\n    "limits": {\n      "type": "object",\n      "properties": {\n        "upload_bytes": { "type": "integer", "minimum": 1 }\n      }\n    },\n    "regions": {\n      "type": "array",\n      "minItems": 1,\n      "items": { "type": "string", "pattern": "^[a-z]{2}-[a-z]+$" }\n    }\n  },\n  "additionalProperties": false\n}\n';
+
     const state = {
         mode: 'config',
         policy: 'safe',
+        configLab: 'trace',
         configName: 'config.json',
+        schemaName: 'schema.json',
+        configText: '',
         configResult: null,
+        queryResult: null,
+        schemaResult: null,
+        schemaValidated: false,
+        structureRows: new Map(),
         requestResult: null,
         curlLibrary: null,
         curlLibraryPromise: null,
@@ -49,6 +59,26 @@
         traceDetected: one('[data-trace-detected]'),
         traceStructure: one('[data-trace-structure]'),
         traceRoundtrip: one('[data-trace-roundtrip]'),
+        configLabButtons: all('[data-config-lab]'),
+        configLabPanels: all('[data-config-lab-panel]'),
+        structureCount: one('[data-structure-count]'),
+        structureTree: one('[data-structure-tree]'),
+        structureExpand: one('[data-structure-expand]'),
+        structureCollapse: one('[data-structure-collapse]'),
+        configQuery: one('[data-config-query]'),
+        configQueryRun: one('[data-config-query-run]'),
+        queryHealth: one('[data-query-health]'),
+        querySummary: one('[data-query-summary]'),
+        queryCopy: one('[data-query-copy]'),
+        queryResults: one('[data-query-results]'),
+        schemaCount: one('[data-schema-count]'),
+        schemaInput: one('[data-schema-input]'),
+        schemaLines: one('[data-schema-lines]'),
+        schemaStats: one('[data-schema-stats]'),
+        schemaFormat: one('[data-schema-format]'),
+        schemaFile: one('[data-schema-file]'),
+        schemaHealth: one('[data-schema-health]'),
+        schemaResults: one('[data-schema-results]'),
         configIndent: one('[data-config-indent]'),
         configSort: one('[data-config-sort]'),
         configMinify: one('[data-config-minify]'),
@@ -65,6 +95,14 @@
         requestSecretStatus: one('[data-request-secret-status]'),
         requestProtect: one('[data-request-protect]'),
         requestResponse: one('[data-request-response]'),
+        requestTarget: one('[data-request-target]'),
+        requestOutputKicker: one('[data-request-output-kicker]'),
+        requestOutputLabel: one('[data-request-output-label]'),
+        requestActionLabel: one('[data-request-action-label]'),
+        requestDownloadLabel: one('[data-request-download]'),
+        requestEmptyMark: one('[data-request-empty-mark]'),
+        requestEmptyLabel: one('[data-request-empty-label]'),
+        requestRuntime: one('[data-request-runtime]'),
         requestFile: one('[data-request-file]'),
         requestCopy: one('[data-request-copy]'),
         requestDownload: one('[data-request-download]'),
@@ -154,6 +192,22 @@
         if (item.path) parts.push(item.path);
         location.textContent = parts.join(' · ');
         row.append(dot, message, location);
+        if (item.source !== 'schema' && item.path && String(item.path).startsWith('/')) {
+            row.classList.add('is-navigable');
+            row.tabIndex = 0;
+            row.setAttribute('role', 'button');
+            row.setAttribute('aria-label', item.message + '，定位到 ' + item.path);
+            const navigate = function() {
+                switchConfigLab('structure');
+                focusStructurePath(item.path === '/' ? '' : item.path);
+            };
+            row.addEventListener('click', navigate);
+            row.addEventListener('keydown', function(event) {
+                if (event.key !== 'Enter' && event.key !== ' ') return;
+                event.preventDefault();
+                navigate();
+            });
+        }
         return row;
     }
 
@@ -181,7 +235,9 @@
             sortKeys: elements.configSort.checked,
             minify: elements.configMinify.checked,
             protectSecrets: elements.requestProtect.checked,
-            responseOutput: elements.requestResponse.checked
+            responseOutput: elements.requestResponse.checked,
+            requestTarget: elements.requestTarget.value,
+            configLab: state.configLab
         };
     }
 
@@ -209,12 +265,17 @@
         elements.configMinify.checked = Boolean(preferences.minify);
         elements.requestProtect.checked = preferences.protectSecrets !== false;
         elements.requestResponse.checked = preferences.responseOutput !== false;
+        elements.requestTarget.value = Object.prototype.hasOwnProperty.call(requestCore.TARGETS, preferences.requestTarget)
+            ? preferences.requestTarget
+            : 'python';
         all('[data-policy]').forEach(function(button) {
             button.setAttribute('aria-pressed', String(button.dataset.policy === state.policy));
         });
         updatePolicyPresentation();
         switchMode(preferences.mode === 'request' ? 'request' : 'config', false);
+        switchConfigLab(['trace', 'structure', 'schema'].includes(preferences.configLab) ? preferences.configLab : 'trace', false);
         updateTargetPresentation();
+        updateRequestTargetPresentation();
     }
 
     function switchMode(mode, persist) {
@@ -229,10 +290,43 @@
         if (persist !== false) savePreferences();
     }
 
+    function switchConfigLab(lab, persist) {
+        state.configLab = ['trace', 'structure', 'schema'].includes(lab) ? lab : 'trace';
+        elements.configLabButtons.forEach(function(button) {
+            button.setAttribute('aria-pressed', String(button.dataset.configLab === state.configLab));
+        });
+        elements.configLabPanels.forEach(function(panel) {
+            panel.hidden = panel.dataset.configLabPanel !== state.configLab;
+        });
+        if (persist !== false) savePreferences();
+    }
+
     function updateTargetPresentation() {
         const target = elements.configTarget.value.toUpperCase();
         elements.configOutputLabel.textContent = target;
         elements.configMinify.disabled = target !== 'JSON';
+    }
+
+    function updateRequestTargetPresentation() {
+        const target = requestCore.targetInfo(elements.requestTarget.value);
+        const presentation = {
+            python: { short: 'PY', action: '生成 Python', label: '可执行 Requests 脚本', aria: 'Python 转换结果' },
+            node: { short: 'JS', action: '生成 JavaScript', label: '可执行 Fetch 模块', aria: 'JavaScript 转换结果' },
+            go: { short: 'GO', action: '生成 Go', label: '可执行 net/http 程序', aria: 'Go 转换结果' },
+            http: { short: 'HTTP', action: '生成 HTTP', label: '原始 HTTP 请求报文', aria: 'Raw HTTP 转换结果' },
+            har: { short: 'HAR', action: '生成 HAR', label: 'HAR 1.2 请求档案', aria: 'HAR 转换结果' }
+        }[target.id];
+        const extension = target.filename.slice(target.filename.lastIndexOf('.'));
+        elements.requestOutputKicker.textContent = 'RESULT / ' + target.label.split(' · ')[0];
+        elements.requestOutputLabel.textContent = presentation.label;
+        elements.requestActionLabel.textContent = presentation.action;
+        elements.requestDownloadLabel.textContent = '下载 ' + extension;
+        elements.requestEmptyMark.textContent = presentation.short;
+        elements.requestEmptyLabel.textContent = '解析后生成' + presentation.label;
+        elements.requestRuntime.textContent = target.runtime;
+        elements.requestOutput.setAttribute('aria-label', presentation.aria);
+        elements.requestResponse.disabled = !target.responseOutput;
+        elements.requestResponse.closest('.inline-toggle').classList.toggle('is-disabled', !target.responseOutput);
     }
 
     function configOptions() {
@@ -247,7 +341,271 @@
         };
     }
 
-    function renderConfigResult(result) {
+    function pointerToken(value) {
+        return String(value).replace(/~/g, '~0').replace(/\//g, '~1');
+    }
+
+    function pathProperty(value) {
+        const key = String(value);
+        return /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(key)
+            ? '.' + key
+            : '[' + JSON.stringify(key) + ']';
+    }
+
+    function structurePreview(node) {
+        if (node.type === 'object') return node.entries.length + ' keys';
+        if (node.type === 'array') return node.items.length + ' items';
+        const value = configCore.serializeNode(node);
+        return value.length > 100 ? value.slice(0, 97) + '…' : value;
+    }
+
+    function structureChildren(node, pointer, path) {
+        if (node.type === 'object') {
+            return node.entries.map(function(entry) {
+                return {
+                    node: entry[1],
+                    key: entry[0],
+                    pointer: pointer + '/' + pointerToken(entry[0]),
+                    path: path + pathProperty(entry[0])
+                };
+            });
+        }
+        if (node.type === 'array') {
+            return node.items.map(function(item, index) {
+                return {
+                    node: item,
+                    key: '[' + index + ']',
+                    pointer: pointer + '/' + index,
+                    path: path + '[' + index + ']'
+                };
+            });
+        }
+        return [];
+    }
+
+    function createStructureNode(record, depth, budget) {
+        budget.count += 1;
+        const expandable = record.node.type === 'object' || record.node.type === 'array';
+        const container = document.createElement(expandable ? 'details' : 'div');
+        container.className = 'structure-node';
+        container.dataset.pointer = record.pointer;
+        if (expandable) container.open = depth < 2;
+
+        const row = document.createElement(expandable ? 'summary' : 'div');
+        row.className = 'structure-row';
+        const key = document.createElement('strong');
+        key.className = 'structure-key';
+        key.textContent = record.key === null ? '$' : record.key;
+        const type = document.createElement('span');
+        type.className = 'node-type type-' + record.node.type;
+        type.textContent = record.node.type;
+        const preview = document.createElement('code');
+        preview.className = 'structure-preview';
+        preview.textContent = structurePreview(record.node);
+        const path = document.createElement('code');
+        path.className = 'structure-path';
+        path.textContent = record.pointer || '/';
+        path.title = record.path;
+        row.append(key, type, preview, path);
+        container.append(row);
+        state.structureRows.set(record.pointer, row);
+
+        if (expandable) {
+            const children = document.createElement('div');
+            children.className = 'structure-children';
+            structureChildren(record.node, record.pointer, record.path).forEach(function(child) {
+                if (budget.count >= budget.limit) return;
+                children.append(createStructureNode(child, depth + 1, budget));
+            });
+            container.append(children);
+        }
+        return container;
+    }
+
+    function renderStructure(structure, stats) {
+        elements.structureTree.replaceChildren();
+        state.structureRows = new Map();
+        if (!structure) {
+            const empty = document.createElement('p');
+            empty.className = 'quiet-message';
+            empty.textContent = '输入可解析后显示节点、类型与精确路径。';
+            elements.structureTree.append(empty);
+            elements.structureCount.textContent = '—';
+            renderQueryResult(null);
+            return;
+        }
+        const budget = { count: 0, limit: 2000 };
+        elements.structureTree.append(createStructureNode({
+            node: structure,
+            key: null,
+            pointer: '',
+            path: '$'
+        }, 0, budget));
+        if (stats && stats.nodes > budget.limit) {
+            const note = document.createElement('p');
+            note.className = 'tree-limit-note';
+            note.textContent = '结构树仅渲染前 ' + budget.limit + ' 个节点；路径查询仍针对完整文档。';
+            elements.structureTree.append(note);
+        }
+        elements.structureCount.textContent = stats ? String(stats.nodes) : String(budget.count);
+    }
+
+    function focusStructurePath(pointer) {
+        const normalized = pointer === '/' ? '' : String(pointer || '');
+        const row = state.structureRows.get(normalized);
+        if (!row) {
+            showToast('该节点未出现在当前渲染范围内，可用路径查询直接查看。');
+            return;
+        }
+        let parent = row.parentElement;
+        while (parent) {
+            if (parent.tagName === 'DETAILS') parent.open = true;
+            parent = parent.parentElement;
+        }
+        state.structureRows.forEach(function(item) { item.classList.remove('is-focused'); });
+        row.classList.add('is-focused');
+        row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+
+    function renderQueryResult(result) {
+        elements.queryResults.replaceChildren();
+        state.queryResult = result;
+        if (!result) {
+            elements.querySummary.textContent = '尚未执行';
+            elements.queryCopy.disabled = true;
+            setHealth(elements.queryHealth, 'idle', '待查询');
+            const empty = document.createElement('p');
+            empty.className = 'quiet-message';
+            empty.textContent = '查询结果会显示精确路径、类型和值预览。';
+            elements.queryResults.append(empty);
+            return;
+        }
+        if (!result.ok) {
+            elements.querySummary.textContent = result.error;
+            elements.queryCopy.disabled = true;
+            setHealth(elements.queryHealth, 'error', '表达式错误');
+            const error = document.createElement('p');
+            error.className = 'query-error';
+            error.textContent = result.error;
+            elements.queryResults.append(error);
+            return;
+        }
+        const clippedValues = result.results.filter(function(item) { return item.valueTruncated; }).length;
+        elements.querySummary.textContent = result.results.length + ' 个结果 · ' + result.mode.toUpperCase() +
+            (result.truncated ? ' · 结果已截断' : '') +
+            (clippedValues ? ' · ' + clippedValues + ' 个值预览截断' : '');
+        elements.queryCopy.disabled = !result.results.length;
+        setHealth(elements.queryHealth, result.results.length ? 'ok' : 'warning', result.results.length ? '已命中' : '无结果');
+        if (!result.results.length) {
+            const empty = document.createElement('p');
+            empty.className = 'quiet-message';
+            empty.textContent = '表达式有效，但没有匹配节点。';
+            elements.queryResults.append(empty);
+            return;
+        }
+        result.results.forEach(function(item) {
+            const row = document.createElement('div');
+            row.className = 'query-result';
+            row.tabIndex = 0;
+            row.setAttribute('role', 'button');
+            row.setAttribute('aria-label', '定位到 ' + item.path);
+            const heading = document.createElement('div');
+            const path = document.createElement('code');
+            path.textContent = item.path;
+            path.title = item.pointer || '/';
+            const type = document.createElement('span');
+            type.className = 'node-type type-' + item.type;
+            type.textContent = item.type;
+            heading.append(path, type);
+            const preview = document.createElement('pre');
+            preview.textContent = item.value;
+            if (item.valueTruncated) preview.title = '值过大，仅显示前 12,000 个字符。';
+            row.append(heading, preview);
+            const navigate = function() {
+                switchConfigLab('structure');
+                focusStructurePath(item.pointer);
+            };
+            row.addEventListener('click', navigate);
+            row.addEventListener('keydown', function(event) {
+                if (event.key !== 'Enter' && event.key !== ' ') return;
+                event.preventDefault();
+                navigate();
+            });
+            elements.queryResults.append(row);
+        });
+    }
+
+    function executeQuery(showMessage) {
+        const refreshed = ensureConfigCurrent();
+        if (refreshed && state.schemaValidated) validateSchema(false);
+        const structure = state.configResult && state.configResult.structure;
+        const result = configCore.queryStructure(structure, elements.configQuery.value);
+        renderQueryResult(result);
+        if (showMessage) {
+            showToast(result.ok
+                ? '查询完成，共命中 ' + result.results.length + ' 个节点。'
+                : result.error);
+        }
+    }
+
+    function renderSchemaResult(result) {
+        state.schemaResult = result;
+        renderDiagnostics(elements.schemaResults, result.issues || [], result.valid ? 'Schema 验证通过，未发现约束问题。' : '尚无验证结果。');
+        elements.schemaFormat.textContent = result.format
+            ? result.format.toUpperCase() + ' · Draft 2020-12'
+            : 'JSON / YAML';
+        if (result.ok && result.valid) {
+            setHealth(elements.schemaHealth, 'ok', '验证通过');
+            elements.schemaCount.textContent = '0';
+        } else if (result.ok) {
+            setHealth(elements.schemaHealth, 'error', (result.errorCount || 0) + ' 条错误');
+            elements.schemaCount.textContent = String(result.errorCount || 0);
+        } else {
+            setHealth(elements.schemaHealth, 'error', 'Schema 错误');
+            elements.schemaCount.textContent = '!';
+        }
+    }
+
+    function validateSchema(showMessage) {
+        const refreshed = ensureConfigCurrent();
+        if (refreshed && state.queryResult) executeQuery(false);
+        state.schemaValidated = true;
+        const result = schemaCore.validate(
+            state.configResult && state.configResult.structure,
+            elements.schemaInput.value,
+            configCore,
+            state.schemaName
+        );
+        renderSchemaResult(result);
+        if (showMessage) {
+            if (result.ok && result.valid) showToast('当前配置符合 Schema。');
+            else if (result.ok) showToast('发现 ' + result.errorCount + ' 条 Schema 约束问题。');
+            else showToast('Schema 暂时无法执行，请查看验证结果。');
+        }
+    }
+
+    function resetSchemaResult() {
+        state.schemaValidated = false;
+        state.schemaResult = null;
+        elements.schemaResults.replaceChildren();
+        const empty = document.createElement('p');
+        empty.className = 'quiet-message';
+        empty.textContent = 'Schema 已变化，请重新验证当前配置。';
+        elements.schemaResults.append(empty);
+        elements.schemaCount.textContent = '—';
+        elements.schemaFormat.textContent = 'JSON / YAML';
+        setHealth(elements.schemaHealth, 'idle', '待验证');
+    }
+
+    function loadSchemaText(text, filename) {
+        elements.schemaInput.value = text;
+        state.schemaName = filename || 'schema.json';
+        updateLines(elements.schemaInput, elements.schemaLines);
+        syncStats(elements.schemaInput, elements.schemaStats);
+        resetSchemaResult();
+    }
+
+    function renderConfigResult(result, refreshInspections) {
         state.configResult = result;
         elements.configOutput.value = result.output || '';
         updateLines(elements.configOutput, elements.configOutputLines);
@@ -282,17 +640,29 @@
         else if (result.ok) setHealth(elements.configHealth, 'ok', '可导出');
         else setHealth(elements.configHealth, 'idle', '待转换');
         if (!result.output) elements.configOutputStats.textContent = '尚未生成';
+        renderStructure(result.structure, result.stats);
+        if (refreshInspections !== false) {
+            if (state.queryResult) executeQuery(false);
+            if (state.schemaValidated) validateSchema(false);
+        }
     }
 
-    function convertConfig(showMessage) {
+    function convertConfig(showMessage, refreshInspections) {
         window.clearTimeout(state.configTimer);
+        state.configText = elements.configInput.value;
         const result = configCore.convert(elements.configInput.value, configOptions());
-        renderConfigResult(result);
+        renderConfigResult(result, refreshInspections);
         if (showMessage) {
             if (result.ok) showToast('转换完成，并已通过目标格式回读复检。');
             else if (result.blocked) showToast('保真策略阻止了有损转换；可查看诊断，或切换到宽松模式继续。');
             else showToast('输入存在问题，请查看诊断信息。');
         }
+    }
+
+    function ensureConfigCurrent() {
+        if (state.configText === elements.configInput.value) return false;
+        convertConfig(false, false);
+        return true;
     }
 
     function scheduleConfigConversion() {
@@ -312,30 +682,54 @@
 
     function setRequestOutput(result) {
         state.requestResult = result;
+        if (result.target && Object.prototype.hasOwnProperty.call(requestCore.TARGETS, result.target)) {
+            elements.requestTarget.value = result.target;
+        }
+        updateRequestTargetPresentation();
         elements.requestOutput.value = result.code || '';
         updateLines(elements.requestOutput, elements.requestOutputLines);
         syncStats(elements.requestOutput, elements.requestOutputStats);
         elements.requestEmpty.hidden = Boolean(result.code);
         setButtonOutput([elements.requestCopy, elements.requestDownload], Boolean(result.code));
-        renderDiagnostics(elements.requestWarnings, result.warnings || [], '未发现不兼容参数或安全问题。');
+        renderDiagnostics(
+            elements.requestWarnings,
+            result.warnings || [],
+            result.stale ? 'cURL 已变化，请重新生成目标输出。' : '未发现不兼容参数或安全问题。'
+        );
 
         const errors = (result.warnings || []).filter(function(item) { return item.level === 'error'; });
         const warnings = (result.warnings || []).filter(function(item) { return item.level === 'warning'; });
         if (errors.length) setHealth(elements.requestHealth, 'error', '解析失败');
         else if (warnings.length) setHealth(elements.requestHealth, 'warning', warnings.length + ' 条提示');
-        else if (result.ok) setHealth(elements.requestHealth, 'ok', '可运行');
+        else if (result.ok) setHealth(elements.requestHealth, 'ok', '可导出');
         else setHealth(elements.requestHealth, 'idle', '待解析');
 
         elements.requestOutputStats.textContent = result.code
             ? formatBytes(textBytes(result.code)) + ' · ' + lineCount(result.code) + ' 行'
             : '尚未生成';
-        elements.requestSecretStatus.textContent = result.detectedSecretCount
+        elements.requestSecretStatus.textContent = result.stale
+            ? '等待重新分析凭据'
+            : result.detectedSecretCount
             ? (result.protectedEntries && result.protectedEntries.length
                 ? '✓ ' + result.protectedEntries.length + ' 处凭据已环境变量化'
                 : '⚠ 检测到 ' + result.detectedSecretCount + ' 处凭据')
-            : '未检测到明显凭据';
+            : '未检测到需改写的字面凭据';
         renderRequestSummary(result.summary);
         renderEnvironment(result.protectedEntries || []);
+    }
+
+    function invalidateRequestResult() {
+        setRequestOutput({
+            ok: false,
+            stale: true,
+            code: '',
+            summary: null,
+            target: elements.requestTarget.value,
+            warnings: [],
+            protectedEntries: [],
+            detectedSecretCount: 0
+        });
+        state.requestResult = null;
     }
 
     function renderRequestSummary(summary) {
@@ -451,17 +845,21 @@
             const library = await loadCurlLibrary();
             const result = await requestCore.convert(elements.requestInput.value, library, {
                 secretPolicy: elements.requestProtect.checked ? 'environment' : 'literal',
-                appendResponseOutput: elements.requestResponse.checked
+                appendResponseOutput: elements.requestResponse.checked,
+                target: elements.requestTarget.value
             });
             setRequestOutput(result);
             if (showMessage) {
-                showToast(result.ok ? 'Python 脚本已生成；浏览器未发送任何请求。' : 'cURL 解析失败，请查看提示。');
+                showToast(result.ok
+                    ? requestCore.targetInfo(result.target).label + ' 已生成；浏览器未发送任何请求。'
+                    : 'cURL 解析失败，请查看提示。');
             }
         } catch (error) {
             const result = {
                 ok: false,
                 code: '',
                 summary: null,
+                target: elements.requestTarget.value,
                 warnings: [{ level: 'error', code: 'runtime', message: error.message || String(error) }]
             };
             setRequestOutput(result);
@@ -475,6 +873,7 @@
         elements.requestInput.value = text;
         updateLines(elements.requestInput, elements.requestInputLines);
         syncStats(elements.requestInput, elements.requestInputStats);
+        invalidateRequestResult();
     }
 
     async function readFile(file, kind) {
@@ -485,6 +884,7 @@
         }
         const text = await file.text();
         if (kind === 'request') loadRequestText(text);
+        else if (kind === 'schema') loadSchemaText(text, file.name);
         else loadConfigText(text, file.name);
     }
 
@@ -548,6 +948,34 @@
         });
     });
 
+    elements.configLabButtons.forEach(function(button) {
+        button.addEventListener('click', function() {
+            switchConfigLab(button.dataset.configLab);
+        });
+    });
+
+    elements.structureExpand.addEventListener('click', function() {
+        all('.structure-tree details').forEach(function(item) { item.open = true; });
+    });
+    elements.structureCollapse.addEventListener('click', function() {
+        all('.structure-tree details').forEach(function(item, index) { item.open = index === 0; });
+    });
+    elements.configQueryRun.addEventListener('click', function() { executeQuery(true); });
+    elements.configQuery.addEventListener('keydown', function(event) {
+        if (event.key !== 'Enter') return;
+        event.preventDefault();
+        executeQuery(true);
+    });
+    elements.configQuery.addEventListener('input', function() {
+        if (state.queryResult) renderQueryResult(null);
+    });
+    elements.queryCopy.addEventListener('click', function() {
+        if (!state.queryResult || !state.queryResult.ok) return;
+        copyText(state.queryResult.results.map(function(item) {
+            return item.path + ' = ' + item.value + (item.valueTruncated ? ' [值预览已截断]' : '');
+        }).join('\n'));
+    });
+
     all('[data-policy]').forEach(function(button) {
         button.addEventListener('click', function() {
             state.policy = button.dataset.policy;
@@ -581,6 +1009,11 @@
             savePreferences();
             if (state.requestResult) convertRequest(false);
         });
+    });
+    elements.requestTarget.addEventListener('change', function() {
+        updateRequestTargetPresentation();
+        savePreferences();
+        if (state.requestResult) convertRequest(false);
     });
 
     one('[data-config-convert]').addEventListener('click', function() { convertConfig(true); });
@@ -624,8 +1057,23 @@
         downloadText(elements.configOutput.value, configCore.outputFilename(state.configName, target), target === 'json' ? 'application/json' : 'text/plain');
     });
 
+    elements.schemaInput.addEventListener('input', resetSchemaResult);
+    one('[data-schema-validate]').addEventListener('click', function() { validateSchema(true); });
+    one('[data-schema-sample]').addEventListener('click', function() {
+        loadSchemaText(SCHEMA_SAMPLE, 'service.schema.json');
+    });
+    one('[data-schema-import]').addEventListener('click', function() { elements.schemaFile.click(); });
+    elements.schemaFile.addEventListener('change', function() {
+        readFile(elements.schemaFile.files[0], 'schema').catch(function(error) { showToast(error.message || String(error)); });
+        elements.schemaFile.value = '';
+    });
+    one('[data-schema-clear]').addEventListener('click', function() {
+        loadSchemaText('', 'schema.json');
+        elements.schemaInput.focus();
+    });
+
     elements.requestInput.addEventListener('input', function() {
-        state.requestResult = null;
+        if (state.requestResult || elements.requestOutput.value) invalidateRequestResult();
     });
     one('[data-request-convert]').addEventListener('click', function() { convertRequest(true); });
     one('[data-request-sample]').addEventListener('click', function() { loadRequestText(REQUEST_SAMPLE); });
@@ -636,12 +1084,12 @@
     });
     one('[data-request-clear]').addEventListener('click', function() {
         loadRequestText('');
-        setRequestOutput({ ok: false, code: '', summary: null, warnings: [], protectedEntries: [], detectedSecretCount: 0 });
         elements.requestInput.focus();
     });
     elements.requestCopy.addEventListener('click', function() { copyText(elements.requestOutput.value); });
     elements.requestDownload.addEventListener('click', function() {
-        downloadText(elements.requestOutput.value, requestCore.outputFilename(), 'text/x-python');
+        const target = requestCore.targetInfo(elements.requestTarget.value);
+        downloadText(elements.requestOutput.value, target.filename, target.mime);
     });
 
     all('[data-drop-zone]').forEach(bindDropZone);
@@ -651,19 +1099,24 @@
         if (!(event.metaKey || event.ctrlKey) || event.key !== 'Enter') return;
         event.preventDefault();
         if (state.mode === 'request') convertRequest(true);
+        else if (state.configLab === 'schema') validateSchema(true);
+        else if (state.configLab === 'structure') executeQuery(true);
         else convertConfig(true);
     });
 
     bindEditor(elements.configInput, elements.configInputLines, elements.configInputStats);
     bindEditor(elements.configOutput, elements.configOutputLines, elements.configOutputStats);
+    bindEditor(elements.schemaInput, elements.schemaLines, elements.schemaStats);
     bindEditor(elements.requestInput, elements.requestInputLines, elements.requestInputStats);
     bindEditor(elements.requestOutput, elements.requestOutputLines, elements.requestOutputStats);
 
     elements.configInput.value = CONFIG_SAMPLE;
+    elements.schemaInput.value = SCHEMA_SAMPLE;
     elements.requestInput.value = REQUEST_SAMPLE;
     [
         [elements.configInput, elements.configInputLines, elements.configInputStats],
         [elements.configOutput, elements.configOutputLines, elements.configOutputStats],
+        [elements.schemaInput, elements.schemaLines, elements.schemaStats],
         [elements.requestInput, elements.requestInputLines, elements.requestInputStats],
         [elements.requestOutput, elements.requestOutputLines, elements.requestOutputStats]
     ].forEach(function(entry) {

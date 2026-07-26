@@ -1,5 +1,9 @@
 export {
+    toGoWarn,
+    toHarStringWarn,
+    toHTTPWarn,
     toJsonObjectWarn,
+    toNodeWarn,
     toPythonWarn
 } from 'curlconverter';
 export { reprStr } from 'curlconverter/dist/src/generators/python/python.js';
