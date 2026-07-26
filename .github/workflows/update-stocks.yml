@@ -71,6 +71,9 @@ jobs:
       - name: Smoke test QR workbench
         run: node scripts/smoke_qr_workbench.js
 
+      - name: Smoke test developer converter
+        run: node scripts/smoke_developer_converter.js
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:

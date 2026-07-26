@@ -1,0 +1,51 @@
+dependencies:
+  - name: yaml
+    version: 2.9.0
+    license: ISC
+    source: https://github.com/eemeli/yaml
+  - name: smol-toml
+    version: 1.7.0
+    license: BSD-3-Clause
+    source: https://github.com/squirrelchat/smol-toml
+  - name: lossless-json
+    version: 4.3.0
+    license: MIT
+    source: https://github.com/josdejong/lossless-json
+  - name: curlconverter
+    version: 4.12.0
+    license: MIT
+    source: https://github.com/curlconverter/curlconverter
+  - name: jsesc
+    version: 3.1.0
+    license: MIT
+    source: https://github.com/mathiasbynens/jsesc
+  - name: web-tree-sitter
+    version: 0.24.7
+    license: MIT
+    source: https://github.com/tree-sitter/tree-sitter
+  - name: tree-sitter-bash
+    version: 0.23.3
+    license: MIT
+    source: https://github.com/tree-sitter/tree-sitter-bash
+  - name: yamljs
+    version: 0.3.0
+    license: MIT
+    source: https://github.com/jeremyfa/yaml.js
+build:
+  bundler:
+    name: esbuild
+    version: 0.25.10
+  config_entry: scripts/vendor_developer_converter_config.mjs
+  curl_entry: scripts/vendor_developer_converter_curl.mjs
+  curl_browser_patch: Initialize the parser asynchronously and embed both tree-sitter WASM binaries in a classic-script bundle for the opaque sandbox.
+sha256:
+  vendor/config-libs.js: 076c541cc1f33b17dd68ee84ac04394eecaeddd8a44890f547ea0c50a7220109
+  vendor/curlconverter.LICENSE: 2064877fc32d394fcb2463c1a4b118fbf14a0a79277640c529d0f970e3ab646c
+  vendor/curlconverter.js: 19ede29efdffcfa14191d588b92d4107cf7749f48c08b1dd387faadd046d0189
+  vendor/jsesc.LICENSE: 483acb265f182907d1caf6cff9c16c96f31325ed23792832cc5d8b12d5f88c8a
+  vendor/lossless-json.LICENSE: 525f1b720bc4ba077eba7a82e3c357bfb55ebcfe1ae0aaa509ba6110a024a445
+  vendor/smol-toml.LICENSE: fa5659948374d4f555594f47f6da073b40dc503e921aeeece30df4362b3051a5
+  vendor/tree-sitter-bash.LICENSE: 49bf33cf78ef5897e4e161ce1517df7de1ae5042a65b6bcfd44401e0fc606559
+  vendor/web-tree-sitter.LICENSE: 5f9cf9fb6acb1972b35ae29119ce563bb60ec097656bc4b69b9bac2d04c7a147
+  vendor/yaml.LICENSE: 5bba27375d93e9119f76c1015f7672cf9ad5f70952296e0842fb2243d6376869
+  vendor/yamljs.LICENSE: bd12f03a749cf27c7dc7e9b20739551d464e41c38f433e360cb26b8a76f9caee

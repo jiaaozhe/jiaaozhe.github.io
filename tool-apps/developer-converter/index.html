@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' data: blob:; connect-src 'none'; font-src 'none'; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; worker-src 'none'">
+    <title>开发者转换台</title>
+    <link rel="stylesheet" href="app.css">
+</head>
+<body>
+    <div class="converter-shell" data-app data-mode="config">
+        <header class="command-bar">
+            <div class="workbench-mark" aria-label="开发者转换台">
+                <span class="mark-glyph" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span>DEV / TRANSFORM</span>
+            </div>
+
+            <nav class="mode-switch" aria-label="工作模式">
+                <button type="button" data-mode-button="config" aria-pressed="true">
+                    <span class="mode-index">01</span><span>配置互转</span>
+                </button>
+                <button type="button" data-mode-button="request" aria-pressed="false">
+                    <span class="mode-index">02</span><span>cURL → Python</span>
+                </button>
+            </nav>
+
+            <div class="command-spacer"></div>
+            <span class="local-status"><i aria-hidden="true"></i>LOCAL ONLY</span>
+            <span class="shortcut-hint"><kbd>⌘</kbd><kbd>↵</kbd> 转换</span>
+        </header>
+
+        <main class="workbench">
+            <section class="mode-panel config-panel" data-mode-panel="config">
+                <div class="control-strip">
+                    <div class="route-control" aria-label="转换格式">
+                        <label>
+                            <span>输入</span>
+                            <select data-config-source aria-label="输入格式">
+                                <option value="auto">AUTO</option>
+                                <option value="json">JSON</option>
+                                <option value="yaml">YAML</option>
+                                <option value="toml">TOML</option>
+                            </select>
+                        </label>
+                        <button class="swap-button" type="button" data-config-swap aria-label="交换输入与输出格式" title="交换格式">
+                            <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+                                <path d="M3 6h13m0 0-3-3m3 3-3 3M17 14H4m0 0 3 3m-3-3 3-3"/>
+                            </svg>
+                        </button>
+                        <label>
+                            <span>输出</span>
+                            <select data-config-target aria-label="输出格式">
+                                <option value="json">JSON</option>
+                                <option value="yaml" selected>YAML</option>
+                                <option value="toml">TOML</option>
+                            </select>
+                        </label>
+                    </div>
+
+                    <div class="policy-control">
+                        <span class="control-caption" data-policy-caption aria-live="polite">策略 · 有损时阻止</span>
+                        <div class="policy-switch" role="group" aria-label="转换保真策略">
+                            <button type="button" data-policy="safe" aria-pressed="true"
+                                    aria-label="保真模式：检测到信息损失时阻止输出"
+                                    title="检测到注释、类型或精度损失时停止转换">
+                                <span class="policy-dot"></span>保真
+                            </button>
+                            <button type="button" data-policy="practical" aria-pressed="false"
+                                    aria-label="宽松模式：允许输出并提示信息损失"
+                                    title="允许转换，并在诊断区列出可能的信息损失">宽松</button>
+                        </div>
+                    </div>
+
+                    <div class="control-spacer"></div>
+                    <button class="text-button" type="button" data-config-sample>载入示例</button>
+                    <button class="text-button" type="button" data-config-import>导入文件</button>
+                    <input type="file" accept=".json,.yaml,.yml,.toml,.txt,application/json,text/yaml,text/plain" hidden data-config-file>
+                    <button class="primary-button" type="button" data-config-convert>
+                        <span>执行转换</span><kbd>⌘↵</kbd>
+                    </button>
+                </div>
+
+                <div class="editor-grid">
+                    <article class="editor-panel" data-drop-zone="config">
+                        <header class="panel-heading">
+                            <div>
+                                <span class="panel-kicker">SOURCE / 输入</span>
+                                <strong data-config-input-label>自动检测</strong>
+                            </div>
+                            <div class="panel-tools">
+                                <span class="format-signal" data-config-detected>等待检测</span>
+                                <button type="button" data-config-clear>清空</button>
+                            </div>
+                        </header>
+                        <div class="code-field">
+                            <pre class="line-numbers" aria-hidden="true" data-config-input-lines>1</pre>
+                            <textarea wrap="off" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="配置输入" data-config-input></textarea>
+                        </div>
+                        <footer class="editor-status">
+                            <span data-config-input-stats>0 B · 1 行</span>
+                            <span>可拖入 JSON / YAML / TOML</span>
+                        </footer>
+                    </article>
+
+                    <article class="editor-panel output-panel">
+                        <header class="panel-heading">
+                            <div>
+                                <span class="panel-kicker">RESULT / 输出</span>
+                                <strong data-config-output-label>YAML</strong>
+                            </div>
+                            <div class="panel-tools">
+                                <button type="button" data-config-copy disabled>复制</button>
+                                <button type="button" data-config-download disabled>下载</button>
+                            </div>
+                        </header>
+                        <div class="code-field">
+                            <pre class="line-numbers" aria-hidden="true" data-config-output-lines>1</pre>
+                            <textarea wrap="off" spellcheck="false" readonly aria-label="配置转换结果" data-config-output></textarea>
+                            <div class="empty-output" data-config-empty>
+                                <span>⇢</span>
+                                <p>转换结果将在这里生成</p>
+                            </div>
+                        </div>
+                        <footer class="editor-status">
+                            <span data-config-output-stats>尚未生成</span>
+                            <span data-config-verification>等待回读复检</span>
+                        </footer>
+                    </article>
+                </div>
+
+                <div class="inspection-grid">
+                    <article class="inspection-card diagnostics-card">
+                        <header>
+                            <div><span class="card-index">A</span><strong>损失与语法诊断</strong></div>
+                            <span class="health-badge idle" data-config-health>待转换</span>
+                        </header>
+                        <div class="diagnostic-list" data-config-diagnostics>
+                            <p class="quiet-message">保真模式会在类型、注释或精度无法保留时停止导出。</p>
+                        </div>
+                    </article>
+
+                    <article class="inspection-card">
+                        <header>
+                            <div><span class="card-index">B</span><strong>转换轨迹</strong></div>
+                        </header>
+                        <dl class="trace-list">
+                            <div><dt>识别</dt><dd data-trace-detected>—</dd></div>
+                            <div><dt>结构</dt><dd data-trace-structure>—</dd></div>
+                            <div><dt>回读</dt><dd data-trace-roundtrip>—</dd></div>
+                        </dl>
+                    </article>
+
+                    <article class="inspection-card">
+                        <header>
+                            <div><span class="card-index">C</span><strong>输出规则</strong></div>
+                        </header>
+                        <div class="option-stack">
+                            <label class="select-option">
+                                <span>缩进</span>
+                                <select data-config-indent>
+                                    <option value="2">2 空格</option>
+                                    <option value="4">4 空格</option>
+                                </select>
+                            </label>
+                            <label class="check-option">
+                                <input type="checkbox" data-config-sort>
+                                <span><i></i>递归排序键</span>
+                            </label>
+                            <label class="check-option">
+                                <input type="checkbox" data-config-minify>
+                                <span><i></i>压缩 JSON</span>
+                            </label>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
+            <section class="mode-panel request-panel" data-mode-panel="request" hidden>
+                <div class="control-strip">
+                    <div class="request-route">
+                        <span class="route-tag">BASH</span>
+                        <span class="route-arrow">→</span>
+                        <span class="route-tag active">PYTHON · REQUESTS</span>
+                    </div>
+
+                    <label class="inline-toggle">
+                        <input type="checkbox" checked data-request-protect>
+                        <span><i></i>密钥转环境变量</span>
+                    </label>
+                    <label class="inline-toggle">
+                        <input type="checkbox" checked data-request-response>
+                        <span><i></i>附加响应输出</span>
+                    </label>
+
+                    <div class="control-spacer"></div>
+                    <button class="text-button" type="button" data-request-sample>载入示例</button>
+                    <button class="text-button" type="button" data-request-import>导入文本</button>
+                    <input type="file" accept=".txt,.sh,.bash,text/plain,application/x-sh" hidden data-request-file>
+                    <button class="primary-button" type="button" data-request-convert>
+                        <span>生成 Python</span><kbd>⌘↵</kbd>
+                    </button>
+                </div>
+
+                <div class="editor-grid request-editors">
+                    <article class="editor-panel" data-drop-zone="request">
+                        <header class="panel-heading">
+                            <div>
+                                <span class="panel-kicker">SOURCE / cURL</span>
+                                <strong>终端或 DevTools 命令</strong>
+                            </div>
+                            <div class="panel-tools">
+                                <span class="format-signal">BASH PARSER</span>
+                                <button type="button" data-request-clear>清空</button>
+                            </div>
+                        </header>
+                        <div class="code-field">
+                            <pre class="line-numbers" aria-hidden="true" data-request-input-lines>1</pre>
+                            <textarea wrap="off" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="cURL 输入" data-request-input></textarea>
+                        </div>
+                        <footer class="editor-status">
+                            <span data-request-input-stats>0 B · 1 行</span>
+                            <span>不会在浏览器中发送请求</span>
+                        </footer>
+                    </article>
+
+                    <article class="editor-panel output-panel">
+                        <header class="panel-heading">
+                            <div>
+                                <span class="panel-kicker">RESULT / Python</span>
+                                <strong>可执行 requests 脚本</strong>
+                            </div>
+                            <div class="panel-tools">
+                                <button type="button" data-request-copy disabled>复制</button>
+                                <button type="button" data-request-download disabled>下载 .py</button>
+                            </div>
+                        </header>
+                        <div class="code-field">
+                            <pre class="line-numbers" aria-hidden="true" data-request-output-lines>1</pre>
+                            <textarea wrap="off" spellcheck="false" readonly aria-label="Python 转换结果" data-request-output></textarea>
+                            <div class="empty-output" data-request-empty>
+                                <span>PY</span>
+                                <p>解析后生成完整 Python 脚本</p>
+                            </div>
+                        </div>
+                        <footer class="editor-status">
+                            <span data-request-output-stats>尚未生成</span>
+                            <span data-request-secret-status>默认保护凭据</span>
+                        </footer>
+                    </article>
+                </div>
+
+                <div class="inspection-grid request-inspection">
+                    <article class="inspection-card request-summary-card">
+                        <header>
+                            <div><span class="card-index">A</span><strong>请求摘要</strong></div>
+                            <span class="method-badge" data-request-method>—</span>
+                        </header>
+                        <div class="request-summary" data-request-summary>
+                            <p class="quiet-message">URL、方法、请求体和选项会在这里拆解；敏感值只显示掩码。</p>
+                        </div>
+                    </article>
+
+                    <article class="inspection-card diagnostics-card request-warnings-card">
+                        <header>
+                            <div><span class="card-index">B</span><strong>兼容性与安全提示</strong></div>
+                            <span class="health-badge idle" data-request-health>待解析</span>
+                        </header>
+                        <div class="diagnostic-list" data-request-warnings>
+                            <p class="quiet-message">转换器会报告未支持的 cURL 参数，不会静默忽略。</p>
+                        </div>
+                    </article>
+
+                    <article class="inspection-card environment-card">
+                        <header>
+                            <div><span class="card-index">C</span><strong>运行准备</strong></div>
+                        </header>
+                        <div class="runtime-notes">
+                            <p><code>python -m pip install requests</code></p>
+                            <div data-request-environment>
+                                <span class="quiet-message">检测到凭据后显示变量名</span>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </section>
+        </main>
+
+        <div class="drop-curtain" data-drop-curtain hidden>
+            <strong>释放文件以载入</strong>
+            <span>文件只在当前页面内存中读取</span>
+        </div>
+        <div class="loading-curtain" data-request-loading hidden>
+            <span class="loader-mark" aria-hidden="true"></span>
+            <strong>正在启动 Bash 语法解析器</strong>
+            <p>首次使用会读取本工具随附的本地 WASM 文件。</p>
+        </div>
+        <div class="toast" role="status" aria-live="polite" data-toast hidden></div>
+    </div>
+
+    <script src="../../assets/js/tool-runtime.js" data-runner-url="../../tools/developer-converter/"></script>
+    <script src="vendor/config-libs.js"></script>
+    <script src="converter-core.js"></script>
+    <script src="request-core.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
