@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="完全在浏览器本地比较两段文本或两个文件，支持并排、统一视图和精确 Patch 导出。">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'none'; font-src 'none'; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; worker-src 'none'">
+    <title>文本差异台</title>
+    <link rel="stylesheet" href="app.css">
+</head>
+<body>
+    <div class="diff-shell" data-app data-view="split" data-state="ready">
+        <header class="command-bar">
+            <div class="workbench-mark" aria-label="文本差异台">
+                <span class="mark-glyph" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span>TEXT / DELTA</span>
+            </div>
+
+            <div class="comparison-state" aria-live="polite">
+                <span data-state-code>READY</span>
+                <strong data-state-title>等待比较</strong>
+            </div>
+
+            <div class="command-spacer"></div>
+            <span class="local-status"><i aria-hidden="true"></i>LOCAL ONLY</span>
+            <span class="shortcut-hint"><kbd>⌘</kbd><kbd>↵</kbd> 比较</span>
+        </header>
+
+        <main class="workbench">
+            <section class="control-deck" aria-label="比较设置">
+                <div class="view-control">
+                    <span class="control-caption">结果视图</span>
+                    <div class="segmented-control" role="group" aria-label="结果视图">
+                        <button type="button" data-view-button="split" aria-pressed="true">并排</button>
+                        <button type="button" data-view-button="unified" aria-pressed="false">统一</button>
+                    </div>
+                </div>
+
+                <label class="option-toggle">
+                    <span class="control-caption">比较规则</span>
+                    <span class="toggle-body">
+                        <input type="checkbox" data-ignore-whitespace>
+                        <i aria-hidden="true"></i>
+                        <span>忽略首尾空白</span>
+                    </span>
+                </label>
+
+                <label class="option-toggle compact-option">
+                    <span class="control-caption" aria-hidden="true">　</span>
+                    <span class="toggle-body">
+                        <input type="checkbox" data-ignore-case>
+                        <i aria-hidden="true"></i>
+                        <span>忽略大小写</span>
+                    </span>
+                </label>
+
+                <label class="select-control">
+                    <span class="control-caption">行内高亮</span>
+                    <select data-intraline aria-label="行内高亮粒度">
+                        <option value="auto">自动</option>
+                        <option value="word">单词</option>
+                        <option value="char">字符</option>
+                        <option value="none">关闭</option>
+                    </select>
+                </label>
+
+                <label class="select-control context-control">
+                    <span class="control-caption">上下文</span>
+                    <select data-context aria-label="差异上下文行数">
+                        <option value="3">3 行</option>
+                        <option value="5">5 行</option>
+                        <option value="all">全部</option>
+                    </select>
+                </label>
+
+                <div class="control-spacer"></div>
+                <button class="text-button" type="button" data-load-sample>载入示例</button>
+                <button class="icon-text-button" type="button" data-swap title="交换左右文本">
+                    <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+                        <path d="M3 6h13m0 0-3-3m3 3-3 3M17 14H4m0 0 3 3m-3-3 3-3"/>
+                    </svg>
+                    <span>交换</span>
+                </button>
+                <button class="text-button" type="button" data-clear>清空</button>
+                <button class="primary-button" type="button" data-compare>
+                    <span data-compare-label>比较文本</span><kbd>⌘↵</kbd>
+                </button>
+            </section>
+
+            <section class="input-grid" aria-label="待比较文本">
+                <article class="input-panel old-panel" data-drop-zone="old">
+                    <header class="panel-heading">
+                        <div>
+                            <span class="side-label old">A / ORIGINAL</span>
+                            <strong data-old-name>before.txt</strong>
+                        </div>
+                        <div class="panel-actions">
+                            <button type="button" data-old-import>导入文件</button>
+                            <input type="file" accept="text/*,.txt,.md,.json,.yaml,.yml,.toml,.xml,.csv,.log,.ini,.conf,.properties,.diff,.patch" hidden data-old-file>
+                        </div>
+                    </header>
+                    <div class="text-field">
+                        <pre class="line-numbers" aria-hidden="true" data-old-lines>1</pre>
+                        <textarea wrap="off" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="原始文本" data-old-input></textarea>
+                    </div>
+                    <footer class="input-status">
+                        <span data-old-stats>0 B · 1 行</span>
+                        <span data-old-newline>换行：NONE</span>
+                    </footer>
+                </article>
+
+                <article class="input-panel new-panel" data-drop-zone="new">
+                    <header class="panel-heading">
+                        <div>
+                            <span class="side-label new">B / REVISED</span>
+                            <strong data-new-name>after.txt</strong>
+                        </div>
+                        <div class="panel-actions">
+                            <button type="button" data-new-import>导入文件</button>
+                            <input type="file" accept="text/*,.txt,.md,.json,.yaml,.yml,.toml,.xml,.csv,.log,.ini,.conf,.properties,.diff,.patch" hidden data-new-file>
+                        </div>
+                    </header>
+                    <div class="text-field">
+                        <pre class="line-numbers" aria-hidden="true" data-new-lines>1</pre>
+                        <textarea wrap="off" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="新文本" data-new-input></textarea>
+                    </div>
+                    <footer class="input-status">
+                        <span data-new-stats>0 B · 1 行</span>
+                        <span data-new-newline>换行：NONE</span>
+                    </footer>
+                </article>
+            </section>
+
+            <section class="result-panel" aria-labelledby="result-heading">
+                <header class="result-toolbar">
+                    <div class="result-identity">
+                        <span class="result-index">Δ</span>
+                        <div>
+                            <span>COMPARISON / 比较结果</span>
+                            <strong id="result-heading" data-result-heading>等待比较</strong>
+                        </div>
+                    </div>
+
+                    <dl class="diff-stats" aria-label="差异统计">
+                        <div class="stat-added"><dt>新增</dt><dd data-stat-added>0</dd></div>
+                        <div class="stat-removed"><dt>删除</dt><dd data-stat-removed>0</dd></div>
+                        <div class="stat-modified"><dt>修改</dt><dd data-stat-modified>0</dd></div>
+                        <div><dt>差异块</dt><dd data-stat-hunks>0</dd></div>
+                    </dl>
+
+                    <div class="result-actions">
+                        <div class="hunk-navigator" role="group" aria-label="差异块导航">
+                            <button type="button" data-previous-hunk disabled aria-label="上一个差异">↑</button>
+                            <span data-hunk-position>0 / 0</span>
+                            <button type="button" data-next-hunk disabled aria-label="下一个差异">↓</button>
+                        </div>
+                        <button type="button" data-patch-toggle disabled>查看 Patch</button>
+                    </div>
+                </header>
+
+                <div class="result-stage" data-result-stage>
+                    <div class="result-empty" data-result-empty>
+                        <span aria-hidden="true">Δ</span>
+                        <strong>差异结果将在这里展开</strong>
+                        <p>粘贴两段文本或导入文件，按 <kbd>⌘</kbd><kbd>↵</kbd> 开始比较。</p>
+                    </div>
+                    <div class="result-busy" data-result-busy hidden>
+                        <span aria-hidden="true"><i></i><i></i><i></i></span>
+                        <strong>正在计算最小差异</strong>
+                    </div>
+                    <div class="diff-scroll" data-diff-scroll hidden>
+                        <div class="diff-table" data-diff-table></div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="patch-panel" data-patch-panel hidden>
+                <header>
+                    <div>
+                        <span class="patch-kicker">UNIFIED DIFF / 精确导出</span>
+                        <strong data-patch-title>before.txt → after.txt</strong>
+                    </div>
+                    <div class="patch-actions">
+                        <span class="verification-badge" data-patch-verification>等待验证</span>
+                        <button type="button" data-copy-patch>复制 Patch</button>
+                        <button type="button" data-download-patch>下载 .diff</button>
+                        <button type="button" data-close-patch aria-label="关闭 Patch 预览">×</button>
+                    </div>
+                </header>
+                <p class="patch-note" data-patch-note>Patch 始终根据原始文本精确生成。</p>
+                <pre tabindex="0" data-patch-output></pre>
+            </section>
+        </main>
+
+        <div class="drop-curtain" data-drop-curtain hidden>
+            <strong data-drop-title>释放文件以载入</strong>
+            <span>仅在当前页面内存中读取 UTF-8 文本</span>
+        </div>
+        <div class="toast" role="status" aria-live="polite" data-toast hidden></div>
+    </div>
+
+    <script src="../../assets/js/tool-runtime.js" data-runner-url="../../tools/text-diff/"></script>
+    <script src="vendor/diff.js"></script>
+    <script src="diff-core.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+dependencies:
+  - name: diff
+    version: 9.0.0
+    license: BSD-3-Clause
+    source: https://github.com/kpdecker/jsdiff
+build:
+  upstream_asset: dist/diff.min.js
+  registry_tarball: https://registry.npmjs.org/diff/-/diff-9.0.0.tgz
+sha256:
+  vendor/diff.js: b51a9d2885f2c090dc97b981027395f7e7e6558a46c75ae3747db267913a89ab
+  vendor/diff.LICENSE: eda81a415869e67809f6a9f3fd6056062cb83a462118e07eec5e92b2e0c40ce9

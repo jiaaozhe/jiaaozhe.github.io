@@ -77,6 +77,11 @@ Developer Converter
 - yamljs 0.3.0, MIT
   https://github.com/jeremyfa/yaml.js
 
+Text Diff
+
+- diff 9.0.0, BSD-3-Clause
+  https://github.com/kpdecker/jsdiff
+
 Full license texts for vendored runtime files are stored alongside those files
 under tool-apps/*/vendor. PDF.js font, color profile, and codec notices are
 preserved in its vendored subdirectories.

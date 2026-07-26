@@ -74,6 +74,9 @@ jobs:
       - name: Smoke test developer converter
         run: node scripts/smoke_developer_converter.js
 
+      - name: Smoke test text diff
+        run: node scripts/smoke_text_diff.js
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:
