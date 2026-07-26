@@ -15,13 +15,19 @@ dependencies:
     version: 0.468.0
     license: ISC
     source: https://github.com/lucide-icons/lucide
+  - name: exifr
+    version: 7.1.3
+    license: MIT
+    source: https://github.com/MikeKovarik/exifr
 sha256:
   vendor/cropper.min.js: 6290a3fa581b17ccf4692cf3ec617a74ae65de88d9140c72d492ae9b47707efb
   vendor/cropper.min.css: 23679f552ce73499f817de22b5dcdd9e1e5a1e50cd9d77e34bbd31bf65a85186
   vendor/pica.min.js: 7c972ba274e50b8cd7dcc3a9de53560ab2db2e03c08b9fae3c94137eaea42fb0
   vendor/fflate.js: 462ef8041fc970e3615a20a9dd2b2e3047a073b2da729ef4f02b634bba8b7b83
   vendor/lucide.min.js: 3411692820cb8d47543f69496aa25fd603a358f4498046f41c508a5a3342210e
+  vendor/exifr.min.js: 2bd05117781c12ddd965dee846de3b3f986b5ecb4c7f6a78f2d2ec1db7c65ae7
   vendor/cropper.LICENSE: eb917650781dcf06a60b97cba9b05bf583931ec2d311d8a5548a8dca90a57e0f
   vendor/pica.LICENSE: 55c3dde19ab8a9b9b23c576375fb7a48423124d76530a3ddeeb897a3c47223aa
   vendor/fflate.LICENSE: 0a1df3a083d0c010560aa342e87959c8c1070e6fd54545741f083f22d0c8b551
   vendor/lucide.LICENSE: 1e7290b35280a048667bbf0ebabac1c7fd52a75300e8b2946ac165715997f2bc
+  vendor/exifr.LICENSE: e32a745bc4816c774d8e26bb9f04acde451b54669079e8b728d22fe9805c1225

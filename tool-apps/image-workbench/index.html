@@ -43,8 +43,8 @@
                 <span>结果预览</span>
             </button>
             <button class="command-button command-button-export" type="button" data-export disabled>
-                <i data-lucide="download" aria-hidden="true"></i>
-                <span>导出</span>
+                <i data-lucide="shield-check" aria-hidden="true"></i>
+                <span>安全导出</span>
             </button>
         </header>
 
@@ -142,6 +142,9 @@
                     <button type="button" role="tab" aria-selected="true" data-inspector-tab="transform">变换</button>
                     <button type="button" role="tab" aria-selected="false" data-inspector-tab="size">尺寸</button>
                     <button type="button" role="tab" aria-selected="false" data-inspector-tab="export">导出</button>
+                    <button type="button" role="tab" aria-selected="false" data-inspector-tab="privacy">
+                        隐私<span class="privacy-tab-signal" data-privacy-tab-signal hidden aria-hidden="true"></span>
+                    </button>
                 </div>
 
                 <div class="inspector-body">
@@ -268,6 +271,73 @@
                             <span>设为默认</span>
                         </button>
                     </section>
+
+                    <section class="inspector-section privacy-section" data-inspector-panel="privacy" hidden>
+                        <div class="privacy-state-card" data-privacy-state data-risk="empty">
+                            <span class="privacy-state-icon" aria-hidden="true">
+                                <i data-lucide="shield"></i>
+                            </span>
+                            <div>
+                                <span class="privacy-kicker" data-privacy-kicker>PRIVACY SCAN</span>
+                                <strong data-privacy-title>选择一张图片</strong>
+                                <p data-privacy-summary>导入后将在本地检查 EXIF、GPS、XMP、IPTC 和文本元数据。</p>
+                            </div>
+                            <span class="privacy-risk-pill" data-privacy-risk>--</span>
+                        </div>
+
+                        <div data-privacy-report hidden>
+                            <div class="privacy-metrics" aria-label="隐私扫描统计">
+                                <div><span>敏感字段</span><strong data-privacy-sensitive-count>0</strong></div>
+                                <div><span>全部字段</span><strong data-privacy-field-count>0</strong></div>
+                                <div><span>元数据载体</span><strong data-privacy-carrier-count>0</strong></div>
+                            </div>
+
+                            <div class="privacy-location" data-privacy-location hidden>
+                                <span aria-hidden="true"><i data-lucide="map-pin"></i></span>
+                                <div>
+                                    <strong>发现精确位置</strong>
+                                    <code data-privacy-coordinates>--</code>
+                                </div>
+                            </div>
+
+                            <div class="privacy-clean-card">
+                                <div class="privacy-clean-heading">
+                                    <span aria-hidden="true"><i data-lucide="eraser"></i></span>
+                                    <div>
+                                        <strong>安全导出默认开启</strong>
+                                        <p>重新编码像素，并在下载前复检隐私元数据是否已清除。</p>
+                                    </div>
+                                </div>
+                                <button class="wide-button" type="button" data-privacy-preset>
+                                    <i data-lucide="scan-line" aria-hidden="true"></i>
+                                    <span>套用隐私副本预设</span>
+                                </button>
+                                <button class="wide-button privacy-export-button" type="button" data-privacy-export>
+                                    <i data-lucide="shield-check" aria-hidden="true"></i>
+                                    <span data-privacy-export-label>清理并导出当前图片</span>
+                                </button>
+                                <small>预设会使用当前裁剪尺寸、原文件格式、高质量编码和 <code>-clean</code> 后缀。</small>
+                            </div>
+
+                            <div class="privacy-results">
+                                <div class="privacy-results-heading">
+                                    <strong>检测详情</strong>
+                                    <span data-privacy-scan-note>仅显示可读取字段</span>
+                                </div>
+                                <div class="privacy-groups" data-privacy-groups></div>
+                                <p class="privacy-no-fields" data-privacy-no-fields hidden>没有读取到可展示的隐私字段。</p>
+                                <details class="privacy-carriers" data-privacy-carriers-wrap>
+                                    <summary>文件中的元数据载体 <span data-privacy-carriers-label>0</span></summary>
+                                    <div data-privacy-carriers></div>
+                                </details>
+                                <div class="privacy-warnings" data-privacy-warnings hidden></div>
+                            </div>
+                        </div>
+
+                        <p class="privacy-footnote">
+                            原文件不会被修改或上传。JPEG 与 WebP 清理时需要重新编码，可能产生轻微画质变化。
+                        </p>
+                    </section>
                 </div>
             </aside>
         </main>
@@ -281,6 +351,8 @@
     <script src="vendor/cropper.min.js"></script>
     <script src="vendor/pica.min.js"></script>
     <script src="vendor/fflate.js"></script>
+    <script src="vendor/exifr.min.js"></script>
+    <script src="image-privacy.js"></script>
     <script src="image-core.js"></script>
     <script src="app.js"></script>
 </body>

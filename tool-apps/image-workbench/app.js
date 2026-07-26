@@ -1,5 +1,7 @@
 (function() {
     const core = window.ImageWorkbenchCore;
+    const privacy = window.ImagePrivacy;
+    const metadataReader = window.exifr;
     const storage = window.toolStorage;
     const host = window.toolHost;
     const MAX_ASSETS = 40;
@@ -10,6 +12,27 @@
     const SETTINGS_KEY = 'image.settings';
     const SCOPE_KEY = 'image.scope';
     const TAB_KEY = 'image.tab';
+    const PRIVACY_PARSE_OPTIONS = Object.freeze({
+        tiff: true,
+        ifd0: true,
+        ifd1: false,
+        exif: true,
+        gps: true,
+        interop: false,
+        xmp: true,
+        iptc: true,
+        icc: false,
+        jfif: false,
+        ihdr: false,
+        makerNote: false,
+        userComment: true,
+        translateKeys: true,
+        translateValues: true,
+        reviveValues: true,
+        sanitize: true,
+        mergeOutput: true,
+        silentErrors: true
+    });
     const PRESETS = {
         blog: {
             sizeMode: 'long-edge', longEdge: 1600, format: 'image/webp',
@@ -94,6 +117,28 @@
         suffix: one('[data-suffix]'),
         presetButtons: all('[data-preset]'),
         saveDefault: one('[data-save-default]'),
+        privacyTabSignal: one('[data-privacy-tab-signal]'),
+        privacyState: one('[data-privacy-state]'),
+        privacyKicker: one('[data-privacy-kicker]'),
+        privacyTitle: one('[data-privacy-title]'),
+        privacySummary: one('[data-privacy-summary]'),
+        privacyRisk: one('[data-privacy-risk]'),
+        privacyReport: one('[data-privacy-report]'),
+        privacySensitiveCount: one('[data-privacy-sensitive-count]'),
+        privacyFieldCount: one('[data-privacy-field-count]'),
+        privacyCarrierCount: one('[data-privacy-carrier-count]'),
+        privacyLocation: one('[data-privacy-location]'),
+        privacyCoordinates: one('[data-privacy-coordinates]'),
+        privacyPreset: one('[data-privacy-preset]'),
+        privacyExport: one('[data-privacy-export]'),
+        privacyExportLabel: one('[data-privacy-export-label]'),
+        privacyScanNote: one('[data-privacy-scan-note]'),
+        privacyGroups: one('[data-privacy-groups]'),
+        privacyNoFields: one('[data-privacy-no-fields]'),
+        privacyCarriersWrap: one('[data-privacy-carriers-wrap]'),
+        privacyCarriersLabel: one('[data-privacy-carriers-label]'),
+        privacyCarriers: one('[data-privacy-carriers]'),
+        privacyWarnings: one('[data-privacy-warnings]'),
         renderFarm: one('[data-render-farm]'),
         toastRegion: one('[data-toast-region]')
     };
@@ -174,7 +219,7 @@
     }
 
     function setTab(name) {
-        if (!['transform', 'size', 'export'].includes(name)) return;
+        if (!['transform', 'size', 'export', 'privacy'].includes(name)) return;
         state.tab = name;
         elements.tabs.forEach(function(button) {
             button.setAttribute('aria-selected', String(button.dataset.inspectorTab === name));
@@ -183,6 +228,7 @@
             panel.hidden = panel.dataset.inspectorPanel !== name;
         });
         storage.setItem(TAB_KEY, name);
+        if (name === 'privacy') renderPrivacyPanel(activeAsset());
     }
 
     function setScope(name) {
@@ -192,6 +238,7 @@
             button.setAttribute('aria-pressed', String(button.dataset.scope === name));
         });
         storage.setItem(SCOPE_KEY, name);
+        updatePrivacyExportLabel();
     }
 
     function setView(name) {
@@ -224,6 +271,8 @@
 
         elements.preview.disabled = !asset || state.processing;
         elements.export.disabled = !hasAssets || state.processing;
+        elements.privacyExport.disabled = !hasAssets || state.processing;
+        elements.privacyPreset.disabled = !hasAssets || state.processing;
         elements.selectAll.disabled = !hasAssets;
         elements.removeSelected.disabled = !hasSelection || state.processing;
         elements.resetTransform.disabled = !canTransform;
@@ -280,6 +329,32 @@
             status.dataset.state = asset.state;
             status.title = asset.state === 'processing' ? '处理中' : asset.state === 'done' ? '已生成' : asset.state === 'error' ? '失败' : '就绪';
 
+            const privacyBadge = document.createElement('span');
+            const privacyStatus = asset.privacy || { status: 'scanning', report: null };
+            const privacyRisk = privacyStatus.status === 'ready' && privacyStatus.report
+                ? privacyStatus.report.risk
+                : privacyStatus.status;
+            const privacyLabels = {
+                scanning: '…',
+                error: '?',
+                high: 'GPS',
+                medium: '!',
+                low: '✓',
+                clean: '✓'
+            };
+            privacyBadge.className = 'asset-privacy';
+            privacyBadge.dataset.risk = privacyRisk;
+            privacyBadge.textContent = privacyLabels[privacyRisk] || '?';
+            privacyBadge.title = privacyStatus.status === 'scanning'
+                ? '正在检查隐私元数据'
+                : privacyStatus.status === 'error'
+                    ? '隐私元数据检查不完整'
+                    : privacyRisk === 'high'
+                        ? '发现高风险隐私信息'
+                        : privacyRisk === 'medium'
+                            ? '发现可识别元数据'
+                            : '未发现明显隐私风险';
+
             checkbox.addEventListener('click', function(event) {
                 event.stopPropagation();
                 if (checkbox.checked) state.selected.add(asset.id);
@@ -294,7 +369,7 @@
                 }
             });
 
-            item.append(checkbox, thumb, copy, status);
+            item.append(checkbox, thumb, copy, status, privacyBadge);
             elements.assetList.appendChild(item);
         });
 
@@ -314,6 +389,237 @@
         elements.selectAll.checked = state.assets.length > 0 && selectedCount === state.assets.length;
         elements.selectAll.indeterminate = selectedCount > 0 && selectedCount < state.assets.length;
         elements.removeSelected.disabled = selectedCount === 0 || state.processing;
+    }
+
+    function updatePrivacyExportLabel() {
+        const labels = {
+            current: '清理并导出当前图片',
+            selected: '清理并导出选中图片',
+            all: '清理并导出全部图片'
+        };
+        elements.privacyExportLabel.textContent = labels[state.scope] || labels.current;
+    }
+
+    function setPrivacyState(risk, kicker, title, summary, pill) {
+        elements.privacyState.dataset.risk = risk;
+        elements.privacyKicker.textContent = kicker;
+        elements.privacyTitle.textContent = title;
+        elements.privacySummary.textContent = summary;
+        elements.privacyRisk.textContent = pill;
+    }
+
+    function appendPrivacyGroup(group) {
+        const details = document.createElement('details');
+        details.className = 'privacy-group';
+        details.dataset.risk = group.risk;
+        details.open = group.risk === 'high';
+
+        const summary = document.createElement('summary');
+        summary.append(document.createTextNode(group.label));
+        const count = document.createElement('span');
+        count.textContent = String(group.entries.length);
+        summary.appendChild(count);
+        details.appendChild(summary);
+
+        group.entries.forEach(function(entry) {
+            const row = document.createElement('dl');
+            row.className = 'privacy-field';
+            const term = document.createElement('dt');
+            const label = document.createElement('strong');
+            const key = document.createElement('code');
+            const value = document.createElement('dd');
+            label.textContent = entry.label;
+            key.textContent = entry.key;
+            value.textContent = entry.value;
+            term.append(label, key);
+            row.append(term, value);
+            details.appendChild(row);
+        });
+
+        elements.privacyGroups.appendChild(details);
+    }
+
+    function appendPrivacyCarrier(item) {
+        const row = document.createElement('div');
+        row.className = 'privacy-carrier-item';
+        const copy = document.createElement('div');
+        const title = document.createElement('strong');
+        const detail = document.createElement('span');
+        const size = document.createElement('small');
+        title.textContent = item.label;
+        detail.textContent = item.detail || item.kind.toUpperCase();
+        size.textContent = core.formatBytes(item.size);
+        copy.append(title, detail);
+        row.append(copy, size);
+        elements.privacyCarriers.appendChild(row);
+    }
+
+    function renderPrivacyPanel(asset) {
+        elements.privacyGroups.replaceChildren();
+        elements.privacyCarriers.replaceChildren();
+        elements.privacyWarnings.replaceChildren();
+        elements.privacyLocation.hidden = true;
+        elements.privacyTabSignal.hidden = true;
+
+        if (!asset) {
+            setPrivacyState(
+                'empty',
+                'PRIVACY SCAN',
+                '选择一张图片',
+                '导入后将在本地检查 EXIF、GPS、XMP、IPTC 和文本元数据。',
+                '--'
+            );
+            elements.privacyReport.hidden = true;
+            return;
+        }
+
+        const status = asset.privacy || { status: 'scanning', report: null };
+        if (status.status === 'scanning') {
+            setPrivacyState(
+                'scanning',
+                'SCANNING / LOCAL',
+                '正在检查隐私元数据',
+                '只读取必要的文件片段，图片不会离开当前浏览器。',
+                '扫描'
+            );
+            elements.privacyReport.hidden = true;
+            return;
+        }
+
+        if (status.status === 'error' || !status.report) {
+            setPrivacyState(
+                'error',
+                'SCAN INCOMPLETE',
+                '检查未能完成',
+                '仍可安全导出；导出结果会在下载前进行独立复检。',
+                '注意'
+            );
+            elements.privacyReport.hidden = true;
+            return;
+        }
+
+        const report = status.report;
+        const typeLabel = asset.type.replace('image/', '').toUpperCase();
+        const riskCopy = {
+            high: {
+                title: report.location ? '发现精确拍摄位置' : '发现高风险隐私信息',
+                summary: '这张图片包含可能定位个人或设备的信息，建议清理后再分享。',
+                pill: '高'
+            },
+            medium: {
+                title: '图片包含可识别元数据',
+                summary: '检测到设备、时间、描述或文件级元数据，导出时将自动清理。',
+                pill: '注意'
+            },
+            low: {
+                title: '仅发现拍摄参数',
+                summary: '没有发现明显定位或身份字段，仍会在导出时移除元数据。',
+                pill: '低'
+            },
+            clean: {
+                title: '未发现隐私元数据',
+                summary: '没有检测到可读取字段或隐私载体，导出结果仍会再次复检。',
+                pill: '清爽'
+            }
+        };
+        const copy = riskCopy[report.risk] || riskCopy.medium;
+
+        setPrivacyState(report.risk, typeLabel + ' / LOCAL SCAN', copy.title, copy.summary, copy.pill);
+        elements.privacyReport.hidden = false;
+        elements.privacySensitiveCount.textContent = String(report.counts.sensitive);
+        elements.privacyFieldCount.textContent = String(report.counts.fields);
+        elements.privacyCarrierCount.textContent = String(report.counts.carriers);
+        elements.privacyNoFields.hidden = report.entries.length > 0;
+        elements.privacyCarriersWrap.hidden = report.carriers.length === 0;
+        elements.privacyCarriersLabel.textContent = String(report.carriers.length);
+        elements.privacyScanNote.textContent = status.lastVerified
+            ? '最近生成结果复检通过'
+            : report.warnings.length
+                ? '部分字段可能未展开'
+                : '仅显示可读取字段';
+        elements.privacyTabSignal.hidden = report.risk !== 'high' && report.risk !== 'medium';
+        elements.privacyTabSignal.dataset.risk = report.risk;
+
+        if (report.location) {
+            elements.privacyLocation.hidden = false;
+            elements.privacyCoordinates.textContent =
+                report.location.latitude.toFixed(6) + ', ' + report.location.longitude.toFixed(6);
+        }
+
+        report.groups.forEach(appendPrivacyGroup);
+        report.carriers.forEach(appendPrivacyCarrier);
+
+        if (report.warnings.length) {
+            elements.privacyWarnings.hidden = false;
+            report.warnings.forEach(function(message) {
+                const item = document.createElement('p');
+                item.textContent = message;
+                elements.privacyWarnings.appendChild(item);
+            });
+        } else {
+            elements.privacyWarnings.hidden = true;
+        }
+    }
+
+    async function parseMetadata(asset, carriers) {
+        let source = asset.file;
+
+        if (asset.type === 'image/webp') {
+            const exifCarrier = carriers.find(function(item) { return item.kind === 'exif'; });
+            if (!exifCarrier || !exifCarrier.payloadSize) return {};
+            source = asset.file.slice(
+                exifCarrier.payloadOffset,
+                exifCarrier.payloadOffset + exifCarrier.payloadSize
+            );
+            const prefix = new Uint8Array(await source.slice(0, 6).arrayBuffer());
+            if (
+                prefix.length >= 6 &&
+                prefix[0] === 0x45 && prefix[1] === 0x78 && prefix[2] === 0x69 &&
+                prefix[3] === 0x66 && prefix[4] === 0 && prefix[5] === 0
+            ) {
+                source = source.slice(6);
+            }
+        }
+
+        return (await metadataReader.parse(source, PRIVACY_PARSE_OPTIONS)) || {};
+    }
+
+    async function analyzeAssetPrivacy(asset) {
+        const warnings = [];
+        let carriers = [];
+        let metadata = {};
+        let carrierFailed = false;
+        let metadataFailed = false;
+
+        try {
+            carriers = await privacy.scanMetadataCarriers(asset.file, asset.type);
+        } catch (error) {
+            carrierFailed = true;
+            warnings.push('文件结构扫描未完整完成，导出结果仍会单独复检。');
+            console.warn('Privacy carrier scan:', error);
+        }
+
+        try {
+            metadata = await parseMetadata(asset, carriers);
+        } catch (error) {
+            metadataFailed = true;
+            warnings.push('部分元数据字段无法展开，但已识别的元数据载体仍会被清理。');
+            console.warn('Metadata parse:', error);
+        }
+
+        if (asset.type === 'image/webp' && carriers.some(function(item) { return item.kind === 'xmp'; })) {
+            warnings.push('已发现 WebP XMP；当前仅显示其载体，导出时会完整移除。');
+        }
+
+        asset.privacy = {
+            status: carrierFailed && metadataFailed ? 'error' : 'ready',
+            report: privacy.createReport(metadata, carriers, warnings),
+            lastVerified: false
+        };
+
+        if (!state.assets.includes(asset)) return;
+        renderAssetList();
+        if (asset.id === state.activeId) renderPrivacyPanel(asset);
     }
 
     function duplicateKey(file) {
@@ -397,12 +703,18 @@
                     state: 'ready',
                     resultSize: null,
                     revision: 0,
-                    zoomTimer: null
+                    zoomTimer: null,
+                    privacy: {
+                        status: 'scanning',
+                        report: null,
+                        lastVerified: false
+                    }
                 };
                 state.assets.push(asset);
                 state.selected.add(id);
                 existing.add(key);
                 addedIds.push(id);
+                analyzeAssetPrivacy(asset);
 
                 if (pixels > WARN_PIXELS) {
                     toast(asset.name + ' 分辨率较高，将顺序处理以控制内存。');
@@ -432,6 +744,7 @@
         if (!asset) return;
         asset.revision += 1;
         asset.resultSize = null;
+        if (asset.privacy) asset.privacy.lastVerified = false;
         if (asset.state !== 'processing') asset.state = 'ready';
         if (asset.id === state.activeId) {
             clearCompare();
@@ -591,6 +904,7 @@
             : '尚未生成预览';
         syncRatioControls(asset.ratio);
         syncInspectorSettings();
+        renderPrivacyPanel(asset);
         initializeActiveCropper(asset);
         renderAssetList();
         setView('edit');
@@ -632,6 +946,7 @@
         elements.outputEstimate.textContent = '尚未生成预览';
         syncRatioControls('free');
         syncInspectorSettings();
+        renderPrivacyPanel(null);
         updateActionState();
     }
 
@@ -703,6 +1018,31 @@
         }
         syncInspectorSettings();
         renderAssetList();
+    }
+
+    function applyPrivacyPreset() {
+        if (state.processing) return;
+        const targets = settingsTargets();
+        if (!targets.length) return;
+
+        targets.forEach(function(asset) {
+            const sourceFormat = core.formatDefinition(asset.type) ? asset.type : 'image/jpeg';
+            const format = sourceFormat === 'image/webp' && !state.webpSupported
+                ? 'image/jpeg'
+                : sourceFormat;
+            asset.settings = normalizeForBrowser(Object.assign({}, asset.settings, {
+                sizeMode: 'original',
+                format: format,
+                quality: 0.94,
+                transparent: format !== 'image/jpeg',
+                suffix: '-clean'
+            }));
+            invalidateAsset(asset);
+        });
+
+        syncInspectorSettings();
+        renderAssetList();
+        toast('已为 ' + targets.length + ' 张图片套用隐私副本预设。');
     }
 
     function currentSettings() {
@@ -886,19 +1226,26 @@
 
         const beforeBlob = includeBefore ? await canvasBlob(output, 'image/png', 1) : null;
         const blob = await canvasBlob(output, settings.format, settings.quality);
+        const privacyVerification = await privacy.verifySanitized(blob, settings.format);
+        if (!privacyVerification.clean) {
+            throw new Error('导出复检发现残留元数据，已阻止下载。');
+        }
+        if (asset.privacy) asset.privacy.lastVerified = true;
         return {
             blob: blob,
             beforeBlob: beforeBlob,
             width: output.width,
             height: output.height,
-            filename: core.outputFilename(asset.name, settings, { width: output.width, height: output.height })
+            filename: core.outputFilename(asset.name, settings, { width: output.width, height: output.height }),
+            privacyVerification: privacyVerification
         };
     }
 
     function outputSummary(asset, result) {
         const saved = asset.size > 0 ? Math.round((1 - result.blob.size / asset.size) * 100) : 0;
         const delta = saved >= 0 ? '节省 ' + saved + '%' : '增加 ' + Math.abs(saved) + '%';
-        return result.width + '×' + result.height + ' · ' + core.formatBytes(result.blob.size) + ' · ' + delta;
+        return result.width + '×' + result.height + ' · ' + core.formatBytes(result.blob.size) +
+            ' · ' + delta + ' · 隐私已清理';
     }
 
     async function previewActive() {
@@ -922,6 +1269,7 @@
             asset.state = 'done';
             elements.outputEstimate.textContent = outputSummary(asset, result);
             renderAssetList();
+            renderPrivacyPanel(asset);
             state.view = 'compare';
             elements.viewButtons.forEach(function(button) {
                 button.setAttribute('aria-pressed', String(button.dataset.view === 'compare'));
@@ -1017,13 +1365,14 @@
                 downloadBlob(new Blob([zipped], { type: 'application/zip' }), zipName());
             }
 
-            if (failures) toast(failures + ' 张图片处理失败，其余结果已导出。', 'error');
-            else toast(completed.length + ' 张图片已完成导出。');
+            if (failures) toast(failures + ' 张图片处理失败，其余安全结果已导出。', 'error');
+            else toast(completed.length + ' 张图片已清理隐私信息并完成导出。');
         } catch (error) {
             toast(error.message || String(error), 'error');
             reportError(error);
         } finally {
             renderAssetList();
+            renderPrivacyPanel(activeAsset());
             setProcessing(false, '', 0);
         }
     }
@@ -1137,6 +1486,8 @@
             });
         });
         elements.saveDefault.addEventListener('click', saveDefaultSettings);
+        elements.privacyPreset.addEventListener('click', applyPrivacyPreset);
+        elements.privacyExport.addEventListener('click', exportImages);
 
         document.addEventListener('paste', function(event) {
             const files = event.clipboardData ? Array.from(event.clipboardData.files || []) : [];
@@ -1190,7 +1541,10 @@
     }
 
     async function start() {
-        if (!core || !storage || !host || !window.Cropper || !window.pica || !window.fflate) {
+        if (
+            !core || !privacy || !metadataReader || !storage || !host ||
+            !window.Cropper || !window.pica || !window.fflate
+        ) {
             throw new Error('图像工作台依赖未完整加载。');
         }
 
@@ -1203,7 +1557,7 @@
         const savedTab = storage.getItem(TAB_KEY);
         bindEvents();
         setScope(['current', 'selected', 'all'].includes(savedScope) ? savedScope : 'current');
-        setTab(['transform', 'size', 'export'].includes(savedTab) ? savedTab : 'transform');
+        setTab(['transform', 'size', 'export', 'privacy'].includes(savedTab) ? savedTab : 'transform');
         elements.formatButtons.forEach(function(button) {
             if (button.dataset.format === 'image/webp') {
                 button.disabled = !state.webpSupported;
