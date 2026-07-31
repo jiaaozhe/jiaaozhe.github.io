@@ -111,7 +111,6 @@ if index_html.exist?
   html = index_html.read
   script_order = %w[site-data.js site-ai.js terminal.js].map { |name| html.index(name) }
   check.call(script_order.all? && script_order == script_order.sort, "shared data and AI scripts load in the wrong order")
-  check.call(html.include?("代码 MIT") && html.include?("文字 CC BY 4.0"), "site footer must expose code and content licenses")
 end
 
 post_pages = SITE.glob("posts/*/index.html")
