@@ -5,9 +5,10 @@ permalink: /research/
 ---
 
 <section class="research-hero">
-    <div class="hero-content">
+    <header class="page-heading">
+        <p class="page-kicker">Academic work</p>
         <h1>学术研究</h1>
-    </div>
+    </header>
 </section>
 
 <section class="research-content">

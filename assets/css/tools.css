@@ -1,21 +1,20 @@
 .tools-index {
-    --tools-accent: #3f6f9f;
+    --tools-accent: var(--label-accent);
     width: min(100%, 1200px);
     margin: 0 auto;
     padding: 52px 24px 96px;
 }
 
-[data-theme="dark"] .tools-index {
-    --tools-accent: #83a9cf;
-}
-
 .tools-index-header {
+    position: relative;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
     align-items: end;
     gap: 32px;
     padding-bottom: 32px;
     border-bottom: 1px solid var(--line);
+    text-align: center;
 }
 
 .tools-kicker {
@@ -31,16 +30,16 @@
     margin: 0;
     color: var(--black);
     font-family: var(--display-font);
-    font-size: clamp(46px, 6vw, 68px);
-    font-weight: 600;
-    line-height: 0.96;
-    letter-spacing: -0.04em;
+    font-size: clamp(30px, 4vw, 44px);
+    font-weight: 500;
+    line-height: 1.15;
+    letter-spacing: 0;
     text-wrap: balance;
 }
 
 .tools-intro {
     max-width: 62ch;
-    margin: 18px 0 0;
+    margin: 18px auto 0;
     color: var(--muted);
     font-size: 16px;
     line-height: 1.75;
@@ -48,6 +47,9 @@
 }
 
 .tools-count {
+    position: absolute;
+    right: 0;
+    bottom: 32px;
     display: grid;
     justify-items: end;
     min-width: 92px;
@@ -79,7 +81,7 @@
 .tools-filter {
     display: inline-flex;
     align-items: center;
-    gap: 18px;
+    gap: 8px;
     padding: 0;
     border: 0;
     border-radius: 0;
@@ -88,16 +90,15 @@
 
 .tools-filter button {
     min-height: 34px;
-    padding: 6px 1px;
+    padding: 7px 12px;
     border: 0;
-    border-bottom: 1px solid transparent;
-    border-radius: 0;
+    border-radius: var(--pill);
     background: transparent;
     color: var(--muted);
     font: inherit;
     font-size: 14px;
     cursor: pointer;
-    transition: color 180ms ease, border-color 180ms ease, transform 120ms ease;
+    transition: color 180ms ease, background-color 180ms ease, transform 120ms ease;
 }
 
 .tools-filter button:hover {
@@ -105,8 +106,7 @@
 }
 
 .tools-filter button.is-active {
-    border-bottom-color: var(--tools-accent);
-    background: transparent;
+    background: var(--surface);
     color: var(--tools-accent);
     box-shadow: none;
 }
@@ -135,12 +135,14 @@
     border: 0;
     border-radius: 10px;
     background: var(--surface);
-    transition: background-color 200ms ease, transform 180ms ease;
+    box-shadow: var(--card-shadow);
+    transition: background-color 200ms ease, box-shadow 220ms ease, transform 180ms ease;
 }
 
 .tool-card:hover {
-    transform: translateY(-2px);
     background: color-mix(in srgb, var(--surface) 92%, var(--tools-accent) 8%);
+    box-shadow: var(--card-shadow-hover);
+    transform: translateY(-3px);
 }
 
 .tool-card-preview {
@@ -300,12 +302,13 @@
     }
 
     .tools-index-header {
-        grid-template-columns: minmax(0, 1fr) auto;
         gap: 18px;
     }
 
-    .tools-index-header h1 {
-        font-size: 42px;
+    .tools-count {
+        position: static;
+        justify-items: center;
+        min-width: 0;
     }
 
     .tools-count strong {
@@ -336,10 +339,6 @@
 }
 
 @media (max-width: 460px) {
-    .tools-index-header {
-        grid-template-columns: minmax(0, 1fr);
-    }
-
     .tools-count {
         display: none;
     }

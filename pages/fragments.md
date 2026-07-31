@@ -5,8 +5,11 @@ permalink: /fragments/
 ---
 
 <section class="hero fragments-hero">
-    <h1>碎片流</h1>
-    <p>论文、工具、实验和代码库的短记录。它们不够完整，但值得留下。</p>
+    <header class="page-heading">
+        <p class="page-kicker">Field notes</p>
+        <h1>碎片流</h1>
+    </header>
+    <p>随手记下的碎片想法与评论。可能关于技术，也可能关于生活。</p>
 </section>
 
 <section class="fragment-filter">

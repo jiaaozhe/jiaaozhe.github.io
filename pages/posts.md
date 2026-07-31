@@ -5,7 +5,10 @@ permalink: /posts/
 ---
 
 <section class="hero">
-    <h1>我的博客文章</h1>
+    <header class="page-heading">
+        <p class="page-kicker">Writing &amp; essays</p>
+        <h1>我的博客文章</h1>
+    </header>
 </section>
 
 <section class="post-filter">

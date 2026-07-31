@@ -7,7 +7,10 @@ permalink: /photos/
 {% assign photo_posts = site.photos | sort: "date" | reverse %}
 
 <section class="hero photos-hero">
-    <h1>摄影</h1>
+    <header class="page-heading">
+        <p class="page-kicker">Visual journal</p>
+        <h1>摄影</h1>
+    </header>
     <p>按时间发布的图片文章。每一页是一组照片，也是一段拍摄记录。</p>
 </section>
 
