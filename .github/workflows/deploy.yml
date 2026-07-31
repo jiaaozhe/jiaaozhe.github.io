@@ -1,12 +1,10 @@
-name: Deploy Site With Fresh Stocks
+name: Deploy Site
 
 on:
   push:
     branches:
       - main
-  schedule:
-    - cron: '0 12 * * *'  # UTC 12:00 = Beijing 20:00
-  workflow_dispatch:       # Allow manual trigger
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -36,19 +34,6 @@ jobs:
         with:
           ruby-version: '3.3'
           bundler-cache: true
-
-      - name: Setup Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.12'
-
-      - name: Setup uv
-        uses: astral-sh/setup-uv@v8.1.0
-        with:
-          cache-dependency-glob: .github/workflows/update-stocks.yml
-
-      - name: Fetch stock data
-        run: uv run --with yfinance --with pyyaml python scripts/update_stocks.py
 
       - name: Build Jekyll site
         run: bundle exec jekyll build

@@ -5,102 +5,38 @@ permalink: /status/
 ---
 
 <section class="os-dashboard">
-    <!-- System Status Bar -->
-    <div class="os-status-bar">
-        <div class="os-metric">
-            <span class="os-metric-icon">&#128267;</span>
-            <div class="os-metric-text">
-                <span class="os-metric-label">System Health</span>
-                <span class="os-metric-value">{{ site.data.now.status.health }}</span>
+    <!-- Core Processes -->
+    <div class="os-section">
+        <div class="os-section-header">
+            CORE_PROCESSES
+            <div class="core-temp" id="core-temp" title="Click to check thermal status">
+                <span class="temp-icon">&#127777;</span>
+                <span class="temp-value" id="temp-value" data-base="{{ site.data.now.system.core_temp }}">{{ site.data.now.system.core_temp }}&#176;C</span>
             </div>
         </div>
-        <div class="os-metric">
-            <span class="os-metric-icon">&#9201;</span>
-            <div class="os-metric-text">
-                <span class="os-metric-label">Uptime</span>
-                <span class="os-metric-value" id="system-uptime" data-birth="{{ site.data.now.system.birth_date }}">--</span>
-            </div>
-        </div>
-        <div class="os-metric">
-            <span class="os-metric-icon">&#128202;</span>
-            <div class="os-metric-text">
-                <span class="os-metric-label">Load Avg</span>
-                <span class="os-metric-value">{{ site.data.now.system.load_average | join: ', ' }}</span>
-            </div>
-        </div>
-        <div class="os-metric">
-            <span class="os-metric-icon">&#127760;</span>
-            <div class="os-metric-text">
-                <span class="os-metric-label">Ping</span>
-                <span class="os-metric-value">127.0.0.1 &#11015; 0.1ms</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- CPU + RAM Row -->
-    <div class="os-process-row">
-        <!-- CPU / Core Processes -->
-        <div class="os-section">
-            <div class="os-section-header">
-                CORE_PROCESSES
-                <div class="core-temp" id="core-temp" title="Click to check thermal status">
-                    <span class="temp-icon">&#127777;</span>
-                    <span class="temp-value" id="temp-value" data-base="{{ site.data.now.system.core_temp }}">{{ site.data.now.system.core_temp }}&#176;C</span>
+        <div class="cpu-gauges">
+            {% for item in site.data.now.focus.items %}
+            {% assign circ = 314 %}
+            {% assign progress_length = circ | times: item.progress | divided_by: 100.0 %}
+            {% assign offset = circ | minus: progress_length %}
+            <div class="cpu-gauge" style="--wave-color: {{ item.wave_color }};">
+                <div class="gauge-header">
+                    <span class="gauge-name">{{ item.display_name }}</span>
+                    <span class="gauge-pid">PID {{ item.pid }}</span>
                 </div>
-            </div>
-            <div class="cpu-gauges">
-                {% for item in site.data.now.focus.items %}
-                {% assign circ = 314 %}
-                {% assign progress_length = circ | times: item.progress | divided_by: 100.0 %}
-                {% assign offset = circ | minus: progress_length %}
-                <div class="cpu-gauge" style="--wave-color: {{ item.wave_color }};">
-                    <div class="gauge-header">
-                        <span class="gauge-name">{{ item.display_name }}</span>
-                        <span class="gauge-pid">PID {{ item.pid }}</span>
-                    </div>
-                    <svg viewBox="0 0 120 120" class="gauge-svg">
-                        <circle class="gauge-bg" cx="60" cy="60" r="50"></circle>
-                        <circle class="gauge-wave" cx="60" cy="60" r="50" style="stroke: {{ item.wave_color }};"></circle>
-                        <circle class="gauge-progress" cx="60" cy="60" r="50"
-                            stroke-dasharray="{{ circ }}"
-                            stroke-dashoffset="{{ offset }}"></circle>
-                    </svg>
-                    <div class="gauge-center">
-                        <div class="gauge-pct">{{ item.progress }}%</div>
-                    </div>
-                    <div class="gauge-meta">
-                        <div><span class="meta-label">UPTIME</span> {{ item.uptime_hours }}h</div>
-                        <div><span class="meta-label">CHECKPOINT</span> {{ item.checkpoint_days }}d</div>
-                    </div>
+                <svg viewBox="0 0 120 120" class="gauge-svg">
+                    <circle class="gauge-bg" cx="60" cy="60" r="50"></circle>
+                    <circle class="gauge-wave" cx="60" cy="60" r="50" style="stroke: {{ item.wave_color }};"></circle>
+                    <circle class="gauge-progress" cx="60" cy="60" r="50"
+                        stroke-dasharray="{{ circ }}"
+                        stroke-dashoffset="{{ offset }}"></circle>
+                </svg>
+                <div class="gauge-center">
+                    <div class="gauge-pct">{{ item.progress }}%</div>
                 </div>
-                {% endfor %}
-            </div>
-        </div>
-
-        <!-- RAM / Trial Zone -->
-        <div class="os-section">
-            <div class="os-section-header">RAM_TRIAL</div>
-            {% for item in site.data.now.trying.items %}
-            <div class="ram-trial">
-                <div class="ram-header">
-                    <span class="ram-name">{{ item.display_name }}</span>
-                    <span class="ram-pid">PID {{ item.pid }}</span>
-                    <span class="ram-mem">{{ item.allocated_memory }}</span>
-                </div>
-                <div class="ram-beaker">
-                    <div class="ram-liquid" style="--progress: {{ item.progress }}%; --liquid-color: {{ item.wave_color }};">
-                        <div class="ram-surface"></div>
-                        <div class="ram-bubbles">
-                            <span></span><span></span><span></span><span></span><span></span>
-                        </div>
-                    </div>
-                    <div class="ram-scale">
-                        <span></span><span></span><span></span><span></span><span></span>
-                    </div>
-                </div>
-                <div class="ram-meta">
-                    <span><span class="meta-label">DEPS</span> {{ item.dependencies | join: ', ' }}</span>
-                    <span><span class="meta-label">PROGRESS</span> {{ item.progress }}%</span>
+                <div class="gauge-meta">
+                    <div><span class="meta-label">UPTIME</span> {{ item.uptime_hours }}h</div>
+                    <div><span class="meta-label">CHECKPOINT</span> {{ item.checkpoint_days }}d</div>
                 </div>
             </div>
             {% endfor %}
@@ -223,62 +159,23 @@ permalink: /status/
         <div class="os-section-header" style="color: {{ fin_group.color }}">FINANCIAL_SUBSYSTEM <span class="header-sub">STOCKS</span></div>
         <div class="stock-panel">
             {% for item in fin_group.items %}
-            {% assign stock = site.data.stocks | where: "symbol", item.version | first %}
-            {% if item.url %}
-            <a href="{{ item.url }}" class="stock-row" data-symbol="{{ item.version }}" target="_blank" rel="noopener noreferrer">
-            {% else %}
-            {% assign yahoo_symbol = item.version %}
-            {% if stock.market == 'SH' %}{% assign yahoo_symbol = item.version | append: '.SS' %}{% elsif stock.market == 'SZ' %}{% assign yahoo_symbol = item.version | append: '.SZ' %}{% endif %}
-            <a href="https://finance.yahoo.com/quote/{{ yahoo_symbol }}/" class="stock-row" data-symbol="{{ item.version }}" target="_blank" rel="noopener noreferrer">
-            {% endif %}
-                <div class="stock-header">
-                    <div class="stock-info">
-                        <span class="stock-name">{{ item.name | split: "(" | first | strip }}</span>
-                        <span class="stock-symbol">{{ item.version }}</span>
-                    </div>
-                    <div class="stock-price">
-                        {% if stock %}
-                        <span class="stock-current {% if stock.change_pct >= 0 %}up{% else %}down{% endif %}">{{ stock.currency }}{{ stock.current }}</span>
-                        <span class="stock-change {% if stock.change_pct >= 0 %}up{% else %}down{% endif %}">{% if stock.change_pct >= 0 %}+{% endif %}{{ stock.change_pct }}%</span>
-                        {% else %}
-                        <span class="stock-current offline">--</span>
-                        {% endif %}
-                    </div>
-                </div>
-                <svg class="stock-chart"></svg>
-                {% if item.desc %}
-                <span class="stock-desc">{{ item.desc }}</span>
-                {% endif %}
+            <a href="{{ item.url }}" class="stock-row" target="_blank" rel="noopener noreferrer">
+                <span class="stock-icon" aria-hidden="true">
+                    {% if item.icon == "microsoft" %}
+                    <svg viewBox="0 0 22 22" focusable="false">
+                        <rect x="1" y="1" width="9" height="9" fill="#f25022"></rect>
+                        <rect x="12" y="1" width="9" height="9" fill="#7fba00"></rect>
+                        <rect x="1" y="12" width="9" height="9" fill="#00a4ef"></rect>
+                        <rect x="12" y="12" width="9" height="9" fill="#ffb900"></rect>
+                    </svg>
+                    {% endif %}
+                </span>
+                <span class="stock-name">{{ item.name }}</span>
             </a>
             {% endfor %}
         </div>
-        <script id="stock-data" type="application/json">
-            {{ site.data.stocks | jsonify }}
-        </script>
     </div>
 
-    <!-- System Log -->
-    <div class="os-section">
-        <div class="os-section-header">SYSTEM_LOG</div>
-        <div class="os-terminal" id="system-log">
-            <div class="terminal-header">
-                <span class="terminal-btn close"></span>
-                <span class="terminal-btn minimize"></span>
-                <span class="terminal-btn maximize"></span>
-                <span class="terminal-title">jiaaozhe@brain:~$ tail -f /var/log/life.log</span>
-            </div>
-            <div class="terminal-body" id="terminal-body">
-                {% for log in site.data.now.system.log_messages %}
-                <div class="log-line">
-                    <span class="log-time">[{{ log.time }}]</span>
-                    <span class="log-level {{ log.level }}">{{ log.level }}</span>
-                    <span class="log-message">{{ log.message }}</span>
-                </div>
-                {% endfor %}
-                <div class="log-cursor"></div>
-            </div>
-        </div>
-    </div>
 </section>
 
 <link rel="stylesheet" href="{{ '/assets/css/status-dashboard.css' | relative_url }}?v={{ site.time | date: '%s' }}">
