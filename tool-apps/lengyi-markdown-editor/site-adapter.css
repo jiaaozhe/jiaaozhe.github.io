@@ -1,0 +1,452 @@
+html[data-tool-app="markdown-editor"] body {
+    --bg: var(--tool-ui-bg);
+    --panel-bg: var(--tool-ui-surface);
+    --surface: var(--tool-ui-panel);
+    --surface-hover: var(--tool-ui-surface-hover);
+    --text: var(--tool-ui-ink);
+    --text-secondary: var(--tool-ui-muted);
+    --text-muted: var(--tool-ui-faint);
+    --border: var(--tool-ui-line);
+    --accent: var(--tool-ui-accent);
+    --accent-hover: var(--tool-ui-accent-hover);
+    --accent-soft: var(--tool-ui-accent-soft);
+    --code-bg: var(--tool-ui-stage);
+    --code-text: #e7edf3;
+    --danger: var(--tool-ui-danger);
+    --shadow-sm: none;
+    --shadow: none;
+    --shadow-md: var(--tool-ui-shadow-float);
+    --shadow-lg: var(--tool-ui-shadow-float);
+    --font-sans: var(--tool-ui-font-sans);
+    --font-mono: var(--tool-ui-font-mono);
+    --font-editor: var(--tool-ui-font-sans);
+    --radius-sm: var(--tool-ui-radius-inner);
+    --radius: var(--tool-ui-radius-control);
+    --radius-lg: var(--tool-ui-radius-panel);
+    --radius-xl: var(--tool-ui-radius-overlay);
+    font-variant-numeric: tabular-nums;
+}
+
+html[data-tool-app="markdown-editor"] .app {
+    height: 100dvh;
+    background: var(--tool-ui-bg);
+}
+
+html[data-tool-app="markdown-editor"] .top-bar {
+    min-height: var(--tool-ui-toolbar-height);
+    flex-wrap: nowrap;
+    gap: 6px;
+    padding: 0 12px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-bottom-color: var(--tool-ui-line);
+    background: color-mix(in srgb, var(--tool-ui-surface) 94%, transparent);
+    box-shadow: none;
+    scrollbar-width: none;
+    backdrop-filter: blur(12px);
+}
+
+html[data-tool-app="markdown-editor"] .top-bar::-webkit-scrollbar,
+html[data-tool-app="markdown-editor"] .editor-toolbar::-webkit-scrollbar {
+    display: none;
+}
+
+html[data-tool-app="markdown-editor"] .top-bar .brand,
+html[data-tool-app="markdown-editor"] [data-tool-theme-control] {
+    display: none;
+}
+
+html[data-tool-app="markdown-editor"] .top-bar input[type="text"] {
+    flex: 0 0 210px;
+    height: 38px;
+    padding: 0 11px;
+    border-color: var(--tool-ui-line);
+    border-radius: var(--tool-ui-radius-control);
+    background: var(--tool-ui-panel);
+    color: var(--tool-ui-ink);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+html[data-tool-app="markdown-editor"] .top-bar input[type="text"]:hover {
+    border-color: var(--tool-ui-line-strong);
+}
+
+html[data-tool-app="markdown-editor"] .top-bar input[type="text"]:focus {
+    border-color: var(--tool-ui-accent);
+    box-shadow: 0 0 0 3px var(--tool-ui-focus);
+}
+
+html[data-tool-app="markdown-editor"] .top-actions {
+    min-width: 0;
+    flex-wrap: nowrap;
+    gap: 3px;
+}
+
+html[data-tool-app="markdown-editor"] .top-bar button,
+html[data-tool-app="markdown-editor"] .top-bar label,
+html[data-tool-app="markdown-editor"] .editor-toolbar button,
+html[data-tool-app="markdown-editor"] .editor-toolbar label {
+    min-height: 36px;
+    gap: 6px;
+    padding: 0 9px;
+    border: 1px solid transparent;
+    border-radius: var(--tool-ui-radius-inner);
+    color: var(--tool-ui-muted);
+    font-size: 13px;
+    font-weight: 500;
+    transition:
+        background-color 180ms ease,
+        border-color 180ms ease,
+        color 180ms ease,
+        transform 120ms ease;
+}
+
+html[data-tool-app="markdown-editor"] .top-bar button:hover,
+html[data-tool-app="markdown-editor"] .top-bar label:hover,
+html[data-tool-app="markdown-editor"] .editor-toolbar button:hover,
+html[data-tool-app="markdown-editor"] .editor-toolbar label:hover {
+    border-color: var(--tool-ui-line);
+    background: var(--tool-ui-surface-hover);
+    color: var(--tool-ui-ink);
+}
+
+html[data-tool-app="markdown-editor"] .top-bar button.primary,
+html[data-tool-app="markdown-editor"] .editor-toolbar button.primary {
+    border-color: var(--tool-ui-accent);
+    background: var(--tool-ui-accent);
+    box-shadow: none;
+    color: #ffffff;
+}
+
+html[data-tool-app="markdown-editor"] .top-bar button.primary:hover,
+html[data-tool-app="markdown-editor"] .editor-toolbar button.primary:hover {
+    border-color: var(--tool-ui-accent-hover);
+    background: var(--tool-ui-accent-hover);
+    box-shadow: none;
+    color: #ffffff;
+}
+
+html[data-tool-app="markdown-editor"] .icon {
+    width: 15px;
+    height: 15px;
+    stroke-width: 1.75;
+}
+
+html[data-tool-app="markdown-editor"] .dropdown-menu {
+    margin-top: 6px;
+    padding: 5px;
+    border-color: var(--tool-ui-line);
+    border-radius: var(--tool-ui-radius-panel);
+    background: var(--tool-ui-surface);
+    box-shadow: var(--tool-ui-shadow-float);
+}
+
+html[data-tool-app="markdown-editor"] .dropdown-item {
+    border-radius: var(--tool-ui-radius-inner);
+    color: var(--tool-ui-muted);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+html[data-tool-app="markdown-editor"] .dropdown-item:hover {
+    background: var(--tool-ui-accent-soft);
+    color: var(--tool-ui-accent-hover);
+}
+
+html[data-tool-app="markdown-editor"] .editor-toolbar {
+    min-height: 50px;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 5px 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-bottom-color: var(--tool-ui-line);
+    background: var(--tool-ui-panel);
+    scrollbar-width: none;
+}
+
+html[data-tool-app="markdown-editor"] .editor-toolbar .format-group,
+html[data-tool-app="markdown-editor"] .editor-toolbar .editor-actions {
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    gap: 2px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+}
+
+html[data-tool-app="markdown-editor"] .editor-toolbar .editor-actions {
+    margin-left: auto;
+}
+
+html[data-tool-app="markdown-editor"] .top-bar .divider,
+html[data-tool-app="markdown-editor"] .editor-toolbar .divider {
+    height: 18px;
+    margin: 0 3px;
+    background: var(--tool-ui-line);
+}
+
+html[data-tool-app="markdown-editor"] .main {
+    background: var(--tool-ui-surface);
+}
+
+html[data-tool-app="markdown-editor"] .pane-header {
+    height: 46px;
+    padding: 0 14px;
+    border-bottom-color: var(--tool-ui-line);
+    background: var(--tool-ui-panel);
+    color: var(--tool-ui-muted);
+    font-size: 13px;
+    letter-spacing: 0.035em;
+    text-transform: none;
+}
+
+html[data-tool-app="markdown-editor"] .pane-title {
+    color: var(--tool-ui-ink);
+    font-weight: 600;
+}
+
+html[data-tool-app="markdown-editor"] .collapse-btn {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border-radius: var(--tool-ui-radius-inner);
+}
+
+html[data-tool-app="markdown-editor"] .collapse-btn:hover {
+    background: var(--tool-ui-surface-hover);
+    color: var(--tool-ui-accent);
+}
+
+html[data-tool-app="markdown-editor"] .resizer {
+    flex-basis: 6px;
+    width: 6px;
+}
+
+html[data-tool-app="markdown-editor"] .resizer:hover,
+html[data-tool-app="markdown-editor"] .resizer.dragging {
+    background: var(--tool-ui-accent-soft);
+}
+
+html[data-tool-app="markdown-editor"] .resizer::after {
+    width: 1px;
+    height: 36px;
+    background: var(--tool-ui-line-strong);
+}
+
+html[data-tool-app="markdown-editor"] .editor-pane textarea,
+html[data-tool-app="markdown-editor"] .preview-source {
+    padding: 26px 30px 34px;
+    background: var(--tool-ui-surface);
+    color: var(--tool-ui-ink);
+    font-family: var(--tool-ui-font-sans);
+    font-size: 17px;
+    line-height: 1.78;
+    caret-color: var(--tool-ui-accent);
+}
+
+html[data-tool-app="markdown-editor"] .preview-source {
+    font-family: var(--tool-ui-font-mono);
+    font-size: 16px;
+}
+
+html[data-tool-app="markdown-editor"] .preview-pane {
+    border-left-color: var(--tool-ui-line);
+    background: var(--tool-ui-surface);
+}
+
+html[data-tool-app="markdown-editor"] .preview-content {
+    background: var(--tool-ui-surface);
+    color: var(--tool-ui-ink);
+    font-family: var(--tool-ui-font-sans);
+    font-size: 17px;
+    line-height: 1.78;
+}
+
+html[data-tool-app="markdown-editor"] .preview-content .markdown-body {
+    max-width: 760px;
+    padding: 32px 42px 72px;
+}
+
+html[data-tool-app="markdown-editor"] .preview-toggle,
+html[data-tool-app="markdown-editor"] .image-modal-tabs {
+    gap: 2px;
+    padding: 3px;
+    border-color: var(--tool-ui-line);
+    border-radius: var(--tool-ui-radius-control);
+    background: var(--tool-ui-bg);
+}
+
+html[data-tool-app="markdown-editor"] .toggle-btn,
+html[data-tool-app="markdown-editor"] .image-tab {
+    border-radius: var(--tool-ui-radius-inner);
+    color: var(--tool-ui-muted);
+    transition:
+        background-color 180ms ease,
+        color 180ms ease,
+        transform 120ms ease;
+}
+
+html[data-tool-app="markdown-editor"] .toggle-btn.active,
+html[data-tool-app="markdown-editor"] .image-tab.active {
+    background: var(--tool-ui-surface);
+    box-shadow: var(--tool-ui-shadow-control);
+    color: var(--tool-ui-ink);
+}
+
+html[data-tool-app="markdown-editor"] .preview-content h1,
+html[data-tool-app="markdown-editor"] .preview-content h2,
+html[data-tool-app="markdown-editor"] .preview-content h3 {
+    color: var(--tool-ui-ink-strong);
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+}
+
+html[data-tool-app="markdown-editor"] .preview-content h1 {
+    font-size: 2.15em;
+    line-height: 1.12;
+}
+
+html[data-tool-app="markdown-editor"] .preview-content p,
+html[data-tool-app="markdown-editor"] .preview-content li {
+    text-wrap: pretty;
+}
+
+html[data-tool-app="markdown-editor"] .preview-content code {
+    border-radius: var(--tool-ui-radius-inner);
+    background: var(--tool-ui-panel);
+    color: var(--tool-ui-accent-hover);
+}
+
+html[data-tool-app="markdown-editor"] .preview-content pre {
+    border: 1px solid var(--tool-ui-stage-line);
+    border-radius: var(--tool-ui-radius-panel);
+    background: var(--tool-ui-stage);
+    box-shadow: none;
+}
+
+html[data-tool-app="markdown-editor"] .preview-content img {
+    border-radius: var(--tool-ui-radius-panel);
+    box-shadow: none;
+}
+
+html[data-tool-app="markdown-editor"] .statusbar {
+    min-height: 34px;
+    padding: 0 14px;
+    border-top-color: var(--tool-ui-line);
+    background: var(--tool-ui-panel);
+    color: var(--tool-ui-muted);
+    font-family: var(--tool-ui-font-mono);
+    font-size: 12px;
+}
+
+html[data-tool-app="markdown-editor"] .modal-overlay {
+    background: rgba(13, 20, 27, 0.46);
+    backdrop-filter: blur(8px);
+}
+
+html[data-tool-app="markdown-editor"] .modal {
+    border: 1px solid var(--tool-ui-line);
+    border-radius: var(--tool-ui-radius-overlay);
+    background: var(--tool-ui-surface);
+    box-shadow: var(--tool-ui-shadow-float);
+}
+
+html[data-tool-app="markdown-editor"] .modal-header,
+html[data-tool-app="markdown-editor"] .modal-footer {
+    border-color: var(--tool-ui-line);
+}
+
+html[data-tool-app="markdown-editor"] .modal-body input[type="url"],
+html[data-tool-app="markdown-editor"] .modal-body input[type="text"],
+html[data-tool-app="markdown-editor"] .modal-body textarea,
+html[data-tool-app="markdown-editor"] .modal-body select {
+    border-color: var(--tool-ui-line);
+    border-radius: var(--tool-ui-radius-control);
+    background: var(--tool-ui-panel);
+    color: var(--tool-ui-ink);
+}
+
+html[data-tool-app="markdown-editor"] .modal-body input:focus,
+html[data-tool-app="markdown-editor"] .modal-body textarea:focus,
+html[data-tool-app="markdown-editor"] .modal-body select:focus {
+    border-color: var(--tool-ui-accent);
+    box-shadow: 0 0 0 3px var(--tool-ui-focus);
+}
+
+html[data-tool-app="markdown-editor"] .modal-footer button,
+html[data-tool-app="markdown-editor"] .ratio-btn {
+    border-radius: var(--tool-ui-radius-control);
+}
+
+html[data-tool-app="markdown-editor"] .toast {
+    right: 16px;
+    bottom: 16px;
+    left: auto;
+    max-width: min(360px, calc(100vw - 32px));
+    padding: 10px 13px;
+    border: 1px solid var(--tool-ui-line-strong);
+    border-left: 3px solid var(--tool-ui-accent);
+    border-radius: var(--tool-ui-radius-control);
+    background: color-mix(in srgb, var(--tool-ui-ink-strong) 94%, transparent);
+    box-shadow: var(--tool-ui-shadow-float);
+    color: var(--tool-ui-bg);
+    font-size: 14px;
+    transform: translateY(8px);
+    backdrop-filter: blur(10px);
+}
+
+html[data-tool-app="markdown-editor"] .toast.show {
+    transform: translateY(0);
+}
+
+html[data-tool-app="markdown-editor"] .drop-overlay {
+    border-color: var(--tool-ui-accent);
+    background: color-mix(in srgb, var(--tool-ui-accent) 8%, transparent);
+}
+
+html[data-tool-app="markdown-editor"] .drop-message {
+    border: 1px solid var(--tool-ui-line);
+    border-radius: var(--tool-ui-radius-panel);
+    background: var(--tool-ui-surface);
+    box-shadow: var(--tool-ui-shadow-float);
+    color: var(--tool-ui-accent);
+}
+
+@media (max-width: 960px) {
+    html[data-tool-app="markdown-editor"] .top-bar {
+        padding: 0 8px;
+    }
+
+    html[data-tool-app="markdown-editor"] .top-bar input[type="text"] {
+        flex-basis: 170px;
+    }
+
+    html[data-tool-app="markdown-editor"] .top-bar button span,
+    html[data-tool-app="markdown-editor"] .top-bar label span {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    html[data-tool-app="markdown-editor"] .top-bar input[type="text"] {
+        flex: 1 1 150px;
+    }
+
+    html[data-tool-app="markdown-editor"] .editor-toolbar {
+        padding: 5px 8px;
+    }
+
+    html[data-tool-app="markdown-editor"] .preview-content .markdown-body,
+    html[data-tool-app="markdown-editor"] .editor-pane textarea,
+    html[data-tool-app="markdown-editor"] .preview-source {
+        padding: 22px 20px 48px;
+    }
+
+    html[data-tool-app="markdown-editor"] .statusbar #status-right {
+        display: none;
+    }
+}

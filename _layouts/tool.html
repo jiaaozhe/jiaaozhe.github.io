@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="{{ '/assets/css/tool-runner.css' | relative_url }}?v={{ site.time | date: '%s' }}">
 </head>
 <body class="tool-runner-page">
+    <a class="tool-runner-skip" href="#tool-stage">跳到工具</a>
     <header class="tool-runner-bar">
         <a class="tool-runner-back" href="{{ '/tools/' | relative_url }}"><span aria-hidden="true">←</span> 工具</a>
         <div class="tool-runner-identity">
@@ -32,9 +33,13 @@
         </div>
     </header>
 
-    <main class="tool-runner-stage" data-tool-stage>
-        <div class="tool-runner-loading" data-tool-loading>
-            <span></span>
+    <main class="tool-runner-stage" id="tool-stage" data-tool-stage>
+        <div class="tool-runner-loading" data-tool-loading role="status" aria-live="polite">
+            <div class="tool-runner-skeleton" aria-hidden="true">
+                <span class="tool-runner-skeleton-sidebar"></span>
+                <span class="tool-runner-skeleton-canvas"></span>
+                <span class="tool-runner-skeleton-inspector"></span>
+            </div>
             <p>Loading {{ page.title }}</p>
         </div>
         {% assign capabilities = page.capabilities | default: empty %}

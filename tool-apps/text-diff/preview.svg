@@ -1,166 +1,166 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
   <title id="title">文本差异台预览</title>
   <desc id="desc">浅色双栏文本比较工具，展示原始文本、新文本和并排差异结果。</desc>
-  <rect width="1200" height="675" fill="#eef1f5"/>
+  <rect width="1200" height="675" fill="#f3f6f9"/>
 
   <rect width="1200" height="62" fill="#ffffff"/>
-  <line x1="0" y1="61.5" x2="1200" y2="61.5" stroke="#d9e0e8"/>
-  <g fill="#4d70b8">
+  <line x1="0" y1="61.5" x2="1200" y2="61.5" stroke="#d8e1e9"/>
+  <g fill="#3f6f9f">
     <rect x="29" y="20" width="17" height="4"/>
     <rect x="29" y="29" width="28" height="4"/>
     <rect x="29" y="38" width="11" height="4"/>
   </g>
-  <text x="72" y="38" fill="#172236" font-family="ui-monospace,monospace" font-size="15" font-weight="700" letter-spacing="1.5">TEXT / DELTA</text>
-  <line x1="226" y1="0" x2="226" y2="62" stroke="#d9e0e8"/>
-  <text x="248" y="25" fill="#a66b2b" font-family="ui-monospace,monospace" font-size="9" font-weight="700" letter-spacing="1">DIFF</text>
-  <text x="248" y="43" fill="#243044" font-family="system-ui,sans-serif" font-size="12" font-weight="700">4 个差异块 · 7 行受影响</text>
-  <line x1="500" y1="0" x2="500" y2="62" stroke="#d9e0e8"/>
-  <circle cx="1071" cy="31" r="6" fill="none" stroke="#2f7d61" stroke-width="3"/>
-  <text x="1087" y="35" fill="#6f7b8c" font-family="ui-monospace,monospace" font-size="10">LOCAL ONLY</text>
+  <text x="72" y="38" fill="#101820" font-family="ui-monospace,monospace" font-size="15" font-weight="700" letter-spacing="1.5">TEXT / DELTA</text>
+  <line x1="226" y1="0" x2="226" y2="62" stroke="#d8e1e9"/>
+  <text x="248" y="25" fill="#9a6716" font-family="ui-monospace,monospace" font-size="9" font-weight="700" letter-spacing="1">DIFF</text>
+  <text x="248" y="43" fill="#19232d" font-family="system-ui,sans-serif" font-size="12" font-weight="700">4 个差异块 · 7 行受影响</text>
+  <line x1="500" y1="0" x2="500" y2="62" stroke="#d8e1e9"/>
+  <circle cx="1071" cy="31" r="6" fill="none" stroke="#27705a" stroke-width="3"/>
+  <text x="1087" y="35" fill="#667482" font-family="ui-monospace,monospace" font-size="10">LOCAL ONLY</text>
 
-  <rect x="24" y="79" width="1152" height="61" fill="#ffffff" stroke="#d9e0e8"/>
-  <text x="40" y="98" fill="#6f7b8c" font-family="ui-monospace,monospace" font-size="8" font-weight="700">结果视图</text>
-  <rect x="40" y="104" width="119" height="28" fill="#edf0f4" stroke="#d9e0e8"/>
+  <rect x="24" y="79" width="1152" height="61" fill="#ffffff" stroke="#d8e1e9"/>
+  <text x="40" y="98" fill="#667482" font-family="ui-monospace,monospace" font-size="8" font-weight="700">结果视图</text>
+  <rect x="40" y="104" width="119" height="28" fill="#edf0f4" stroke="#d8e1e9"/>
   <rect x="43" y="107" width="55" height="22" fill="#ffffff"/>
-  <text x="59" y="123" fill="#243044" font-family="system-ui,sans-serif" font-size="10" font-weight="700">并排</text>
-  <text x="116" y="123" fill="#6f7b8c" font-family="system-ui,sans-serif" font-size="10" font-weight="700">统一</text>
-  <text x="175" y="98" fill="#6f7b8c" font-family="ui-monospace,monospace" font-size="8" font-weight="700">比较规则</text>
-  <rect x="175" y="104" width="117" height="28" fill="#f6f8fb" stroke="#b7c1cf"/>
-  <rect x="185" y="111" width="13" height="13" fill="#ffffff" stroke="#b7c1cf"/>
-  <text x="207" y="123" fill="#243044" font-family="system-ui,sans-serif" font-size="9" font-weight="700">忽略首尾空白</text>
-  <rect x="300" y="104" width="99" height="28" fill="#f6f8fb" stroke="#b7c1cf"/>
-  <rect x="310" y="111" width="13" height="13" fill="#ffffff" stroke="#b7c1cf"/>
-  <text x="332" y="123" fill="#243044" font-family="system-ui,sans-serif" font-size="9" font-weight="700">忽略大小写</text>
-  <text x="414" y="98" fill="#6f7b8c" font-family="ui-monospace,monospace" font-size="8" font-weight="700">行内高亮</text>
-  <rect x="414" y="104" width="82" height="28" fill="#f6f8fb" stroke="#b7c1cf"/>
-  <text x="425" y="122" fill="#243044" font-family="ui-monospace,monospace" font-size="9" font-weight="700">自动</text>
-  <path d="M478 115l4 4 4-4" fill="none" stroke="#6f7b8c" stroke-width="1.5"/>
-  <text x="510" y="98" fill="#6f7b8c" font-family="ui-monospace,monospace" font-size="8" font-weight="700">上下文</text>
-  <rect x="510" y="104" width="69" height="28" fill="#f6f8fb" stroke="#b7c1cf"/>
-  <text x="521" y="122" fill="#243044" font-family="ui-monospace,monospace" font-size="9" font-weight="700">3 行</text>
-  <rect x="1036" y="96" width="124" height="36" fill="#4d70b8" stroke="#36578f"/>
+  <text x="59" y="123" fill="#19232d" font-family="system-ui,sans-serif" font-size="10" font-weight="700">并排</text>
+  <text x="116" y="123" fill="#667482" font-family="system-ui,sans-serif" font-size="10" font-weight="700">统一</text>
+  <text x="175" y="98" fill="#667482" font-family="ui-monospace,monospace" font-size="8" font-weight="700">比较规则</text>
+  <rect x="175" y="104" width="117" height="28" fill="#f8fafc" stroke="#bac6d1"/>
+  <rect x="185" y="111" width="13" height="13" fill="#ffffff" stroke="#bac6d1"/>
+  <text x="207" y="123" fill="#19232d" font-family="system-ui,sans-serif" font-size="9" font-weight="700">忽略首尾空白</text>
+  <rect x="300" y="104" width="99" height="28" fill="#f8fafc" stroke="#bac6d1"/>
+  <rect x="310" y="111" width="13" height="13" fill="#ffffff" stroke="#bac6d1"/>
+  <text x="332" y="123" fill="#19232d" font-family="system-ui,sans-serif" font-size="9" font-weight="700">忽略大小写</text>
+  <text x="414" y="98" fill="#667482" font-family="ui-monospace,monospace" font-size="8" font-weight="700">行内高亮</text>
+  <rect x="414" y="104" width="82" height="28" fill="#f8fafc" stroke="#bac6d1"/>
+  <text x="425" y="122" fill="#19232d" font-family="ui-monospace,monospace" font-size="9" font-weight="700">自动</text>
+  <path d="M478 115l4 4 4-4" fill="none" stroke="#667482" stroke-width="1.5"/>
+  <text x="510" y="98" fill="#667482" font-family="ui-monospace,monospace" font-size="8" font-weight="700">上下文</text>
+  <rect x="510" y="104" width="69" height="28" fill="#f8fafc" stroke="#bac6d1"/>
+  <text x="521" y="122" fill="#19232d" font-family="ui-monospace,monospace" font-size="9" font-weight="700">3 行</text>
+  <rect x="1036" y="96" width="124" height="36" fill="#3f6f9f" stroke="#315b84"/>
   <text x="1058" y="119" fill="#ffffff" font-family="system-ui,sans-serif" font-size="11" font-weight="700">比较文本　⌘↵</text>
 
   <g transform="translate(24 153)">
-    <rect width="570" height="196" fill="#ffffff" stroke="#d9e0e8"/>
+    <rect width="570" height="196" fill="#ffffff" stroke="#d8e1e9"/>
     <rect width="570" height="48" fill="#fbfcfe"/>
-    <line x1="0" y1="48" x2="570" y2="48" stroke="#d9e0e8"/>
-    <text x="14" y="19" fill="#b65750" font-family="ui-monospace,monospace" font-size="8" font-weight="700">A / ORIGINAL</text>
-    <text x="14" y="37" fill="#172236" font-family="system-ui,sans-serif" font-size="11" font-weight="700">deploy-check-v1.txt</text>
-    <rect x="489" y="11" width="67" height="26" fill="#ffffff" stroke="#d9e0e8"/>
-    <text x="503" y="28" fill="#6f7b8c" font-family="system-ui,sans-serif" font-size="9" font-weight="700">导入文件</text>
-    <rect x="0" y="48" width="42" height="119" fill="#f6f8fb"/>
-    <line x1="42" y1="48" x2="42" y2="167" stroke="#d9e0e8"/>
+    <line x1="0" y1="48" x2="570" y2="48" stroke="#d8e1e9"/>
+    <text x="14" y="19" fill="#b2473f" font-family="ui-monospace,monospace" font-size="8" font-weight="700">A / ORIGINAL</text>
+    <text x="14" y="37" fill="#101820" font-family="system-ui,sans-serif" font-size="11" font-weight="700">deploy-check-v1.txt</text>
+    <rect x="489" y="11" width="67" height="26" fill="#ffffff" stroke="#d8e1e9"/>
+    <text x="503" y="28" fill="#667482" font-family="system-ui,sans-serif" font-size="9" font-weight="700">导入文件</text>
+    <rect x="0" y="48" width="42" height="119" fill="#f8fafc"/>
+    <line x1="42" y1="48" x2="42" y2="167" stroke="#d8e1e9"/>
     <g fill="#99a4b2" font-family="ui-monospace,monospace" font-size="9" text-anchor="end">
       <text x="31" y="70">1</text><text x="31" y="88">2</text><text x="31" y="106">3</text><text x="31" y="124">4</text><text x="31" y="142">5</text><text x="31" y="160">6</text>
     </g>
-    <g fill="#243044" font-family="ui-monospace,monospace" font-size="9">
+    <g fill="#19232d" font-family="ui-monospace,monospace" font-size="9">
       <text x="55" y="70">部署检查清单</text>
       <text x="55" y="106">1. 构建静态站点</text>
       <text x="55" y="124">2. 上传资源</text>
       <text x="55" y="142">3. 清理缓存</text>
     </g>
-    <rect y="167" width="570" height="29" fill="#f6f8fb"/>
-    <line x1="0" y1="167" x2="570" y2="167" stroke="#d9e0e8"/>
-    <text x="12" y="185" fill="#6f7b8c" font-family="ui-monospace,monospace" font-size="8">132 B · 9 行 · UTF-8</text>
-    <text x="483" y="185" fill="#6f7b8c" font-family="ui-monospace,monospace" font-size="8">换行：LF</text>
+    <rect y="167" width="570" height="29" fill="#f8fafc"/>
+    <line x1="0" y1="167" x2="570" y2="167" stroke="#d8e1e9"/>
+    <text x="12" y="185" fill="#667482" font-family="ui-monospace,monospace" font-size="8">132 B · 9 行 · UTF-8</text>
+    <text x="483" y="185" fill="#667482" font-family="ui-monospace,monospace" font-size="8">换行：LF</text>
   </g>
 
   <g transform="translate(606 153)">
-    <rect width="570" height="196" fill="#ffffff" stroke="#d9e0e8"/>
+    <rect width="570" height="196" fill="#ffffff" stroke="#d8e1e9"/>
     <rect width="570" height="48" fill="#fbfcfe"/>
-    <line x1="0" y1="48" x2="570" y2="48" stroke="#d9e0e8"/>
-    <text x="14" y="19" fill="#2f7d61" font-family="ui-monospace,monospace" font-size="8" font-weight="700">B / REVISED</text>
-    <text x="14" y="37" fill="#172236" font-family="system-ui,sans-serif" font-size="11" font-weight="700">deploy-check-v2.txt</text>
-    <rect x="489" y="11" width="67" height="26" fill="#ffffff" stroke="#d9e0e8"/>
-    <text x="503" y="28" fill="#6f7b8c" font-family="system-ui,sans-serif" font-size="9" font-weight="700">导入文件</text>
-    <rect x="0" y="48" width="42" height="119" fill="#f6f8fb"/>
-    <line x1="42" y1="48" x2="42" y2="167" stroke="#d9e0e8"/>
+    <line x1="0" y1="48" x2="570" y2="48" stroke="#d8e1e9"/>
+    <text x="14" y="19" fill="#27705a" font-family="ui-monospace,monospace" font-size="8" font-weight="700">B / REVISED</text>
+    <text x="14" y="37" fill="#101820" font-family="system-ui,sans-serif" font-size="11" font-weight="700">deploy-check-v2.txt</text>
+    <rect x="489" y="11" width="67" height="26" fill="#ffffff" stroke="#d8e1e9"/>
+    <text x="503" y="28" fill="#667482" font-family="system-ui,sans-serif" font-size="9" font-weight="700">导入文件</text>
+    <rect x="0" y="48" width="42" height="119" fill="#f8fafc"/>
+    <line x1="42" y1="48" x2="42" y2="167" stroke="#d8e1e9"/>
     <g fill="#99a4b2" font-family="ui-monospace,monospace" font-size="9" text-anchor="end">
       <text x="31" y="70">1</text><text x="31" y="88">2</text><text x="31" y="106">3</text><text x="31" y="124">4</text><text x="31" y="142">5</text><text x="31" y="160">6</text>
     </g>
-    <g fill="#243044" font-family="ui-monospace,monospace" font-size="9">
+    <g fill="#19232d" font-family="ui-monospace,monospace" font-size="9">
       <text x="55" y="70">部署检查清单</text>
       <text x="55" y="106">1. 构建并校验静态站点</text>
       <text x="55" y="124">2. 上传压缩资源</text>
       <text x="55" y="142">3. 刷新边缘缓存</text>
       <text x="55" y="160">4. 执行冒烟测试</text>
     </g>
-    <rect y="167" width="570" height="29" fill="#f6f8fb"/>
-    <line x1="0" y1="167" x2="570" y2="167" stroke="#d9e0e8"/>
-    <text x="12" y="185" fill="#6f7b8c" font-family="ui-monospace,monospace" font-size="8">183 B · 10 行 · UTF-8</text>
-    <text x="483" y="185" fill="#6f7b8c" font-family="ui-monospace,monospace" font-size="8">换行：LF</text>
+    <rect y="167" width="570" height="29" fill="#f8fafc"/>
+    <line x1="0" y1="167" x2="570" y2="167" stroke="#d8e1e9"/>
+    <text x="12" y="185" fill="#667482" font-family="ui-monospace,monospace" font-size="8">183 B · 10 行 · UTF-8</text>
+    <text x="483" y="185" fill="#667482" font-family="ui-monospace,monospace" font-size="8">换行：LF</text>
   </g>
 
   <g transform="translate(24 362)">
-    <rect width="1152" height="289" fill="#ffffff" stroke="#d9e0e8"/>
+    <rect width="1152" height="289" fill="#ffffff" stroke="#d8e1e9"/>
     <rect width="1152" height="58" fill="#fbfcfe"/>
-    <line x1="0" y1="58" x2="1152" y2="58" stroke="#d9e0e8"/>
-    <rect x="14" y="13" width="31" height="31" fill="#edf2fa"/>
-    <text x="24" y="34" fill="#36578f" font-family="ui-monospace,monospace" font-size="14" font-weight="800">Δ</text>
-    <text x="57" y="23" fill="#6f7b8c" font-family="ui-monospace,monospace" font-size="8" font-weight="700">COMPARISON / 比较结果</text>
-    <text x="57" y="41" fill="#172236" font-family="system-ui,sans-serif" font-size="11" font-weight="700">4 个差异块</text>
-    <line x1="273" y1="0" x2="273" y2="58" stroke="#d9e0e8"/>
-    <text x="291" y="21" fill="#6f7b8c" font-family="ui-monospace,monospace" font-size="8">新增</text>
-    <text x="291" y="41" fill="#2f7d61" font-family="ui-monospace,monospace" font-size="14" font-weight="800">1</text>
-    <line x1="343" y1="0" x2="343" y2="58" stroke="#d9e0e8"/>
-    <text x="361" y="21" fill="#6f7b8c" font-family="ui-monospace,monospace" font-size="8">删除</text>
-    <text x="361" y="41" fill="#b65750" font-family="ui-monospace,monospace" font-size="14" font-weight="800">0</text>
-    <line x1="413" y1="0" x2="413" y2="58" stroke="#d9e0e8"/>
-    <text x="431" y="21" fill="#6f7b8c" font-family="ui-monospace,monospace" font-size="8">修改</text>
-    <text x="431" y="41" fill="#a66b2b" font-family="ui-monospace,monospace" font-size="14" font-weight="800">3</text>
-    <rect x="1049" y="14" width="87" height="30" fill="#f6f8fb" stroke="#b7c1cf"/>
-    <text x="1063" y="33" fill="#36578f" font-family="system-ui,sans-serif" font-size="9" font-weight="700">查看 Patch</text>
+    <line x1="0" y1="58" x2="1152" y2="58" stroke="#d8e1e9"/>
+    <rect x="14" y="13" width="31" height="31" fill="#e8eff6"/>
+    <text x="24" y="34" fill="#315b84" font-family="ui-monospace,monospace" font-size="14" font-weight="800">Δ</text>
+    <text x="57" y="23" fill="#667482" font-family="ui-monospace,monospace" font-size="8" font-weight="700">COMPARISON / 比较结果</text>
+    <text x="57" y="41" fill="#101820" font-family="system-ui,sans-serif" font-size="11" font-weight="700">4 个差异块</text>
+    <line x1="273" y1="0" x2="273" y2="58" stroke="#d8e1e9"/>
+    <text x="291" y="21" fill="#667482" font-family="ui-monospace,monospace" font-size="8">新增</text>
+    <text x="291" y="41" fill="#27705a" font-family="ui-monospace,monospace" font-size="14" font-weight="800">1</text>
+    <line x1="343" y1="0" x2="343" y2="58" stroke="#d8e1e9"/>
+    <text x="361" y="21" fill="#667482" font-family="ui-monospace,monospace" font-size="8">删除</text>
+    <text x="361" y="41" fill="#b2473f" font-family="ui-monospace,monospace" font-size="14" font-weight="800">0</text>
+    <line x1="413" y1="0" x2="413" y2="58" stroke="#d8e1e9"/>
+    <text x="431" y="21" fill="#667482" font-family="ui-monospace,monospace" font-size="8">修改</text>
+    <text x="431" y="41" fill="#9a6716" font-family="ui-monospace,monospace" font-size="14" font-weight="800">3</text>
+    <rect x="1049" y="14" width="87" height="30" fill="#f8fafc" stroke="#bac6d1"/>
+    <text x="1063" y="33" fill="#315b84" font-family="system-ui,sans-serif" font-size="9" font-weight="700">查看 Patch</text>
 
     <rect y="58" width="1152" height="31" fill="#f4f6f9"/>
-    <line x1="576" y1="58" x2="576" y2="289" stroke="#b7c1cf"/>
-    <text x="58" y="78" fill="#6f7b8c" font-family="ui-monospace,monospace" font-size="8" font-weight="700">A / ORIGINAL · deploy-check-v1.txt</text>
-    <text x="634" y="78" fill="#6f7b8c" font-family="ui-monospace,monospace" font-size="8" font-weight="700">B / REVISED · deploy-check-v2.txt</text>
+    <line x1="576" y1="58" x2="576" y2="289" stroke="#bac6d1"/>
+    <text x="58" y="78" fill="#667482" font-family="ui-monospace,monospace" font-size="8" font-weight="700">A / ORIGINAL · deploy-check-v1.txt</text>
+    <text x="634" y="78" fill="#667482" font-family="ui-monospace,monospace" font-size="8" font-weight="700">B / REVISED · deploy-check-v2.txt</text>
 
     <rect x="0" y="89" width="576" height="34" fill="#fdf1ef"/>
     <rect x="576" y="89" width="576" height="34" fill="#edf7f2"/>
     <rect x="42" y="89" width="24" height="34" fill="#f2d0cc"/>
     <rect x="618" y="89" width="24" height="34" fill="#c9e8da"/>
     <text x="30" y="111" fill="#99a4b2" font-family="ui-monospace,monospace" font-size="9" text-anchor="end">3</text>
-    <text x="54" y="111" fill="#b65750" font-family="ui-monospace,monospace" font-size="11" font-weight="800" text-anchor="middle">−</text>
-    <text x="78" y="111" fill="#243044" font-family="ui-monospace,monospace" font-size="10">1. 构建<tspan fill="#8e3833" font-weight="700">静态站点</tspan></text>
+    <text x="54" y="111" fill="#b2473f" font-family="ui-monospace,monospace" font-size="11" font-weight="800" text-anchor="middle">−</text>
+    <text x="78" y="111" fill="#19232d" font-family="ui-monospace,monospace" font-size="10">1. 构建<tspan fill="#8e3833" font-weight="700">静态站点</tspan></text>
     <text x="606" y="111" fill="#99a4b2" font-family="ui-monospace,monospace" font-size="9" text-anchor="end">3</text>
-    <text x="630" y="111" fill="#2f7d61" font-family="ui-monospace,monospace" font-size="11" font-weight="800" text-anchor="middle">+</text>
-    <text x="654" y="111" fill="#243044" font-family="ui-monospace,monospace" font-size="10">1. 构建<tspan fill="#185d46" font-weight="700">并校验静态站点</tspan></text>
+    <text x="630" y="111" fill="#27705a" font-family="ui-monospace,monospace" font-size="11" font-weight="800" text-anchor="middle">+</text>
+    <text x="654" y="111" fill="#19232d" font-family="ui-monospace,monospace" font-size="10">1. 构建<tspan fill="#185d46" font-weight="700">并校验静态站点</tspan></text>
 
     <rect x="0" y="123" width="576" height="34" fill="#fdf1ef"/>
     <rect x="576" y="123" width="576" height="34" fill="#edf7f2"/>
     <rect x="42" y="123" width="24" height="34" fill="#f2d0cc"/>
     <rect x="618" y="123" width="24" height="34" fill="#c9e8da"/>
     <text x="30" y="145" fill="#99a4b2" font-family="ui-monospace,monospace" font-size="9" text-anchor="end">4</text>
-    <text x="54" y="145" fill="#b65750" font-family="ui-monospace,monospace" font-size="11" font-weight="800" text-anchor="middle">−</text>
-    <text x="78" y="145" fill="#243044" font-family="ui-monospace,monospace" font-size="10">2. 上传<tspan fill="#8e3833" font-weight="700">资源</tspan></text>
+    <text x="54" y="145" fill="#b2473f" font-family="ui-monospace,monospace" font-size="11" font-weight="800" text-anchor="middle">−</text>
+    <text x="78" y="145" fill="#19232d" font-family="ui-monospace,monospace" font-size="10">2. 上传<tspan fill="#8e3833" font-weight="700">资源</tspan></text>
     <text x="606" y="145" fill="#99a4b2" font-family="ui-monospace,monospace" font-size="9" text-anchor="end">4</text>
-    <text x="630" y="145" fill="#2f7d61" font-family="ui-monospace,monospace" font-size="11" font-weight="800" text-anchor="middle">+</text>
-    <text x="654" y="145" fill="#243044" font-family="ui-monospace,monospace" font-size="10">2. 上传<tspan fill="#185d46" font-weight="700">压缩资源</tspan></text>
+    <text x="630" y="145" fill="#27705a" font-family="ui-monospace,monospace" font-size="11" font-weight="800" text-anchor="middle">+</text>
+    <text x="654" y="145" fill="#19232d" font-family="ui-monospace,monospace" font-size="10">2. 上传<tspan fill="#185d46" font-weight="700">压缩资源</tspan></text>
 
     <rect x="0" y="157" width="576" height="34" fill="#fdf1ef"/>
     <rect x="576" y="157" width="576" height="34" fill="#edf7f2"/>
     <rect x="42" y="157" width="24" height="34" fill="#f2d0cc"/>
     <rect x="618" y="157" width="24" height="34" fill="#c9e8da"/>
     <text x="30" y="179" fill="#99a4b2" font-family="ui-monospace,monospace" font-size="9" text-anchor="end">5</text>
-    <text x="54" y="179" fill="#b65750" font-family="ui-monospace,monospace" font-size="11" font-weight="800" text-anchor="middle">−</text>
-    <text x="78" y="179" fill="#243044" font-family="ui-monospace,monospace" font-size="10">3. <tspan fill="#8e3833" font-weight="700">清理缓存</tspan></text>
+    <text x="54" y="179" fill="#b2473f" font-family="ui-monospace,monospace" font-size="11" font-weight="800" text-anchor="middle">−</text>
+    <text x="78" y="179" fill="#19232d" font-family="ui-monospace,monospace" font-size="10">3. <tspan fill="#8e3833" font-weight="700">清理缓存</tspan></text>
     <text x="606" y="179" fill="#99a4b2" font-family="ui-monospace,monospace" font-size="9" text-anchor="end">5</text>
-    <text x="630" y="179" fill="#2f7d61" font-family="ui-monospace,monospace" font-size="11" font-weight="800" text-anchor="middle">+</text>
-    <text x="654" y="179" fill="#243044" font-family="ui-monospace,monospace" font-size="10">3. <tspan fill="#185d46" font-weight="700">刷新边缘缓存</tspan></text>
+    <text x="630" y="179" fill="#27705a" font-family="ui-monospace,monospace" font-size="11" font-weight="800" text-anchor="middle">+</text>
+    <text x="654" y="179" fill="#19232d" font-family="ui-monospace,monospace" font-size="10">3. <tspan fill="#185d46" font-weight="700">刷新边缘缓存</tspan></text>
 
     <rect x="576" y="191" width="576" height="34" fill="#edf7f2"/>
     <rect x="618" y="191" width="24" height="34" fill="#c9e8da"/>
     <text x="606" y="213" fill="#99a4b2" font-family="ui-monospace,monospace" font-size="9" text-anchor="end">6</text>
-    <text x="630" y="213" fill="#2f7d61" font-family="ui-monospace,monospace" font-size="11" font-weight="800" text-anchor="middle">+</text>
-    <text x="654" y="213" fill="#243044" font-family="ui-monospace,monospace" font-size="10">4. 执行冒烟测试</text>
+    <text x="630" y="213" fill="#27705a" font-family="ui-monospace,monospace" font-size="11" font-weight="800" text-anchor="middle">+</text>
+    <text x="654" y="213" fill="#19232d" font-family="ui-monospace,monospace" font-size="10">4. 执行冒烟测试</text>
 
-    <rect y="225" width="1152" height="29" fill="#edf2fa"/>
-    <text x="519" y="244" fill="#36578f" font-family="ui-monospace,monospace" font-size="9" font-weight="700">展开中间 2 行未变化内容</text>
+    <rect y="225" width="1152" height="29" fill="#e8eff6"/>
+    <text x="519" y="244" fill="#315b84" font-family="ui-monospace,monospace" font-size="9" font-weight="700">展开中间 2 行未变化内容</text>
     <text x="30" y="276" fill="#99a4b2" font-family="ui-monospace,monospace" font-size="9" text-anchor="end">8</text>
     <text x="606" y="276" fill="#99a4b2" font-family="ui-monospace,monospace" font-size="9" text-anchor="end">9</text>
-    <text x="78" y="276" fill="#243044" font-family="ui-monospace,monospace" font-size="10">负责人：林溪</text>
-    <text x="654" y="276" fill="#243044" font-family="ui-monospace,monospace" font-size="10">负责人：林溪</text>
+    <text x="78" y="276" fill="#19232d" font-family="ui-monospace,monospace" font-size="10">负责人：林溪</text>
+    <text x="654" y="276" fill="#19232d" font-family="ui-monospace,monospace" font-size="10">负责人：林溪</text>
   </g>
 </svg>

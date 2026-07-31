@@ -10,13 +10,13 @@ permalink: /tools/
 <section class="tools-index" data-tools-index>
     <header class="tools-index-header">
         <div>
-            <p class="tools-kicker">UTILITY INDEX</p>
+            <p class="tools-kicker">Local utilities</p>
             <h1>工具</h1>
             <p class="tools-intro">独立运行的小工具。状态保存在浏览器本地，每个工具拥有隔离的运行空间。</p>
         </div>
         <div class="tools-count" aria-label="工具数量">
             <strong>{{ tools.size }}</strong>
-            <span>available</span>
+            <span>可用</span>
         </div>
     </header>
 

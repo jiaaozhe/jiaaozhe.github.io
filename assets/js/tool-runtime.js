@@ -5,6 +5,7 @@
     const token = params.get('toolHostToken') || '';
     const cache = Object.create(null);
     let hydrated = false;
+    let activeTheme = '';
     let resolveReady = null;
     let rejectReady = null;
     const readyPromise = new Promise(function(resolve, reject) {
@@ -43,6 +44,21 @@
         return typeof value === 'string' && /^[A-Za-z0-9_.:-]{1,128}$/.test(value);
     }
 
+    function normalizeTheme(value) {
+        return value === 'dark' ? 'dark' : 'light';
+    }
+
+    function applyTheme(value) {
+        activeTheme = normalizeTheme(value);
+
+        if (document.documentElement && typeof document.documentElement.setAttribute === 'function') {
+            document.documentElement.setAttribute('data-theme', activeTheme);
+        }
+        if (document.body && typeof document.body.setAttribute === 'function') {
+            document.body.setAttribute('data-theme', activeTheme);
+        }
+    }
+
     const toolStorage = {
         ready: function() {
             return readyPromise;
@@ -79,14 +95,20 @@
     });
 
     window.toolStorage = Object.freeze(toolStorage);
-    window.toolHost = Object.freeze({
+    const toolHost = {
         markReady: function() { post('tool:app-ready'); },
         reportError: function(error) {
             post('tool:runtime-error', {
                 message: error && error.message ? error.message : String(error)
             });
         }
+    };
+
+    Object.defineProperty(toolHost, 'theme', {
+        get: function() { return activeTheme; }
     });
+
+    window.toolHost = Object.freeze(toolHost);
 
     window.addEventListener('message', function(event) {
         if (event.source !== window.parent) return;
@@ -95,12 +117,18 @@
         if (!message || message.token !== token || typeof message.type !== 'string') return;
 
         if (message.type === 'tool-host:init' && !hydrated) {
+            applyTheme(message.theme);
             const state = message.state && typeof message.state === 'object' ? message.state : {};
             Object.keys(state).forEach(function(key) {
                 if (validKey(key)) cache[key] = String(state[key]);
             });
             hydrated = true;
             resolveReady(toolStorage);
+            return;
+        }
+
+        if (message.type === 'tool-host:theme') {
+            applyTheme(message.theme);
             return;
         }
 

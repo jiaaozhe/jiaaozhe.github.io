@@ -1,46 +1,46 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
   <title id="title">图像工作台界面预览</title>
   <desc id="desc">包含图片队列、中央裁剪画布和隐私元数据检查面板的图像处理工作台。</desc>
-  <rect width="1280" height="720" fill="#f4f3ef"/>
+  <rect width="1280" height="720" fill="#f3f6f9"/>
   <rect width="1280" height="54" fill="#ffffff"/>
-  <path d="M0 54H1280" stroke="#d8d8d2"/>
-  <rect x="18" y="17" width="10" height="20" fill="#17191a"/>
-  <rect x="28" y="17" width="4" height="20" fill="#08785b"/>
+  <path d="M0 54H1280" stroke="#d8e1e9"/>
+  <rect x="18" y="17" width="10" height="20" fill="#19232d"/>
+  <rect x="28" y="17" width="4" height="20" fill="#3f6f9f"/>
   <text x="43" y="31" fill="#3f4548" font-family="monospace" font-size="11" font-weight="700">IMAGE / LOCAL</text>
-  <rect x="152" y="10" width="106" height="34" rx="5" fill="#17191a"/>
+  <rect x="152" y="10" width="106" height="34" rx="5" fill="#19232d"/>
   <text x="175" y="31" fill="#ffffff" font-family="sans-serif" font-size="12" font-weight="700">＋ 添加图片</text>
-  <rect x="356" y="11" width="126" height="32" rx="5" fill="#f4f3ef" stroke="#d8d8d2"/>
+  <rect x="356" y="11" width="126" height="32" rx="5" fill="#f3f6f9" stroke="#d8e1e9"/>
   <rect x="359" y="14" width="39" height="26" rx="3" fill="#ffffff"/>
-  <text x="368" y="31" fill="#17191a" font-family="sans-serif" font-size="10">当前</text>
-  <text x="411" y="31" fill="#686d70" font-family="sans-serif" font-size="10">选中</text>
-  <text x="453" y="31" fill="#686d70" font-family="sans-serif" font-size="10">全部</text>
-  <circle cx="1012" cy="27" r="4" fill="#08785b"/>
-  <text x="1023" y="31" fill="#08785b" font-family="sans-serif" font-size="10">本地处理</text>
-  <rect x="1166" y="10" width="96" height="34" rx="5" fill="#08785b"/>
+  <text x="368" y="31" fill="#19232d" font-family="sans-serif" font-size="10">当前</text>
+  <text x="411" y="31" fill="#667482" font-family="sans-serif" font-size="10">选中</text>
+  <text x="453" y="31" fill="#667482" font-family="sans-serif" font-size="10">全部</text>
+  <circle cx="1012" cy="27" r="4" fill="#3f6f9f"/>
+  <text x="1023" y="31" fill="#3f6f9f" font-family="sans-serif" font-size="10">本地处理</text>
+  <rect x="1166" y="10" width="96" height="34" rx="5" fill="#3f6f9f"/>
   <text x="1185" y="31" fill="#ffffff" font-family="sans-serif" font-size="12" font-weight="700">安全导出</text>
 
-  <rect y="55" width="224" height="665" fill="#fbfbf8"/>
-  <path d="M224 55V720" stroke="#d8d8d2"/>
-  <text x="16" y="88" fill="#17191a" font-family="sans-serif" font-size="12" font-weight="700">图片</text>
-  <text x="52" y="88" fill="#929799" font-family="monospace" font-size="10">3</text>
-  <path d="M0 103H224M0 137H224" stroke="#d8d8d2"/>
-  <rect x="0" y="138" width="224" height="76" fill="#e8efff"/>
-  <rect x="0" y="138" width="3" height="76" fill="#215fdb"/>
+  <rect y="55" width="224" height="665" fill="#f8fafc"/>
+  <path d="M224 55V720" stroke="#d8e1e9"/>
+  <text x="16" y="88" fill="#19232d" font-family="sans-serif" font-size="12" font-weight="700">图片</text>
+  <text x="52" y="88" fill="#8b98a5" font-family="monospace" font-size="10">3</text>
+  <path d="M0 103H224M0 137H224" stroke="#d8e1e9"/>
+  <rect x="0" y="138" width="224" height="76" fill="#e8eff6"/>
+  <rect x="0" y="138" width="3" height="76" fill="#3f6f9f"/>
   <rect x="36" y="150" width="54" height="52" rx="4" fill="#8ea9bf"/>
   <path d="M39 194L55 175L66 184L78 166L87 194Z" fill="#e7eee8"/>
   <circle cx="49" cy="162" r="5" fill="#f1c56a"/>
-  <text x="100" y="169" fill="#17191a" font-family="sans-serif" font-size="11" font-weight="700">lake-cover.jpg</text>
-  <text x="100" y="188" fill="#686d70" font-family="monospace" font-size="9">4032×3024 · 4.8 MB</text>
+  <text x="100" y="169" fill="#19232d" font-family="sans-serif" font-size="11" font-weight="700">lake-cover.jpg</text>
+  <text x="100" y="188" fill="#667482" font-family="monospace" font-size="9">4032×3024 · 4.8 MB</text>
   <rect x="36" y="226" width="54" height="52" rx="4" fill="#b89d88"/>
   <path d="M39 270L58 246L71 260L87 270Z" fill="#f2e7da"/>
-  <text x="100" y="245" fill="#17191a" font-family="sans-serif" font-size="11" font-weight="700">studio.png</text>
-  <text x="100" y="264" fill="#686d70" font-family="monospace" font-size="9">2400×1600 · 2.1 MB</text>
+  <text x="100" y="245" fill="#19232d" font-family="sans-serif" font-size="11" font-weight="700">studio.png</text>
+  <text x="100" y="264" fill="#667482" font-family="monospace" font-size="9">2400×1600 · 2.1 MB</text>
   <rect x="36" y="290" width="54" height="52" rx="4" fill="#839b8e"/>
   <path d="M39 334L55 312L67 321L80 304L87 334Z" fill="#e4eee7"/>
-  <text x="100" y="309" fill="#17191a" font-family="sans-serif" font-size="11" font-weight="700">portrait.webp</text>
-  <text x="100" y="328" fill="#686d70" font-family="monospace" font-size="9">1800×2400 · 1.3 MB</text>
+  <text x="100" y="309" fill="#19232d" font-family="sans-serif" font-size="11" font-weight="700">portrait.webp</text>
+  <text x="100" y="328" fill="#667482" font-family="monospace" font-size="9">1800×2400 · 1.3 MB</text>
 
-  <rect x="225" y="55" width="751" height="665" fill="#202427"/>
+  <rect x="225" y="55" width="751" height="665" fill="#18212a"/>
   <rect x="225" y="55" width="751" height="48" fill="#24282b"/>
   <path d="M225 103H976" stroke="#383d40"/>
   <text x="242" y="77" fill="#f1f3f2" font-family="sans-serif" font-size="11" font-weight="700">lake-cover.jpg</text>
@@ -49,49 +49,49 @@
   <rect x="849" y="67" width="50" height="24" rx="3" fill="#3c4245"/>
   <text x="864" y="83" fill="#ffffff" font-family="sans-serif" font-size="10">编辑</text>
   <text x="917" y="83" fill="#9da3a5" font-family="sans-serif" font-size="10">对比</text>
-  <rect x="255" y="128" width="691" height="541" fill="#292e31"/>
+  <rect x="255" y="128" width="691" height="541" fill="#222d38"/>
   <rect x="338" y="153" width="526" height="491" fill="#88a8bd"/>
   <path d="M338 532L474 359L569 438L686 286L864 532V644H338Z" fill="#dce8e3"/>
   <path d="M338 557L516 426L623 500L741 403L864 512V644H338Z" fill="#769183"/>
   <circle cx="437" cy="258" r="41" fill="#e8bf61"/>
   <rect x="393" y="202" width="416" height="312" fill="none" stroke="#ffffff" stroke-width="2"/>
   <path d="M393 306H809M393 410H809M532 202V514M670 202V514" stroke="#ffffff" stroke-opacity="0.55"/>
-  <rect x="389" y="198" width="9" height="9" fill="#215fdb"/>
-  <rect x="804" y="198" width="9" height="9" fill="#215fdb"/>
-  <rect x="389" y="509" width="9" height="9" fill="#215fdb"/>
-  <rect x="804" y="509" width="9" height="9" fill="#215fdb"/>
+  <rect x="389" y="198" width="9" height="9" fill="#3f6f9f"/>
+  <rect x="804" y="198" width="9" height="9" fill="#3f6f9f"/>
+  <rect x="389" y="509" width="9" height="9" fill="#3f6f9f"/>
+  <rect x="804" y="509" width="9" height="9" fill="#3f6f9f"/>
   <rect x="225" y="690" width="751" height="30" fill="#24282b"/>
   <text x="242" y="708" fill="#969c9e" font-family="monospace" font-size="8">3120 × 2340</text>
   <text x="540" y="708" fill="#969c9e" font-family="monospace" font-size="8">1600×1200 · 428 KB · 节省 91%</text>
 
-  <rect x="977" y="55" width="303" height="665" fill="#fbfbf8"/>
-  <path d="M977 55V720" stroke="#d8d8d2"/>
-  <path d="M977 99H1280" stroke="#d8d8d2"/>
-  <text x="1000" y="82" fill="#686d70" font-family="sans-serif" font-size="10">变换</text>
-  <text x="1075" y="82" fill="#686d70" font-family="sans-serif" font-size="10">尺寸</text>
-  <text x="1148" y="82" fill="#686d70" font-family="sans-serif" font-size="10">导出</text>
-  <text x="1219" y="82" fill="#17191a" font-family="sans-serif" font-size="10" font-weight="700">隐私</text>
+  <rect x="977" y="55" width="303" height="665" fill="#f8fafc"/>
+  <path d="M977 55V720" stroke="#d8e1e9"/>
+  <path d="M977 99H1280" stroke="#d8e1e9"/>
+  <text x="1000" y="82" fill="#667482" font-family="sans-serif" font-size="10">变换</text>
+  <text x="1075" y="82" fill="#667482" font-family="sans-serif" font-size="10">尺寸</text>
+  <text x="1148" y="82" fill="#667482" font-family="sans-serif" font-size="10">导出</text>
+  <text x="1219" y="82" fill="#19232d" font-family="sans-serif" font-size="10" font-weight="700">隐私</text>
   <circle cx="1247" cy="72" r="3" fill="#b9342b"/>
-  <rect x="1197" y="97" width="67" height="2" fill="#215fdb"/>
+  <rect x="1197" y="97" width="67" height="2" fill="#3f6f9f"/>
 
-  <rect x="994" y="116" width="270" height="102" rx="5" fill="#ffffff" stroke="#d8d8d2"/>
+  <rect x="994" y="116" width="270" height="102" rx="5" fill="#ffffff" stroke="#d8e1e9"/>
   <rect x="994" y="116" width="3" height="102" fill="#b9342b"/>
   <circle cx="1024" cy="147" r="17" fill="#fbe9e6"/>
   <path d="M1024 137L1032 140V146C1032 152 1028 156 1024 158C1020 156 1016 152 1016 146V140Z" fill="none" stroke="#b9342b" stroke-width="1.5"/>
-  <text x="1052" y="137" fill="#929799" font-family="monospace" font-size="8" font-weight="700">JPEG / LOCAL SCAN</text>
-  <text x="1052" y="155" fill="#17191a" font-family="sans-serif" font-size="11" font-weight="700">发现精确拍摄位置</text>
-  <text x="1052" y="174" fill="#686d70" font-family="sans-serif" font-size="8">建议清理后再分享这张图片</text>
+  <text x="1052" y="137" fill="#8b98a5" font-family="monospace" font-size="8" font-weight="700">JPEG / LOCAL SCAN</text>
+  <text x="1052" y="155" fill="#19232d" font-family="sans-serif" font-size="11" font-weight="700">发现精确拍摄位置</text>
+  <text x="1052" y="174" fill="#667482" font-family="sans-serif" font-size="8">建议清理后再分享这张图片</text>
   <rect x="1226" y="128" width="27" height="18" rx="3" fill="#fbe9e6"/>
   <text x="1235" y="140" fill="#b9342b" font-family="monospace" font-size="8" font-weight="700">高</text>
 
-  <rect x="994" y="226" width="270" height="55" rx="4" fill="#ffffff" stroke="#d8d8d2"/>
-  <path d="M1084 226V281M1174 226V281" stroke="#d8d8d2"/>
-  <text x="1021" y="243" fill="#929799" font-family="sans-serif" font-size="8">敏感字段</text>
-  <text x="1036" y="265" fill="#17191a" font-family="monospace" font-size="14" font-weight="700">8</text>
-  <text x="1112" y="243" fill="#929799" font-family="sans-serif" font-size="8">全部字段</text>
-  <text x="1124" y="265" fill="#17191a" font-family="monospace" font-size="14" font-weight="700">42</text>
-  <text x="1198" y="243" fill="#929799" font-family="sans-serif" font-size="8">元数据载体</text>
-  <text x="1215" y="265" fill="#17191a" font-family="monospace" font-size="14" font-weight="700">2</text>
+  <rect x="994" y="226" width="270" height="55" rx="4" fill="#ffffff" stroke="#d8e1e9"/>
+  <path d="M1084 226V281M1174 226V281" stroke="#d8e1e9"/>
+  <text x="1021" y="243" fill="#8b98a5" font-family="sans-serif" font-size="8">敏感字段</text>
+  <text x="1036" y="265" fill="#19232d" font-family="monospace" font-size="14" font-weight="700">8</text>
+  <text x="1112" y="243" fill="#8b98a5" font-family="sans-serif" font-size="8">全部字段</text>
+  <text x="1124" y="265" fill="#19232d" font-family="monospace" font-size="14" font-weight="700">42</text>
+  <text x="1198" y="243" fill="#8b98a5" font-family="sans-serif" font-size="8">元数据载体</text>
+  <text x="1215" y="265" fill="#19232d" font-family="monospace" font-size="14" font-weight="700">2</text>
 
   <rect x="994" y="289" width="270" height="58" rx="4" fill="#fbe9e6" stroke="#efb7b0"/>
   <circle cx="1022" cy="318" r="14" fill="#ffffff"/>
@@ -101,26 +101,26 @@
   <text x="1047" y="331" fill="#83302a" font-family="monospace" font-size="9">31.230416, 121.473701</text>
 
   <rect x="994" y="359" width="270" height="161" rx="5" fill="#f0f7f4" stroke="#b8d7cb"/>
-  <rect x="1006" y="372" width="28" height="28" rx="4" fill="#08785b"/>
+  <rect x="1006" y="372" width="28" height="28" rx="4" fill="#3f6f9f"/>
   <path d="M1014 387L1018 391L1027 380" fill="none" stroke="#ffffff" stroke-width="2"/>
   <text x="1044" y="382" fill="#075f49" font-family="sans-serif" font-size="10" font-weight="700">安全导出默认开启</text>
   <text x="1044" y="398" fill="#4a6c60" font-family="sans-serif" font-size="8">重新编码，并在下载前复检</text>
   <rect x="1006" y="416" width="246" height="34" rx="4" fill="#ffffff" stroke="#b8d7cb"/>
   <text x="1078" y="437" fill="#44494b" font-family="sans-serif" font-size="9" font-weight="700">套用隐私副本预设</text>
-  <rect x="1006" y="456" width="246" height="36" rx="4" fill="#08785b"/>
+  <rect x="1006" y="456" width="246" height="36" rx="4" fill="#3f6f9f"/>
   <text x="1083" y="478" fill="#ffffff" font-family="sans-serif" font-size="10" font-weight="700">清理并导出</text>
   <text x="1006" y="507" fill="#5a7169" font-family="sans-serif" font-size="7">原文件保持不变 · 生成结果再次扫描</text>
 
-  <text x="994" y="552" fill="#17191a" font-family="sans-serif" font-size="10" font-weight="700">检测详情</text>
-  <text x="1178" y="552" fill="#929799" font-family="sans-serif" font-size="8">仅本地读取</text>
-  <rect x="994" y="563" width="270" height="38" rx="4" fill="#ffffff" stroke="#d8d8d2"/>
+  <text x="994" y="552" fill="#19232d" font-family="sans-serif" font-size="10" font-weight="700">检测详情</text>
+  <text x="1178" y="552" fill="#8b98a5" font-family="sans-serif" font-size="8">仅本地读取</text>
+  <rect x="994" y="563" width="270" height="38" rx="4" fill="#ffffff" stroke="#d8e1e9"/>
   <text x="1006" y="586" fill="#3f4446" font-family="sans-serif" font-size="9" font-weight="700">位置</text>
   <rect x="1040" y="574" width="21" height="17" rx="8" fill="#fbe9e6"/>
   <text x="1048" y="586" fill="#b9342b" font-family="monospace" font-size="8">6</text>
-  <text x="1241" y="586" fill="#929799" font-family="monospace" font-size="11">−</text>
-  <rect x="994" y="607" width="270" height="38" rx="4" fill="#ffffff" stroke="#d8d8d2"/>
+  <text x="1241" y="586" fill="#8b98a5" font-family="monospace" font-size="11">−</text>
+  <rect x="994" y="607" width="270" height="38" rx="4" fill="#ffffff" stroke="#d8e1e9"/>
   <text x="1006" y="630" fill="#3f4446" font-family="sans-serif" font-size="9" font-weight="700">身份与标识</text>
   <rect x="1070" y="618" width="21" height="17" rx="8" fill="#fbe9e6"/>
   <text x="1078" y="630" fill="#b9342b" font-family="monospace" font-size="8">2</text>
-  <text x="1241" y="630" fill="#929799" font-family="monospace" font-size="11">＋</text>
+  <text x="1241" y="630" fill="#8b98a5" font-family="monospace" font-size="11">＋</text>
 </svg>

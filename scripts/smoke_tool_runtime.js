@@ -7,6 +7,7 @@ const runtimeSource = fs.readFileSync('assets/js/tool-runtime.js', 'utf8');
 function createEmbeddedRuntime() {
     const messages = [];
     const listeners = {};
+    const attributes = {};
     const parent = {
         postMessage: function(message) {
             messages.push(message);
@@ -24,7 +25,13 @@ function createEmbeddedRuntime() {
         console: console,
         document: {
             currentScript: { dataset: { runnerUrl: '../../tools/example/' } },
-            documentElement: { hidden: false }
+            documentElement: {
+                hidden: false,
+                setAttribute: function(name, value) { attributes[name] = value; }
+            },
+            body: {
+                setAttribute: function(name, value) { attributes['body:' + name] = value; }
+            }
         },
         Promise: Promise,
         URL: URL,
@@ -33,7 +40,7 @@ function createEmbeddedRuntime() {
     });
 
     vm.runInContext(runtimeSource, context, { filename: 'assets/js/tool-runtime.js' });
-    return { window: window, parent: parent, listeners: listeners, messages: messages };
+    return { window: window, parent: parent, listeners: listeners, messages: messages, attributes: attributes };
 }
 
 async function testEmbeddedRuntime() {
@@ -46,12 +53,27 @@ async function testEmbeddedRuntime() {
         data: {
             type: 'tool-host:init',
             token: 'test-token',
+            theme: 'dark',
             state: { draft: '# Existing' }
         }
     });
 
     await runtime.window.toolStorage.ready();
     assert.equal(runtime.window.toolStorage.getItem('draft'), '# Existing');
+    assert.equal(runtime.window.toolHost.theme, 'dark');
+    assert.equal(runtime.attributes['data-theme'], 'dark');
+    assert.equal(runtime.attributes['body:data-theme'], 'dark');
+
+    runtime.listeners.message({
+        source: runtime.parent,
+        data: {
+            type: 'tool-host:theme',
+            token: 'test-token',
+            theme: 'light'
+        }
+    });
+    assert.equal(runtime.window.toolHost.theme, 'light');
+    assert.equal(runtime.attributes['data-theme'], 'light');
 
     runtime.window.toolStorage.setItem('draft', '# Updated');
     const write = runtime.messages.at(-1);

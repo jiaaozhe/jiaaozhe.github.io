@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-tool-ui="editor" data-tool-app="markdown-editor">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1003,6 +1003,8 @@
     }
   </style>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+  <link rel="stylesheet" href="../../assets/css/tool-ui.css">
+  <link rel="stylesheet" href="site-adapter.css">
 </head>
 <body data-theme="light">
   <!-- SVG 图标精灵 -->
@@ -1142,7 +1144,7 @@
             <div class="dropdown-item" onclick="toggleFullscreen(); closeViewMenu();" data-i18n="systemFullscreen">系统全屏</div>
           </div>
         </div>
-        <button onclick="toggleTheme()" data-i18n-title="theme" title="切换主题"><svg class="icon"><use href="#icon-sun"></use></svg> <span data-i18n="theme">主题</span></button>
+        <button onclick="toggleTheme()" data-tool-theme-control data-i18n-title="theme" title="切换主题"><svg class="icon"><use href="#icon-sun"></use></svg> <span data-i18n="theme">主题</span></button>
       </div>
     </div>
 
@@ -1623,7 +1625,7 @@
         editor.value = i18n[currentLang].welcomeDoc;
       }
       filenameInput.value = storage.getItem(FILENAME_KEY) || t('filenameDefault');
-      const theme = storage.getItem(THEME_KEY) || 'light';
+      const theme = (window.toolHost && window.toolHost.theme) || storage.getItem(THEME_KEY) || 'light';
       document.body.setAttribute('data-theme', theme);
 
       if (typeof mermaid !== 'undefined') {

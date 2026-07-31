@@ -5,7 +5,7 @@ category: 写作
 status: beta
 runtime: sandbox
 entry: /tool-apps/lengyi-markdown-editor/
-thumbnail: /tool-apps/lengyi-markdown-editor/preview.png
+thumbnail: /tool-apps/lengyi-markdown-editor/preview.svg
 source_url: https://github.com/woyin2024/lengyi-markdown-editor
 provenance: vendored
 license: MIT

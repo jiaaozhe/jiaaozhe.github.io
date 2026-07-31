@@ -26,6 +26,14 @@
     let dbPromise = null;
     let writeQueue = Promise.resolve();
 
+    function normalizedTheme(value) {
+        return value === 'dark' ? 'dark' : 'light';
+    }
+
+    function activeTheme() {
+        return normalizedTheme(document.documentElement.getAttribute('data-theme'));
+    }
+
     function setStatus(text, state) {
         if (statusText) statusText.textContent = text;
         if (statusDot) statusDot.dataset.state = state;
@@ -126,7 +134,10 @@
         }
 
         stateReady = true;
-        postToTool('tool-host:init', { state: activeState });
+        postToTool('tool-host:init', {
+            state: activeState,
+            theme: activeTheme()
+        });
     }
 
     window.addEventListener('message', function(event) {
@@ -240,6 +251,26 @@
                 stage.requestFullscreen();
             }
         });
+    }
+
+    window.addEventListener('storage', function(event) {
+        if (event.key !== 'theme') return;
+        const theme = normalizedTheme(event.newValue || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+        document.documentElement.setAttribute('data-theme', theme);
+        if (stateReady) postToTool('tool-host:theme', { theme: theme });
+    });
+
+    const colorScheme = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleColorScheme = function(event) {
+        if (localStorage.getItem('theme')) return;
+        const theme = event.matches ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', theme);
+        if (stateReady) postToTool('tool-host:theme', { theme: theme });
+    };
+    if (typeof colorScheme.addEventListener === 'function') {
+        colorScheme.addEventListener('change', handleColorScheme);
+    } else if (typeof colorScheme.addListener === 'function') {
+        colorScheme.addListener(handleColorScheme);
     }
 
     boot();
