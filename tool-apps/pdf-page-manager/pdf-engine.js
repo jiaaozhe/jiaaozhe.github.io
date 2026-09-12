@@ -2,6 +2,7 @@
     'use strict';
 
     const activeRenders = new WeakMap();
+    const renderVersions = new WeakMap();
 
     function pdfjs() {
         if (!root.pdfjsLib) throw new Error('PDF.js 未加载。');
@@ -27,11 +28,18 @@
     async function openDocument(file, onProgress) {
         const library = pdfjs();
         const bytes = new Uint8Array(await file.arrayBuffer());
+        const lease = root.toolHost && root.toolHost.openPdfWorker ? await root.toolHost.openPdfWorker() : null;
+        let worker;
+        let task;
         let rejectPassword;
         const passwordPromise = new Promise(function(resolve, reject) {
             rejectPassword = reject;
         });
-        const task = library.getDocument({
+        try {
+            worker = lease ? library.PDFWorker.create({ port: lease.port }) : null;
+            if (lease) lease.port.start();
+            task = library.getDocument({
+            ...(worker ? { worker: worker } : {}),
             data: bytes,
             cMapUrl: assetUrl('vendor/pdfjs/cmaps/'),
             cMapPacked: true,
@@ -45,7 +53,20 @@
             disableAutoFetch: true,
             stopAtErrors: false,
             verbosity: library.VerbosityLevel.ERRORS
-        });
+            });
+        } catch (error) {
+            if (worker) worker.destroy();
+            if (lease) {
+                lease.port.close();
+                root.toolHost.releasePdfWorker(lease.id);
+            }
+            throw error;
+        }
+        let workerFailure;
+        let workerDead = false;
+        const failurePromise = new Promise(function(resolve, reject) { workerFailure = reject; });
+        const unsubscribe = lease ? root.toolHost.onPdfError(function(error) { workerDead = true; workerFailure(error); }) : function() {};
+        const timeout = setTimeout(function() { workerFailure(new Error('PDF 解析超时，请缩小文件后重试。')); }, 60000);
 
         task.onProgress = function(progress) {
             if (onProgress) onProgress(progress.loaded || 0, progress.total || file.size || 0);
@@ -56,18 +77,27 @@
         };
 
         try {
-            const documentProxy = await Promise.race([task.promise, passwordPromise]);
-            return { task: task, document: documentProxy };
+            const documentProxy = await Promise.race([task.promise, passwordPromise, failurePromise]);
+            return { task: task, document: documentProxy, worker: worker, lease: lease, unsubscribe: unsubscribe, isWorkerDead: function() { return workerDead; } };
         } catch (error) {
-            await task.destroy().catch(function() {});
+            unsubscribe();
+            if (lease) {
+                worker.destroy();
+                lease.port.close();
+                root.toolHost.releasePdfWorker(lease.id);
+            }
+            task.destroy().catch(function() {});
             if (error && (error.name === 'PasswordException' || error.name === 'EncryptedPDFError')) {
                 throw encryptedError();
             }
             throw error;
+        } finally {
+            clearTimeout(timeout);
         }
     }
 
     function cancelRender(canvas) {
+        renderVersions.set(canvas, (renderVersions.get(canvas) || 0) + 1);
         const render = activeRenders.get(canvas);
         if (!render) return;
         try {
@@ -78,10 +108,22 @@
         activeRenders.delete(canvas);
     }
 
+    function releaseCanvas(canvas) {
+        cancelRender(canvas);
+        canvas.width = 0;
+        canvas.height = 0;
+    }
+
     async function renderPage(source, pageIndex, rotation, canvas, options) {
         const config = options || {};
         cancelRender(canvas);
+        const version = renderVersions.get(canvas);
         const page = await source.pdf.document.getPage(pageIndex + 1);
+        if (renderVersions.get(canvas) !== version) {
+            const error = new Error('页面渲染已取消。');
+            error.name = 'RenderingCancelledException';
+            throw error;
+        }
         const totalRotation = root.PDFPageCore.normalizeRotation(page.rotate + rotation);
         const baseViewport = page.getViewport({ scale: 1, rotation: totalRotation });
         const targetWidth = Math.max(80, Number(config.width) || 180);
@@ -90,7 +132,7 @@
         const deviceScale = Math.min(Number(config.pixelRatio) || root.devicePixelRatio || 1, 2);
         const maxArea = Math.max(500000, Number(config.maxArea) || 4000000);
         const areaScale = Math.min(1, Math.sqrt(maxArea / Math.max(1, cssViewport.width * cssViewport.height * deviceScale * deviceScale)));
-        const outputScale = Math.max(1, deviceScale * areaScale);
+        const outputScale = Math.min(deviceScale * areaScale, 16384 / cssViewport.width, 16384 / cssViewport.height);
 
         canvas.width = Math.max(1, Math.floor(cssViewport.width * outputScale));
         canvas.height = Math.max(1, Math.floor(cssViewport.height * outputScale));
@@ -128,7 +170,14 @@
 
     async function destroySource(source) {
         if (!source || !source.pdf) return;
-        await source.pdf.task.destroy().catch(function() {});
+        if (source.pdf.unsubscribe) source.pdf.unsubscribe();
+        const destroyed = source.pdf.task.destroy().catch(function() {});
+        if (!source.pdf.isWorkerDead || !source.pdf.isWorkerDead()) await destroyed;
+        if (source.pdf.lease) {
+            source.pdf.worker.destroy();
+            source.pdf.lease.port.close();
+            root.toolHost.releasePdfWorker(source.pdf.lease.id);
+        }
     }
 
     function nextFrame() {
@@ -200,7 +249,7 @@
         return output.save({ useObjectStreams: true, addDefaultPage: false, objectsPerTick: 40 });
     }
 
-    async function exportSplitDocuments(pages, sources, onProgress) {
+    async function exportSplitDocuments(pages, sources, onProgress, onDocument) {
         if (!pages.length) throw new Error('没有可拆分的页面。');
         const library = pdfLib();
         const inputDocuments = await loadEditableSources(pages, sources, onProgress);
@@ -214,7 +263,9 @@
             const originalRotation = page.getRotation().angle;
             page.setRotation(library.degrees(root.PDFPageCore.normalizeRotation(originalRotation + descriptor.rotation)));
             document.addPage(page);
-            output.push(await document.save({ useObjectStreams: true, addDefaultPage: false, objectsPerTick: 40 }));
+            const bytes = await document.save({ useObjectStreams: true, addDefaultPage: false, objectsPerTick: 40 });
+            if (onDocument) await onDocument(bytes, descriptor, index);
+            else output.push(bytes);
             if (onProgress) onProgress({ phase: 'split', current: index + 1, total: pages.length, label: '生成第 ' + (index + 1) + ' 页' });
             if ((index + 1) % 4 === 0) await nextFrame();
         }
@@ -226,6 +277,7 @@
         openDocument: openDocument,
         renderPage: renderPage,
         cancelRender: cancelRender,
+        releaseCanvas: releaseCanvas,
         destroySource: destroySource,
         exportDocument: exportDocument,
         exportSplitDocuments: exportSplitDocuments

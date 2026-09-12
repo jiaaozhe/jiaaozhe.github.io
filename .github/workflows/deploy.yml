@@ -29,6 +29,18 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Build tool assets
+        run: |
+          npm ci --ignore-scripts
+          npm run build:tool-assets
+          git diff --exit-code -- assets/js/tool-icons.js tool-apps/pdf-page-manager/pdf-runtime.js
+
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
@@ -36,7 +48,9 @@ jobs:
           bundler-cache: true
 
       - name: Build Jekyll site
-        run: bundle exec jekyll build
+        run: |
+          bundle exec jekyll build
+          ruby scripts/version_tool_assets.rb
 
       - name: Validate generated site
         run: bundle exec ruby scripts/validate_site.rb
@@ -46,6 +60,18 @@ jobs:
 
       - name: Smoke test sandbox tool runtime
         run: node scripts/smoke_tool_runtime.js
+
+      - name: Validate tool icon subset
+        run: node scripts/build_tool_icons.js --check
+
+      - name: Smoke test chunked tool archives
+        run: node scripts/smoke_tool_archive.js
+
+      - name: Smoke test tool workers
+        run: node scripts/smoke_tool_jobs.js
+
+      - name: Smoke test Markdown editor persistence
+        run: node scripts/smoke_markdown_editor.js
 
       - name: Smoke test image workbench
         run: node scripts/smoke_image_workbench.js

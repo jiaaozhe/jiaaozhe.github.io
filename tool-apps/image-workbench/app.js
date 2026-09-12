@@ -1203,42 +1203,52 @@
     async function renderOutput(asset, includeBefore) {
         const settings = normalizeForBrowser(asset.settings);
         const source = await croppedCanvas(asset);
-        const plan = core.renderPlan(source.width, source.height, settings);
-        if (plan.targetWidth * plan.targetHeight > MAX_OUTPUT_PIXELS) {
-            throw new Error('输出尺寸超过 4000 万像素限制。');
-        }
+        let resized;
+        let output;
+        try {
+            const plan = core.renderPlan(source.width, source.height, settings);
+            if (plan.targetWidth * plan.targetHeight > MAX_OUTPUT_PIXELS || plan.renderWidth * plan.renderHeight > MAX_OUTPUT_PIXELS) {
+                throw new Error('输出尺寸超过 4000 万像素限制。');
+            }
 
-        const resized = createCanvas(plan.renderWidth, plan.renderHeight);
-        if (source.width === resized.width && source.height === resized.height) {
-            resized.getContext('2d').drawImage(source, 0, 0);
-        } else {
-            await state.pica.resize(source, resized, { filter: 'mks2013' });
-        }
+            if (source.width === plan.renderWidth && source.height === plan.renderHeight) {
+                resized = source;
+            } else {
+                resized = createCanvas(plan.renderWidth, plan.renderHeight);
+                await state.pica.resize(source, resized, { filter: 'mks2013' });
+                source.width = source.height = 0;
+            }
 
-        const output = createCanvas(plan.targetWidth, plan.targetHeight);
-        const context = output.getContext('2d');
-        const requiresBackground = settings.format === 'image/jpeg' || !settings.transparent;
-        if (requiresBackground) {
-            context.fillStyle = settings.background;
-            context.fillRect(0, 0, output.width, output.height);
-        }
-        context.drawImage(resized, plan.offsetX, plan.offsetY);
+            output = createCanvas(plan.targetWidth, plan.targetHeight);
+            const context = output.getContext('2d');
+            const requiresBackground = settings.format === 'image/jpeg' || !settings.transparent;
+            if (requiresBackground) {
+                context.fillStyle = settings.background;
+                context.fillRect(0, 0, output.width, output.height);
+            }
+            context.drawImage(resized, plan.offsetX, plan.offsetY);
+            resized.width = resized.height = 0;
 
-        const beforeBlob = includeBefore ? await canvasBlob(output, 'image/png', 1) : null;
-        const blob = await canvasBlob(output, settings.format, settings.quality);
-        const privacyVerification = await privacy.verifySanitized(blob, settings.format);
-        if (!privacyVerification.clean) {
-            throw new Error('导出复检发现残留元数据，已阻止下载。');
+            const beforeBlob = includeBefore ? await canvasBlob(output, 'image/png', 1) : null;
+            const blob = await canvasBlob(output, settings.format, settings.quality);
+            const privacyVerification = await privacy.verifySanitized(blob, settings.format);
+            if (!privacyVerification.clean) {
+                throw new Error('导出复检发现残留元数据，已阻止下载。');
+            }
+            if (asset.privacy) asset.privacy.lastVerified = true;
+            return {
+                blob: blob,
+                beforeBlob: beforeBlob,
+                width: output.width,
+                height: output.height,
+                filename: core.outputFilename(asset.name, settings, { width: output.width, height: output.height }),
+                privacyVerification: privacyVerification
+            };
+        } finally {
+            [source, resized, output].forEach(function(canvas) {
+                if (canvas) canvas.width = canvas.height = 0;
+            });
         }
-        if (asset.privacy) asset.privacy.lastVerified = true;
-        return {
-            blob: blob,
-            beforeBlob: beforeBlob,
-            width: output.width,
-            height: output.height,
-            filename: core.outputFilename(asset.name, settings, { width: output.width, height: output.height }),
-            privacyVerification: privacyVerification
-        };
     }
 
     function outputSummary(asset, result) {
@@ -1320,9 +1330,9 @@
         const targets = exportTargets();
         if (!targets.length) return;
         const usedNames = new Set();
-        const files = {};
-        const completed = [];
-        let totalBytes = 0;
+        const archive = targets.length > 1 ? window.ToolArchive.create(window.fflate, MAX_ZIP_BYTES) : null;
+        let completed = 0;
+        let singleResult = null;
         let failures = 0;
 
         captureActiveTransform(false);
@@ -1340,14 +1350,9 @@
                     result.filename = core.uniqueFilename(result.filename, usedNames);
                     asset.resultSize = result.blob.size;
                     asset.state = 'done';
-                    totalBytes += result.blob.size;
-                    if (totalBytes > MAX_ZIP_BYTES && targets.length > 1) {
-                        throw new Error('批量结果超过 220 MB，请减少图片数量。');
-                    }
-                    completed.push(result);
-                    if (targets.length > 1) {
-                        files[result.filename] = new Uint8Array(await result.blob.arrayBuffer());
-                    }
+                    if (archive) await archive.add(result.filename, result.blob);
+                    else singleResult = result;
+                    completed += 1;
                 } catch (error) {
                     failures += 1;
                     asset.state = 'error';
@@ -1355,22 +1360,22 @@
                 }
             }
 
-            if (!completed.length) throw new Error('没有图片成功导出。');
+            if (!completed) throw new Error('没有图片成功导出。');
             setProcessing(true, targets.length > 1 ? '正在打包 ZIP' : '正在生成文件', 94);
 
             if (targets.length === 1) {
-                downloadBlob(completed[0].blob, completed[0].filename);
+                downloadBlob(singleResult.blob, singleResult.filename);
             } else {
-                const zipped = window.fflate.zipSync(files, { level: 0 });
-                downloadBlob(new Blob([zipped], { type: 'application/zip' }), zipName());
+                downloadBlob(await archive.finish(), zipName());
             }
 
             if (failures) toast(failures + ' 张图片处理失败，其余安全结果已导出。', 'error');
-            else toast(completed.length + ' 张图片已清理隐私信息并完成导出。');
+            else toast(completed + ' 张图片已清理隐私信息并完成导出。');
         } catch (error) {
             toast(error.message || String(error), 'error');
             reportError(error);
         } finally {
+            if (archive) archive.dispose();
             renderAssetList();
             renderPrivacyPanel(activeAsset());
             setProcessing(false, '', 0);

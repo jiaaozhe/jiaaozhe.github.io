@@ -25,6 +25,16 @@
     let bootTimer = null;
     let dbPromise = null;
     let writeQueue = Promise.resolve();
+    let pendingWrites = [];
+    let writeTimer = null;
+    let hydrationToken = '';
+    const jobs = window.ToolJobs.create(config.id, function(result) { postToTool('tool-host:task-result', result); });
+    const pdfHost = config.id === 'pdf-page-manager' && window.ToolPdfHost ? window.ToolPdfHost.create(function(result, transfer) {
+        postToTool('tool-host:task-result', result, transfer);
+    }, function(message) {
+        postToTool('tool-host:pdf-error', { message: message });
+        setStatus(message, 'error');
+    }) : null;
 
     function normalizedTheme(value) {
         return value === 'dark' ? 'dark' : 'light';
@@ -62,9 +72,14 @@
                         db.createObjectStore(STORE_NAME);
                     }
                 };
-                request.onsuccess = function() { resolve(request.result); };
+                request.onsuccess = function() {
+                    const db = request.result;
+                    db.onversionchange = function() { db.close(); dbPromise = null; };
+                    resolve(db);
+                };
                 request.onerror = function() { reject(request.error); };
-            });
+                request.onblocked = function() { setStatus('请关闭旧版工具标签页以启用存储', 'error'); };
+            }).catch(function(error) { dbPromise = null; throw error; });
         }
 
         return dbPromise;
@@ -84,57 +99,67 @@
         });
     }
 
-    async function writeState(snapshot) {
-        const db = await openDatabase();
-
-        return new Promise(function(resolve, reject) {
-            const transaction = db.transaction(STORE_NAME, 'readwrite');
-            const request = transaction.objectStore(STORE_NAME).put(snapshot, config.id);
-            request.onsuccess = function() { resolve(); };
-            request.onerror = function() { reject(request.error); };
+    function flushStateWrites() {
+        window.clearTimeout(writeTimer);
+        writeTimer = null;
+        if (!pendingWrites.length) return;
+        const batch = pendingWrites;
+        pendingWrites = [];
+        writeQueue = writeQueue.catch(function() {}).then(async function() {
+            try {
+                const db = await openDatabase();
+                await window.ToolStateStore.commit(db, config.id, batch.map(function(item) { return item.message; }), MAX_STATE_BYTES);
+                batch.forEach(function(item) {
+                    if (item.token === activeToken) postToTool('tool-host:storage-saved', { requestId: item.message.requestId });
+                });
+                if (batch.some(function(item) { return item.token === activeToken; })) setStatus('状态已保存', 'ready');
+            } catch (error) {
+                batch.forEach(function(item) {
+                    if (item.token === activeToken) rejectStorage(error.message || String(error), item.message.requestId);
+                });
+                if (batch.some(function(item) { return item.token === activeToken; })) setStatus('状态保存失败，请重试', 'error');
+            }
         });
     }
 
-    function queueStateWrite() {
-        const snapshot = Object.assign({}, activeState);
-        writeQueue = writeQueue.catch(function() {}).then(function() {
-            return writeState(snapshot);
-        }).catch(function(error) {
-            setStatus('状态保存失败', 'error');
-            console.error(error);
-        });
+    function queueStateWrite(message) {
+        pendingWrites.push({ token: activeToken, message: message });
+        if (writeTimer === null) writeTimer = window.setTimeout(flushStateWrites, 25);
     }
 
     function validKey(value) {
         return typeof value === 'string' && /^[A-Za-z0-9_.:-]{1,128}$/.test(value);
     }
 
-    function stateSize(value) {
-        return new TextEncoder().encode(JSON.stringify(value)).length;
-    }
-
-    function postToTool(type, payload) {
+    function postToTool(type, payload, transfer) {
         if (!frame.contentWindow) return;
         frame.contentWindow.postMessage(Object.assign({
             type: type,
             token: activeToken
-        }, payload || {}), '*');
+        }, payload || {}), '*', transfer || []);
     }
 
-    function rejectStorage(message) {
-        postToTool('tool-host:storage-error', { message: message });
+    function rejectStorage(message, requestId) {
+        postToTool('tool-host:storage-error', { message: message, requestId: requestId });
     }
 
     async function hydrateTool() {
+        const token = activeToken;
+        if (hydrationToken === token) return;
+        hydrationToken = token;
+        let state;
         try {
-            activeState = await readState();
+            await writeQueue;
+            state = await readState();
         } catch (error) {
-            activeState = {};
+            state = {};
             console.error(error);
         }
-
+        if (token !== activeToken) return;
+        activeState = state;
         stateReady = true;
         postToTool('tool-host:init', {
+            protocol: 2,
             state: activeState,
             theme: activeTheme()
         });
@@ -160,43 +185,45 @@
 
         if (message.type === 'tool:runtime-error') {
             console.error('Tool runtime:', message.message || 'unknown error');
+            setStatus('工具发生错误，请查看工具内提示', 'error');
             return;
         }
 
         if (!stateReady) return;
 
+        if (message.type === 'tool:task') { jobs.run(message); return; }
+        if (message.type === 'tool:task-cancel') { jobs.cancel(); return; }
+        if (message.type === 'tool:pdf-worker' && pdfHost) { pdfHost.open(message.requestId); return; }
+        if (message.type === 'tool:pdf-release' && pdfHost) { pdfHost.release(message.id); return; }
+
         if (message.type === 'tool:storage-set') {
             if (!validKey(message.key)) {
-                rejectStorage('无效的存储键。');
+                rejectStorage('无效的存储键。', message.requestId);
                 return;
             }
+            queueStateWrite({ type: message.type, key: message.key, value: String(message.value), requestId: message.requestId });
+            return;
+        }
 
-            const nextState = Object.assign({}, activeState, {
-                [message.key]: String(message.value)
-            });
-
-            if (stateSize(nextState) > MAX_STATE_BYTES) {
-                rejectStorage('工具状态超过 12 MB 限制。');
+        if (message.type === 'tool:storage-batch') {
+            if (!message.values || typeof message.values !== 'object' || !Object.keys(message.values).every(validKey)) {
+                rejectStorage('无效的存储键。', message.requestId);
                 return;
             }
-
-            activeState = nextState;
-            queueStateWrite();
+            const values = Object.create(null);
+            Object.keys(message.values).forEach(function(key) { values[key] = String(message.values[key]); });
+            queueStateWrite({ type: message.type, values: values, requestId: message.requestId });
             return;
         }
 
         if (message.type === 'tool:storage-remove') {
-            if (!validKey(message.key)) return;
-            const nextState = Object.assign({}, activeState);
-            delete nextState[message.key];
-            activeState = nextState;
-            queueStateWrite();
+            if (!validKey(message.key)) { rejectStorage('无效的存储键。', message.requestId); return; }
+            queueStateWrite({ type: message.type, key: message.key, requestId: message.requestId });
             return;
         }
 
         if (message.type === 'tool:storage-clear') {
-            activeState = {};
-            queueStateWrite();
+            queueStateWrite({ type: message.type, requestId: message.requestId });
         }
     });
 
@@ -209,6 +236,10 @@
     }
 
     async function boot() {
+        jobs.cancel();
+        if (pdfHost) pdfHost.dispose();
+        flushStateWrites();
+        window.clearTimeout(bootTimer);
         stateReady = false;
         activeState = {};
         activeToken = randomToken();
@@ -217,12 +248,8 @@
         setStatus('正在建立隔离环境', 'loading');
 
         try {
-            const response = await fetch(config.entry, { method: 'HEAD', cache: 'no-cache' });
-            if (!response.ok) {
-                throw new Error('工具入口返回 HTTP ' + response.status + '。');
-            }
-
             const entry = new URL(config.entry, window.location.href);
+            if (config.version) entry.searchParams.set('v', config.version);
             const hash = new URLSearchParams(entry.hash.replace(/^#/, ''));
             hash.set('toolHostToken', activeToken);
             entry.hash = hash.toString();
@@ -235,6 +262,13 @@
             showError(error);
         }
     }
+
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'hidden') flushStateWrites();
+    });
+    window.addEventListener('pagehide', flushStateWrites);
+    window.addEventListener('pagehide', function() { jobs.cancel(); });
+    window.addEventListener('pagehide', function() { if (pdfHost) pdfHost.dispose(); });
 
     if (retryButton) {
         retryButton.addEventListener('click', boot);

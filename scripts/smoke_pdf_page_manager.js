@@ -1,6 +1,9 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { Worker, MessageChannel } = require('node:worker_threads');
+const { pathToFileURL } = require('node:url');
+const path = require('node:path');
 
 const core = require('../tool-apps/pdf-page-manager/pdf-core.js');
 global.PDFPageCore = core;
@@ -104,24 +107,43 @@ function browserLikeContext() {
 
 async function testBundledPdfJsParsing(bytes) {
     const compat = fs.readFileSync('tool-apps/pdf-page-manager/compat.js', 'utf8');
-    const source = fs.readFileSync('tool-apps/pdf-page-manager/vendor/pdfjs-runtime.min.js', 'utf8');
+    const source = fs.readFileSync('tool-apps/pdf-page-manager/pdf-runtime.js', 'utf8');
     const context = browserLikeContext();
     vm.runInContext(compat, context, { filename: 'compat.js' });
-    vm.runInContext(source, context, { filename: 'pdfjs-runtime.min.js' });
+    vm.runInContext(source, context, { filename: 'pdf-runtime.js' });
     assert.equal(context.pdfjsLib.version, '5.7.284');
-    assert.equal(typeof context.pdfjsWorker.WorkerMessageHandler.setup, 'function');
-    const task = context.pdfjsLib.getDocument({
-        data: new Uint8Array(bytes),
-        useWasm: false,
-        isEvalSupported: false,
-        verbosity: context.pdfjsLib.VerbosityLevel.ERRORS
-    });
-    const document = await task.promise;
-    assert.equal(document.numPages, 2);
-    const page = await document.getPage(1);
-    const viewport = page.getViewport({ scale: 1 });
-    assert.deepEqual([viewport.width, viewport.height], [300, 500]);
-    await task.destroy();
+    assert.equal(context.pdfjsWorker, undefined, 'the page bundle must not include the worker engine');
+
+    // Exercise the exact MessagePort bridge with the real PDF.js worker module.
+    const thread = new Worker(`
+        const { parentPort, workerData } = require('node:worker_threads');
+        global.self = { addEventListener: (type, callback) => parentPort.on(type, data => callback({data})) };
+        import(workerData).then(() => parentPort.postMessage('ready'));
+    `, { eval: true, workerData: pathToFileURL(path.resolve('assets/js/tool-pdf-worker.mjs')).href });
+    const channel = new MessageChannel();
+    const threadFailure = new Promise(function(resolve, reject) { thread.on('error', reject); });
+    threadFailure.catch(function() {});
+    let pdfWorker;
+    try {
+        await new Promise(function(resolve, reject) { thread.once('message', resolve); thread.once('error', reject); });
+        thread.postMessage({ type: 'connect', id: 1, port: channel.port2 }, [channel.port2]);
+        pdfWorker = context.pdfjsLib.PDFWorker.create({ port: channel.port1 });
+        channel.port1.start();
+        const workerTask = context.pdfjsLib.getDocument({
+            data: new Uint8Array(bytes), worker: pdfWorker, useWasm: false,
+            isEvalSupported: false, verbosity: context.pdfjsLib.VerbosityLevel.ERRORS
+        });
+        const workerDocument = await Promise.race([workerTask.promise, threadFailure]);
+        assert.equal(workerDocument.numPages, 2);
+        const workerPage = await workerDocument.getPage(2);
+        const workerViewport = workerPage.getViewport({ scale: 1 });
+        assert.deepEqual([workerViewport.width, workerViewport.height], [360, 640]);
+        await workerTask.destroy();
+    } finally {
+        if (pdfWorker) pdfWorker.destroy();
+        channel.port1.close();
+        await thread.terminate();
+    }
 }
 
 function testCoreOperations() {
@@ -192,6 +214,13 @@ async function testRealPdfExports() {
         const document = await global.PDFLib.PDFDocument.load(bytes, { updateMetadata: false });
         assert.equal(document.getPageCount(), 1);
     }
+    let streamedPages = 0;
+    const retained = await engine.exportSplitDocuments(pages.slice(0, 3), sources, null, async function(bytes) {
+        assert.equal((await global.PDFLib.PDFDocument.load(bytes)).getPageCount(), 1);
+        streamedPages += 1;
+    });
+    assert.equal(streamedPages, 3);
+    assert.equal(retained.length, 0, 'streaming export must not retain every generated PDF');
 }
 
 function testRuntimeSurface() {
@@ -205,9 +234,9 @@ function testRuntimeSurface() {
     assert.match(html, /connect-src 'self'/);
     assert.match(html, /worker-src 'none'/);
     assert.match(html, /tool-runtime\.js/);
-    assert.match(html, /pdfjs-runtime\.min\.js/);
-    assert(html.indexOf('tool-runtime.js') < html.indexOf('pdfjs-runtime.min.js'));
-    assert(html.indexOf('compat.js') < html.indexOf('pdfjs-runtime.min.js'));
+    assert.match(html, /pdf-runtime\.js/);
+    assert(html.indexOf('tool-runtime.js') < html.indexOf('pdf-runtime.js'));
+    assert(html.indexOf('compat.js') < html.indexOf('pdf-runtime.js'));
     assert.doesNotMatch(html, /https:\/\//);
     assert.doesNotMatch(html, /localStorage/);
     assert.match(css, /\.pages-toolbar\s*\{[^}]*grid-row:\s*1/s);
@@ -216,15 +245,16 @@ function testRuntimeSurface() {
     assert.equal(manifest.routes.some(function(route) {
         return String(route.source_path || '').startsWith('tool-apps/pdf-page-manager/');
     }), false, 'tool implementation files must not appear as content routes');
-    assert.match(runtimeEntry, /WorkerMessageHandler/);
-    assert.match(runtimeEntry, /globalThis\.pdfjsWorker/);
+    assert.doesNotMatch(runtimeEntry, /WorkerMessageHandler/);
+    assert.doesNotMatch(runtimeEntry, /globalThis\.pdfjsWorker/);
+    assert.match(engineSource, /root\.toolHost\.openPdfWorker/);
     assert.match(engineSource, /isEvalSupported: false/);
     assert.match(engineSource, /useWorkerFetch: false/);
     assert.match(engineSource, /PDFDocument\.load/);
     assert.match(engineSource, /copyPages/);
     assert.match(app, /IntersectionObserver/);
     assert.match(app, /window\.Sortable\.create/);
-    assert.match(app, /window\.fflate\.zipSync/);
+    assert.match(app, /window\.ToolArchive\.create/);
     assert.match(app, /toolStorage\.setItem\('preferences'/);
     assert.doesNotMatch(app, /toolStorage\.setItem\([^)]*(?:file|bytes|pdf)/i);
 
@@ -246,11 +276,43 @@ function testRuntimeSurface() {
 async function main() {
     testCoreOperations();
     await testRealPdfExports();
+    for (const stage of ['worker', 'document']) {
+        const released = [];
+        global.toolHost = {
+            openPdfWorker: async () => ({ id: 7, port: { start() {}, close() { released.push('port'); } } }),
+            releasePdfWorker: id => released.push(id)
+        };
+        global.pdfjsLib = {
+            PDFWorker: { create() {
+                if (stage === 'worker') throw new Error('startup failure');
+                return { destroy() { released.push('worker'); } };
+            } },
+            VerbosityLevel: { ERRORS: 0 },
+            getDocument() { throw new Error('startup failure'); }
+        };
+        await assert.rejects(engine.openDocument({ arrayBuffer: async () => new ArrayBuffer(0) }), /startup failure/);
+        assert(released.includes('port') && released.includes(7), 'synchronous startup failure must release its worker lease');
+        if (stage === 'document') assert(released.includes('worker'));
+    }
+    delete global.toolHost;
+    global.pdfjsLib = { AnnotationMode: { ENABLE: 1 } };
+    const longPage = {
+        rotate: 0,
+        getViewport: function(options) { return { width: 100 * options.scale, height: 10000 * options.scale }; },
+        render: function() { return { promise: Promise.resolve() }; }
+    };
+    const canvas = { style: {}, getContext: function() { return { save() {}, fillRect() {}, restore() {} }; } };
+    await engine.renderPage({ pdf: { document: { getPage: async function() { return longPage; } } } }, 0, 0, canvas, {
+        width: 1000, maxArea: 4000000, pixelRatio: 1
+    });
+    assert(canvas.width * canvas.height <= 4000000, 'long pages must respect the canvas pixel budget');
+    assert(canvas.width <= 16384 && canvas.height <= 16384, 'long pages must respect maximum canvas dimensions');
     testRuntimeSurface();
     console.log('Validated PDF page manager core, real exports, and isolated runtime surface.');
 }
 
+const watchdog = setTimeout(function() { console.error('PDF smoke test timed out.'); process.exit(1); }, 15000);
 main().catch(function(error) {
     console.error(error);
     process.exitCode = 1;
-});
+}).finally(function() { clearTimeout(watchdog); });

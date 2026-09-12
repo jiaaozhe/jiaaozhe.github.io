@@ -7,7 +7,7 @@
     const all = function(selector, root) { return Array.from((root || document).querySelectorAll(selector)); };
     const app = one('[data-app]');
 
-    if (!app || !core || !engine || !window.PDFLib || !window.pdfjsLib || !window.Sortable || !window.fflate) {
+    if (!app || !core || !engine || !window.pdfjsLib || !window.Sortable) {
         const error = new Error('PDF 页管理器依赖未完整加载。');
         if (window.toolHost) window.toolHost.reportError(error);
         throw error;
@@ -384,7 +384,7 @@
         state.pageElements.forEach(function(card, id) {
             if (pageIds.has(id)) return;
             if (state.observer) state.observer.unobserve(card);
-            engine.cancelRender(one('[data-page-canvas]', card));
+            engine.releaseCanvas(one('[data-page-canvas]', card));
             card.remove();
             state.pageElements.delete(id);
         });
@@ -403,11 +403,16 @@
         elements.pageGrid.appendChild(fragment);
         refreshIcons();
 
-        if (!state.observer) {
-            state.pages.forEach(function(page) { queueRender(page.id); });
-        } else {
-            window.requestAnimationFrame(queueVisibleRenders);
-        }
+        window.requestAnimationFrame(queueVisibleRenders);
+    }
+
+    function setPageVisibility(card, visible) {
+        card.dataset.inViewport = String(visible);
+        if (visible) return;
+        engine.releaseCanvas(one('[data-page-canvas]', card));
+        card.dataset.renderedKey = '';
+        one('[data-page-canvas]', card).hidden = true;
+        one('[data-page-placeholder]', card).hidden = false;
     }
 
     function queueVisibleRenders() {
@@ -419,6 +424,7 @@
                 bounds.top <= rootBounds.bottom + margin &&
                 bounds.right >= rootBounds.left - margin &&
                 bounds.left <= rootBounds.right + margin;
+            setPageVisibility(card, visible);
             if (visible) queueRender(pageId);
         });
     }
@@ -438,7 +444,7 @@
     function queueRender(pageId) {
         const page = state.pages.find(function(item) { return item.id === pageId; });
         const card = state.pageElements.get(pageId);
-        if (!page || !card) return;
+        if (!page || !card || card.dataset.inViewport === 'false') return;
         const key = renderKey(page);
         if (card.dataset.renderedKey === key) return;
         const queueKey = pageId + '|' + key;
@@ -451,7 +457,6 @@
     function pumpRenders() {
         while (state.activeRenders < 2 && state.renderQueue.length) {
             const job = state.renderQueue.shift();
-            state.renderQueued.delete(job.queueKey);
             renderQueuedPage(job);
         }
     }
@@ -459,12 +464,14 @@
     async function renderQueuedPage(job) {
         const page = state.pages.find(function(item) { return item.id === job.pageId; });
         const card = state.pageElements.get(job.pageId);
-        if (!page || !card || renderKey(page) !== job.key || card.dataset.renderedKey === job.key) {
+        if (!page || !card || card.dataset.inViewport === 'false' || renderKey(page) !== job.key || card.dataset.renderedKey === job.key) {
+            state.renderQueued.delete(job.queueKey);
             pumpRenders();
             return;
         }
         const source = state.sources.get(page.sourceId);
         if (!source || source.status !== 'ready') {
+            state.renderQueued.delete(job.queueKey);
             pumpRenders();
             return;
         }
@@ -479,7 +486,7 @@
                 maxArea: 3200000
             });
             const current = state.pages.find(function(item) { return item.id === job.pageId; });
-            if (!current || renderKey(current) !== job.key) return;
+            if (!current || renderKey(current) !== job.key || card.dataset.inViewport === 'false') return;
             one('[data-page-sheet]', card).style.aspectRatio = result.width + ' / ' + result.height;
             card.dataset.renderedKey = job.key;
             canvas.hidden = false;
@@ -492,7 +499,9 @@
             }
         } finally {
             card.classList.remove('is-rendering');
+            state.renderQueued.delete(job.queueKey);
             state.activeRenders -= 1;
+            if (card.dataset.inViewport === 'true' && state.pageElements.has(job.pageId) && !card.classList.contains('is-error')) queueRender(job.pageId);
             pumpRenders();
         }
     }
@@ -720,7 +729,7 @@
             try {
                 const pdf = await engine.openDocument(file);
                 if (!state.sources.has(source.id)) {
-                    await pdf.task.destroy().catch(function() {});
+                    await engine.destroySource({ pdf: pdf });
                     continue;
                 }
                 source.pdf = pdf;
@@ -868,21 +877,26 @@
         updateUi();
 
         try {
+            await Promise.all([
+                window.toolHost.loadScript('vendor/pdf-lib.min.js'),
+                state.exportMode === 'split' ? window.toolHost.loadScript('vendor/fflate.js') : Promise.resolve()
+            ]);
             const baseName = core.sanitizeBaseName(elements.outputName.value, 'merged-document');
             if (state.exportMode === 'split') {
-                const documents = await engine.exportSplitDocuments(pages, state.sources, updateProgress);
                 const used = new Set();
-                const files = Object.create(null);
-                pages.forEach(function(page, index) {
-                    const source = state.sources.get(page.sourceId);
-                    const filename = core.splitFilename(source ? source.name : 'document', page.sourcePageIndex + 1, source ? source.pageCount : 1, used);
-                    files[filename] = [documents[index], { level: 0 }];
-                });
-                elements.processingDetail.textContent = '打包 ZIP';
-                elements.processingProgress.style.width = '97%';
-                const archive = window.fflate.zipSync(files, { level: 0 });
-                const filename = core.outputFilename(baseName, 'zip');
-                downloadBytes(archive, 'application/zip', filename);
+                const archive = window.ToolArchive.create(window.fflate, 220 * 1024 * 1024);
+                try {
+                    await engine.exportSplitDocuments(pages, state.sources, updateProgress, async function(bytes, page) {
+                        const source = state.sources.get(page.sourceId);
+                        const filename = core.splitFilename(source ? source.name : 'document', page.sourcePageIndex + 1, source ? source.pageCount : 1, used);
+                        await archive.add(filename, bytes);
+                    });
+                    elements.processingDetail.textContent = '打包 ZIP';
+                    elements.processingProgress.style.width = '97%';
+                    downloadBytes(await archive.finish(), 'application/zip', core.outputFilename(baseName, 'zip'));
+                } finally {
+                    archive.dispose();
+                }
                 showToast('已导出 ' + pages.length + ' 个页面文件。');
             } else {
                 const bytes = await engine.exportDocument(pages, state.sources, updateProgress);
@@ -964,6 +978,7 @@
         state.previewToken += 1;
         engine.cancelRender(elements.previewCanvas);
         elements.preview.hidden = true;
+        engine.releaseCanvas(elements.previewCanvas);
         const card = state.pageElements.get(state.activeId);
         if (card) card.focus();
     }
@@ -1219,9 +1234,18 @@
         elements.density.value = String(densityNames.indexOf(state.density));
         state.observer = 'IntersectionObserver' in window ? new IntersectionObserver(function(entries) {
             entries.forEach(function(entry) {
+                setPageVisibility(entry.target, entry.isIntersecting);
                 if (entry.isIntersecting) queueRender(entry.target.dataset.pageId);
             });
         }, { root: elements.pagesScroll, rootMargin: '280px 120px', threshold: 0.01 }) : null;
+        if (!state.observer) {
+            let scheduled = false;
+            elements.pagesScroll.addEventListener('scroll', function() {
+                if (scheduled) return;
+                scheduled = true;
+                window.requestAnimationFrame(function() { scheduled = false; queueVisibleRenders(); });
+            }, { passive: true });
+        }
         bindEvents();
         initializeSortable();
         renderWorkspace();

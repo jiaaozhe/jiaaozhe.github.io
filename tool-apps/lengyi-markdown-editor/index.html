@@ -1394,7 +1394,7 @@
   <script src="https://cdn.jsdelivr.net/npm/dom-to-image-more@3.5.0/dist/dom-to-image-more.min.js" integrity="sha384-0PEs9VXKn6x/atQ5H1woMo0cQQnIz11UdqMzjvkDj+U+vxY4xwwj9J+gsbvLNcL9" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.6/dist/mermaid.min.js" integrity="sha384-qX9VvWkP79m/O121ZE6sOYp0nf/pldQgtvWDbkpzi+3mUo4Wn4Ix4cFzNPay3VaB" crossorigin="anonymous"></script>
+  <script type="text/plain" id="mermaid-dependency" data-src="https://cdn.jsdelivr.net/npm/mermaid@10.9.6/dist/mermaid.min.js" integrity="sha384-qX9VvWkP79m/O121ZE6sOYp0nf/pldQgtvWDbkpzi+3mUo4Wn4Ix4cFzNPay3VaB" crossorigin="anonymous"></script>
   <script src="i18n.js"></script>
   <script>
     const editor = document.getElementById('editor');
@@ -1679,8 +1679,21 @@
       applyLanguage();
     }
 
-    // 渲染预览
+    let previewTimer;
+    let previewRevision = 0;
+    let composing = false;
+    const mermaidCache = new Map();
+    let mermaidQueue = Promise.resolve();
+    function schedulePreview() {
+      clearTimeout(previewTimer);
+      previewRevision += 1;
+      if (!composing) previewTimer = setTimeout(updatePreview, editor.value.length > 100000 ? 500 : 160);
+    }
+
+    // Render after an input burst; formatting commands can still refresh immediately.
     function updatePreview() {
+      clearTimeout(previewTimer);
+      previewRevision += 1;
       let text = editor.value;
       let placeholders = [];
       const canRenderHtml = typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined';
@@ -1783,12 +1796,10 @@
         btn.classList.toggle('active', btn.dataset.mode === mode);
       });
       if (mode === 'preview') {
-        editor.value = previewSource.value;
         preview.style.display = '';
         previewSource.style.display = 'none';
         updatePreview();
         updateCount();
-        autoSave();
       } else {
         previewSource.value = editor.value;
         preview.style.display = 'none';
@@ -1799,28 +1810,65 @@
 
     // 自动保存
     let saveTimer;
+    let saveHintTimer;
+    let saveRevision = 0;
+    let documentDirty = false;
+    async function persistDocument(manual) {
+      const revision = ++saveRevision;
+      saveHint.textContent = currentLang === 'zh-CN' ? '正在保存…' : 'Saving…';
+      saveHint.classList.add('show');
+      try {
+        await storage.setItems({ [STORAGE_KEY]: editor.value, [FILENAME_KEY]: filenameInput.value });
+        if (revision !== saveRevision) return;
+        documentDirty = false;
+        showSaveHint();
+        if (manual) showToast(t('toastSaved'));
+      } catch (error) {
+        if (revision !== saveRevision) return;
+        saveHint.textContent = currentLang === 'zh-CN' ? '保存失败，请重试' : 'Save failed; retry';
+        saveHint.classList.add('show');
+        showToast(error.message || String(error));
+      }
+    }
     function autoSave() {
       clearTimeout(saveTimer);
+      clearTimeout(saveHintTimer);
+      documentDirty = true;
+      saveRevision += 1;
+      saveHint.textContent = currentLang === 'zh-CN' ? '未保存' : 'Unsaved';
+      saveHint.classList.add('show');
       saveTimer = setTimeout(() => {
-        storage.setItem(STORAGE_KEY, editor.value);
-        storage.setItem(FILENAME_KEY, filenameInput.value);
-        showSaveHint();
+        saveTimer = null;
+        persistDocument(false);
       }, 500);
     }
 
     function showSaveHint() {
+      clearTimeout(saveHintTimer);
       saveHint.textContent = '✓ ' + t('saved');
       saveHint.classList.add('show');
-      setTimeout(() => saveHint.classList.remove('show'), 1500);
+      saveHintTimer = setTimeout(() => saveHint.classList.remove('show'), 1500);
     }
 
     // 手动保存
     function saveToLocal() {
-      storage.setItem(STORAGE_KEY, editor.value);
-      storage.setItem(FILENAME_KEY, filenameInput.value);
-      showSaveHint();
-      showToast(t('toastSaved'));
+      clearTimeout(saveTimer);
+      saveTimer = null;
+      return persistDocument(true);
     }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden' && saveTimer) {
+        clearTimeout(saveTimer);
+        saveTimer = null;
+        persistDocument(false);
+      }
+    });
+    window.addEventListener('beforeunload', event => {
+      if (!documentDirty) return;
+      event.preventDefault();
+      event.returnValue = '';
+    });
 
     // 导出文件
     function exportFile() {
@@ -2635,21 +2683,38 @@ ${'</scr' + 'ipt>'}
       showToast(t('toastMermaidInserted'));
     }
 
-    function renderMermaidBlocks() {
-      if (typeof mermaid === 'undefined') return;
+    async function renderMermaidBlocks() {
       const blocks = preview.querySelectorAll('.markdown-body pre code.language-mermaid');
       if (!blocks.length) return;
-      blocks.forEach(code => {
-        const pre = code.parentElement;
-        const source = code.textContent.trim();
-        if (!source) return;
-        const container = document.createElement('div');
-        container.className = 'mermaid';
-        container.textContent = source;
-        pre.replaceWith(container);
-      });
+      const revision = previewRevision;
       try {
-        mermaid.run({ querySelector: '.markdown-body .mermaid' });
+        const dependency = document.getElementById('mermaid-dependency');
+        await window.toolHost.loadScript(dependency.dataset.src, { integrity: dependency.getAttribute('integrity') });
+        if (revision !== previewRevision) return;
+        const theme = document.body.getAttribute('data-theme') === 'dark' ? 'dark' : 'default';
+        mermaidQueue = mermaidQueue.catch(() => {}).then(async () => {
+          if (revision !== previewRevision) return;
+          mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', htmlLabels: false, flowchart: { htmlLabels: false }, theme });
+          for (const [index, code] of Array.from(blocks).entries()) {
+            if (revision !== previewRevision || !code.isConnected) return;
+            const source = code.textContent.trim();
+            if (!source) continue;
+            const key = theme + ':' + index + ':' + source;
+            let svg = mermaidCache.get(key);
+            if (!svg) {
+              const result = await mermaid.render('diagram-' + revision + '-' + index, source);
+              svg = result.svg;
+              if (mermaidCache.size >= 32) mermaidCache.delete(mermaidCache.keys().next().value);
+              mermaidCache.set(key, svg);
+            }
+            if (revision !== previewRevision || !code.isConnected) return;
+            const container = document.createElement('div');
+            container.className = 'mermaid';
+            container.innerHTML = DOMPurify.sanitize(svg, { USE_PROFILES: { svg: true, svgFilters: true } });
+            code.parentElement.replaceWith(container);
+          }
+        });
+        await mermaidQueue;
       } catch (err) {
         console.error('Mermaid render error:', err);
       }
@@ -3109,10 +3174,12 @@ ${'</scr' + 'ipt>'}
     editor.addEventListener('input', () => {
       clearTimeout(historyTimer);
       historyTimer = setTimeout(recordHistory, 400);
-      updatePreview();
+      schedulePreview();
       updateCount();
       autoSave();
     });
+    editor.addEventListener('compositionstart', () => { composing = true; clearTimeout(previewTimer); });
+    editor.addEventListener('compositionend', () => { composing = false; schedulePreview(); });
     previewSource.addEventListener('input', () => {
       editor.value = previewSource.value;
       clearTimeout(historyTimer);

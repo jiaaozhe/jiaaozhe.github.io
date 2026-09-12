@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "scripts": {
+    "build:pdf-runtime": "esbuild scripts/pdfjs_runtime_entry.mjs --bundle --minify --format=iife --platform=browser --target=es2022 --outfile=tool-apps/pdf-page-manager/pdf-runtime.js",
+    "build:tool-assets": "npm run build:pdf-runtime && node scripts/build_tool_icons.js"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.0"
+  }
+}

@@ -61,11 +61,17 @@
         {
             "id": {{ page.slug | jsonify }},
             "title": {{ page.title | jsonify }},
+            "version": {{ site.time | date: '%s' | jsonify }},
             "entry": {{ page.entry | relative_url | jsonify }},
             "storage": {{ page.storage | jsonify }},
             "capabilities": {{ page.capabilities | jsonify }}
         }
     </script>
+    <script src="{{ '/assets/js/tool-state-store.js' | relative_url }}?v={{ site.time | date: '%s' }}"></script>
+    <script src="{{ '/assets/js/tool-jobs.js' | relative_url }}?v={{ site.time | date: '%s' }}"></script>
+    {% if page.slug == 'pdf-page-manager' %}
+    <script src="{{ '/assets/js/tool-pdf-host.js' | relative_url }}?v={{ site.time | date: '%s' }}"></script>
+    {% endif %}
     <script src="{{ '/assets/js/tool-runner.js' | relative_url }}?v={{ site.time | date: '%s' }}"></script>
 </body>
 </html>

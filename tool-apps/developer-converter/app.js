@@ -535,8 +535,9 @@
         });
     }
 
-    function executeQuery(showMessage) {
-        const refreshed = ensureConfigCurrent();
+    async function executeQuery(showMessage) {
+        const refreshed = await ensureConfigCurrent();
+        if (state.appliedConfigKey !== configKey()) return;
         if (refreshed && state.schemaValidated) validateSchema(false);
         const structure = state.configResult && state.configResult.structure;
         const result = configCore.queryStructure(structure, elements.configQuery.value);
@@ -566,8 +567,9 @@
         }
     }
 
-    function validateSchema(showMessage) {
-        const refreshed = ensureConfigCurrent();
+    async function validateSchema(showMessage) {
+        const refreshed = await ensureConfigCurrent();
+        if (state.appliedConfigKey !== configKey()) return;
         if (refreshed && state.queryResult) executeQuery(false);
         state.schemaValidated = true;
         const result = schemaCore.validate(
@@ -647,25 +649,56 @@
         }
     }
 
-    function convertConfig(showMessage, refreshInspections) {
-        window.clearTimeout(state.configTimer);
-        state.configText = elements.configInput.value;
-        const result = configCore.convert(elements.configInput.value, configOptions());
-        renderConfigResult(result, refreshInspections);
-        if (showMessage) {
-            if (result.ok) showToast('转换完成，并已通过目标格式回读复检。');
-            else if (result.blocked) showToast('保真策略阻止了有损转换；可查看诊断，或切换到宽松模式继续。');
-            else showToast('输入存在问题，请查看诊断信息。');
-        }
+    function configKey() {
+        return JSON.stringify(configOptions()) + '\n' + elements.configInput.value;
     }
 
-    function ensureConfigCurrent() {
-        if (state.configText === elements.configInput.value) return false;
-        convertConfig(false, false);
-        return true;
+    async function convertConfig(showMessage, refreshInspections) {
+        window.clearTimeout(state.configTimer);
+        const key = configKey();
+        if (state.pendingConfigKey === key && state.configPromise) return state.configPromise;
+        state.pendingConfigKey = key;
+        const text = elements.configInput.value;
+        if (textBytes(text) > 2 * 1024 * 1024) {
+            window.toolHost.cancelTasks();
+            state.appliedConfigKey = '';
+            setButtonOutput([elements.configCopy, elements.configDownload], false);
+            showToast('文本不能超过 2 MB。');
+            return false;
+        }
+        setButtonOutput([elements.configCopy, elements.configDownload], false);
+        setHealth(elements.configHealth, 'idle', '转换中');
+        const promise = window.toolHost.runTask('config-convert', { text: text, options: configOptions() }).then(function(result) {
+            if (key !== configKey() || state.pendingConfigKey !== key) return false;
+            state.configText = text;
+            state.appliedConfigKey = key;
+            renderConfigResult(result, refreshInspections);
+            if (showMessage) {
+                if (result.ok) showToast('转换完成，并已通过目标格式回读复检。');
+                else if (result.blocked) showToast('保真策略阻止了有损转换；可查看诊断，或切换到宽松模式继续。');
+                else showToast('输入存在问题，请查看诊断信息。');
+            }
+            return true;
+        }).catch(function(error) {
+            if (key !== configKey() || error.name === 'AbortError') return false;
+            setHealth(elements.configHealth, 'error', '转换失败');
+            showToast(error.message || String(error));
+            return false;
+        }).finally(function() {
+            if (state.configPromise === promise) state.configPromise = null;
+        });
+        state.configPromise = promise;
+        return promise;
+    }
+
+    async function ensureConfigCurrent() {
+        if (state.appliedConfigKey === configKey()) return false;
+        return convertConfig(false, false);
     }
 
     function scheduleConfigConversion() {
+        window.toolHost.cancelTasks();
+        setButtonOutput([elements.configCopy, elements.configDownload], false);
         window.clearTimeout(state.configTimer);
         state.configTimer = window.setTimeout(function() {
             convertConfig(false);

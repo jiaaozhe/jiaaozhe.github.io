@@ -247,6 +247,7 @@
     }
 
     function markStale() {
+        window.toolHost.cancelTasks();
         state.compareToken += 1;
         setBusy(false);
         invalidatePatch();
@@ -559,7 +560,9 @@
         setBusy(true);
         setAppState('ready', 'WORK', '正在计算差异');
         try {
-            const result = await core.compare(state.old.raw, state.new.raw, comparisonOptions());
+            const result = await window.toolHost.runTask('text-compare', {
+                oldText: state.old.raw, newText: state.new.raw, options: comparisonOptions()
+            });
             if (token !== state.compareToken) return;
             state.result = result;
             renderResult(result);
@@ -597,11 +600,19 @@
         return (base(state.old.name) || 'before') + '-to-' + (base(state.new.name) || 'after') + '.diff';
     }
 
-    function generatePatch() {
+    async function generatePatch() {
         const options = comparisonOptions();
         options.oldName = state.old.name;
         options.newName = state.new.name;
-        const result = core.createPatch(state.old.raw, state.new.raw, options);
+        const token = state.compareToken;
+        let result;
+        try {
+            result = await window.toolHost.runTask('text-patch', { oldText: state.old.raw, newText: state.new.raw, options: options });
+        } catch (error) {
+            if (error.name !== 'AbortError') showToast(error.message || String(error));
+            return false;
+        }
+        if (token !== state.compareToken) return false;
         state.patch = result;
         if (!result.ok) {
             showToast(result.message || '无法生成 Patch。');
@@ -619,8 +630,8 @@
         return true;
     }
 
-    function openPatch() {
-        if (!generatePatch()) return;
+    async function openPatch() {
+        if (!await generatePatch()) return;
         elements.patchPanel.hidden = false;
         elements.patchPanel.scrollIntoView({ block: 'start', behavior: 'smooth' });
     }
@@ -787,14 +798,14 @@
     one('[data-close-patch]').addEventListener('click', function() {
         elements.patchPanel.hidden = true;
     });
-    one('[data-copy-patch]').addEventListener('click', function() {
-        if (!state.patch && !generatePatch()) return;
+    one('[data-copy-patch]').addEventListener('click', async function() {
+        if (!state.patch && !await generatePatch()) return;
         copyText(state.patch.patch).then(function() {
             showToast('Patch 已复制。');
         });
     });
-    one('[data-download-patch]').addEventListener('click', function() {
-        if (!state.patch && !generatePatch()) return;
+    one('[data-download-patch]').addEventListener('click', async function() {
+        if (!state.patch && !await generatePatch()) return;
         downloadText(state.patch.patch, patchFilename());
         showToast('已生成 ' + patchFilename() + '。');
     });

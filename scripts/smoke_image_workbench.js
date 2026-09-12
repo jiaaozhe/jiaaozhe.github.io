@@ -119,8 +119,8 @@ function testRuntimeSurface() {
     assert.doesNotMatch(html, /localStorage/);
     assert.match(app, /new window\.Cropper/);
     assert.match(app, /state\.pica\.resize/);
-    assert.match(app, /window\.fflate\.zipSync/);
-    assert.match(app, /blob\.arrayBuffer\(\)/);
+    assert.match(app, /window\.ToolArchive\.create/);
+    assert.match(app, /archive\.add\(result\.filename, result\.blob\)/);
     assert.match(app, /features: \['js'\]/);
     assert.match(html, /vendor\/exifr\.min\.js/);
     assert.match(html, /image-privacy\.js/);
