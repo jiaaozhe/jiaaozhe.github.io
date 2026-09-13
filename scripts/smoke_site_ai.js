@@ -38,6 +38,16 @@ async function main() {
     }));
     assert.equal(contentReads, 0, 'catalog questions must not load page content');
 
+    // Read entries are curated and replaced often, so assert the routing and the
+    // catalog shape here instead of pinning a specific title. validate_site.rb
+    // already checks every read document against its route and generated page.
+    const reads = await window.siteAI.answerAsync('你分享了哪些好文章？');
+    assert(reads.some(function(line) {
+        return line.includes('分享过的好文章');
+    }), 'read questions must route to the read catalog');
+    assert(reads.length > 2, 'the read catalog must list at least one entry');
+    assert.equal(contentReads, 0, 'read catalog questions must not load page content');
+
     const tools = await window.siteAI.answerAsync('有哪些小工具？');
     assert(tools.some(function(line) {
         return line.includes('Markdown 编辑器');

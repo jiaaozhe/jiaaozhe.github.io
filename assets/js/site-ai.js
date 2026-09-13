@@ -62,6 +62,18 @@
         }));
     }
 
+    function answerReads(manifest) {
+        const reads = getRoutes(manifest, 'read');
+
+        if (!reads.length) {
+            return ['AI demo:', '目前还没有可列出的分享。'];
+        }
+
+        return ['AI demo:', '分享过的好文章：'].concat(reads.map(function(read) {
+            return '- ' + read.title + ' (' + itemPath(read) + ')';
+        }));
+    }
+
     function answerResearch(manifest) {
         const publications = getRoutes(manifest, 'publication');
 
@@ -142,6 +154,7 @@
             'AI demo questions:',
             '你是谁？',
             '你有哪些文章？',
+            '你分享了哪些好文章？',
             '你有哪些照片？',
             'ghostty 配置是什么？',
             '你的研究方向是什么？',
@@ -169,6 +182,10 @@
 
         if (includesAny(q, ['你是谁', 'about', '介绍', '个人', 'jiaaozhe'])) {
             return answerAbout(manifest);
+        }
+
+        if (includesAny(q, ['分享', '好文', '推荐阅读', '阅读', 'reads', 'reading'])) {
+            return answerReads(manifest);
         }
 
         if (includesAny(q, ['照片', '摄影', 'photo', 'photos', '相机'])) {

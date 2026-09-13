@@ -465,12 +465,14 @@ img {
 .research-content,
 .post-filter,
 .photo-filter,
-.fragment-filter {
+.fragment-filter,
+.reads-filter {
     padding: 56px 0;
 }
 
 .links-grid,
 .blog-posts,
+.reads-grid,
 .section-grid,
 .publications-grid,
 .contact-grid,
@@ -484,6 +486,7 @@ img {
 }
 
 .blog-posts,
+.reads-grid,
 .publications-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -499,6 +502,7 @@ img {
 
 .link-card,
 .post-card,
+.read-card,
 .research-card,
 .publication-card,
 .contact-item {
@@ -517,6 +521,7 @@ img {
 
 .link-card,
 .post-card,
+.read-card,
 .research-card,
 .publication-card,
 .contact-item {
@@ -525,6 +530,7 @@ img {
 
 .link-card:hover,
 .post-card:hover,
+.read-card:hover,
 .research-card:hover,
 .publication-card:hover,
 .contact-item:hover {
@@ -535,6 +541,7 @@ img {
 
 .link-card h3,
 .post-card h3,
+.read-card h2,
 .publication-card h3,
 .card-header h2,
 .contact-info h4,
@@ -550,6 +557,7 @@ img {
 
 .link-card h3,
 .post-card h3,
+.read-card h2,
 .publication-card h3,
 .card-header h2 {
     font-size: 22px;
@@ -557,6 +565,7 @@ img {
 
 .link-card p,
 .post-card p,
+.read-card p,
 .card-content p,
 .card-content li,
 .contact-info p,
@@ -566,7 +575,8 @@ img {
 }
 
 .link-card p,
-.post-card p {
+.post-card p,
+.read-card p {
     margin: 12px 0 20px;
 }
 
@@ -601,7 +611,8 @@ img {
 
 .post-filter,
 .photo-filter,
-.fragment-filter {
+.fragment-filter,
+.reads-filter {
     display: grid;
     justify-items: center;
     gap: 14px;
@@ -611,7 +622,8 @@ img {
 
 .post-filter > span,
 .photo-filter > span,
-.fragment-filter > span {
+.fragment-filter > span,
+.reads-filter > span {
     color: var(--muted);
     font-size: 14px;
 }
@@ -1778,6 +1790,10 @@ img {
     outline: 3px solid var(--surface);
 }
 
+.timeline-marker[data-kind="read"] {
+    background: var(--label-accent);
+}
+
 .timeline-body {
     display: grid;
     gap: 4px;
@@ -1898,6 +1914,7 @@ img {
 
     .links-grid,
     .blog-posts,
+    .reads-grid,
     .publications-grid,
     .contact-grid {
         grid-template-columns: 1fr;
@@ -2006,6 +2023,7 @@ img {
 
     .link-card,
     .post-card,
+    .read-card,
     .research-card,
     .publication-card,
     .contact-item {
@@ -2051,5 +2069,276 @@ img {
 
     .photo-post-card-image {
         aspect-ratio: 4 / 3;
+    }
+}
+
+/* Reads (好文分享) — list page.
+   The card shell, grid and filter bar intentionally reuse the article-list rules above
+   (.read-card with .post-card, .reads-grid with .blog-posts, .reads-filter with .post-filter)
+   so the two pages render identically instead of drifting apart. */
+
+.read-card {
+    min-width: 0;
+}
+
+.read-card[hidden] {
+    display: none;
+}
+
+/* Colour and margins for `.read-card p` come from the shared article-card rules above
+   (.post-card p), so the vertical rhythm matches the posts page instead of diverging. */
+.read-card-date {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+}
+
+.read-card-category {
+    color: var(--label-accent);
+}
+
+/* The recommendation is the longest field on a card, so clamp it to keep the grid tidy.
+   Short summaries are unaffected; only overflowing ones get clamped. The full text is
+   still published on the detail page and in site-content.json. */
+.read-card-summary {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.read-card-source {
+    margin: 0 0 12px;
+    font-size: 13px;
+}
+
+.read-card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 14px;
+}
+
+/* The global .tag is a 42px pill built for the homepage timeline; inside a card it
+   dwarfs the rest of the metadata. Same compact override the photo cards use. */
+.read-card-tags span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 5px 11px;
+    border: 0;
+    border-radius: var(--pill);
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1;
+}
+
+.read-card-outbound {
+    color: var(--black);
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.read-card-outbound span {
+    display: inline-block;
+    margin-left: 3px;
+    transition: transform 160ms ease;
+}
+
+.read-card-outbound:hover {
+    color: var(--label-accent);
+}
+
+.read-card-outbound:hover span {
+    transform: translate(2px, -2px);
+}
+
+.read-detail {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 56px 24px 96px;
+}
+
+.read-header {
+    display: grid;
+    gap: 12px;
+    padding-bottom: 26px;
+    border-bottom: 1px solid var(--line);
+}
+
+.read-kicker {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0;
+    font-family: var(--mono-font);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+}
+
+.read-category {
+    padding: 4px 9px;
+    border-radius: var(--pill);
+    background: var(--surface);
+    color: var(--label-accent);
+}
+
+.read-collected {
+    color: var(--muted);
+}
+
+.read-title {
+    margin: 0;
+    color: var(--black);
+    font-family: var(--display-font);
+    font-size: clamp(26px, 3.6vw, 36px);
+    font-weight: 500;
+    line-height: 1.2;
+    text-wrap: balance;
+}
+
+.read-byline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.read-byline-sep {
+    color: var(--line);
+}
+
+.read-summary {
+    margin: 28px 0 0;
+    padding: 22px 24px;
+    border-left: 3px solid var(--label-accent);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    background: var(--surface);
+}
+
+.read-summary-label {
+    margin: 0 0 8px;
+    color: var(--label-accent);
+    font-family: var(--mono-font);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+}
+
+.read-summary p:last-child {
+    margin: 0;
+    color: var(--text);
+    font-size: 16px;
+    line-height: 1.8;
+    text-wrap: pretty;
+}
+
+.read-outbound {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 20px 0 0;
+    padding: 16px 20px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--white);
+    transition: border-color 180ms ease, box-shadow 200ms ease;
+}
+
+.read-outbound:hover {
+    border-color: var(--muted);
+    box-shadow: var(--card-shadow);
+}
+
+.read-outbound-body {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+}
+
+.read-outbound-label {
+    color: var(--black);
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.read-outbound-host {
+    overflow: hidden;
+    color: var(--muted);
+    font-family: var(--mono-font);
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.read-outbound-arrow {
+    color: var(--muted);
+    font-size: 18px;
+    transition: transform 160ms ease;
+}
+
+.read-outbound:hover .read-outbound-arrow {
+    transform: translate(2px, -2px);
+}
+
+.read-notes {
+    margin: 34px 0 0;
+    color: var(--text);
+    font-size: 16px;
+    line-height: 1.85;
+}
+
+.read-notes p,
+.read-notes ul,
+.read-notes ol {
+    margin: 0 0 18px;
+}
+
+.read-notes ul,
+.read-notes ol {
+    padding-left: 1.3em;
+}
+
+.read-notes blockquote {
+    margin: 0 0 18px;
+    padding-left: 16px;
+    border-left: 3px solid var(--line);
+    color: var(--muted);
+}
+
+.read-notes code {
+    padding: 0.15em 0.4em;
+    border-radius: 4px;
+    background: var(--surface);
+    font-family: var(--mono-font);
+    font-size: 0.9em;
+}
+
+.read-notes a {
+    color: var(--label-accent);
+}
+
+.read-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin: 30px 0 0;
+}
+
+.read-footer {
+    display: flex;
+    gap: 18px;
+    margin-top: 34px;
+    padding-top: 22px;
+    border-top: 1px solid var(--line);
+}
+
+@media (max-width: 760px) {
+    .read-detail {
+        padding: 34px 18px 64px;
     }
 }

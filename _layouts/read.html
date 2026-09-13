@@ -1,0 +1,56 @@
+---
+layout: default
+---
+{% assign note_body = content | strip %}
+<article class="read-detail">
+    <header class="read-header">
+        <p class="read-kicker">
+            <span class="read-category">{{ page.category }}</span>
+            <span class="read-collected">收录于 {{ page.date | date: "%Y.%m.%d" }}</span>
+        </p>
+        <h1 class="read-title">{{ page.title }}</h1>
+        <p class="read-byline">
+            <span>{{ page.source.author | default: page.source.site }}</span>
+            {% if page.source.author and page.source.site %}
+            <span class="read-byline-sep" aria-hidden="true">·</span>
+            <span>{{ page.source.site }}</span>
+            {% endif %}
+            {% if page.published %}
+            <span class="read-byline-sep" aria-hidden="true">·</span>
+            <span>原文 {{ page.published | date: "%Y.%m.%d" }}</span>
+            {% endif %}
+        </p>
+    </header>
+
+    <section class="read-summary" aria-label="推荐语">
+        <p class="read-summary-label">推荐语</p>
+        <p>{{ page.summary }}</p>
+    </section>
+
+    <a class="read-outbound" href="{{ page.source.url }}" target="_blank" rel="noopener noreferrer">
+        <span class="read-outbound-body">
+            <span class="read-outbound-label">阅读原文</span>
+            <span class="read-outbound-host">{{ page.source.site }}</span>
+        </span>
+        <span class="read-outbound-arrow" aria-hidden="true">↗</span>
+    </a>
+
+    {% if note_body != "" %}
+    <div class="read-notes">
+        {{ content }}
+    </div>
+    {% endif %}
+
+    {% if page.tags.size > 0 %}
+    <div class="read-tags">
+        {% for tag in page.tags %}
+        <span class="tag">{{ tag }}</span>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <footer class="read-footer">
+        <a href="{{ '/reads/' | relative_url }}" class="back-link">返回分享列表</a>
+        <a href="{{ '/' | relative_url }}" class="back-link">返回首页</a>
+    </footer>
+</article>

@@ -31,6 +31,23 @@ permalink: /site-content.json
       "content": {{ post.content | markdownify | strip_html | strip | jsonify }}
     }
     {% endfor %}
+    {% for read in site.reads %}
+    {% capture read_text %}
+{{ read.summary }}
+{% if read.source.site %}来源：{{ read.source.site }}{% if read.source.author %}（{{ read.source.author }}）{% endif %}{% endif %}
+{% if read.source.url %}原文：{{ read.source.url }}{% endif %}
+{{ read.content | markdownify | strip_html | strip }}
+    {% endcapture %}
+    {% unless first_item %},{% endunless %}
+    {% assign first_item = false %}
+    {{ read.url | relative_url | jsonify }}: {
+      "id": {{ read.url | relative_url | jsonify }},
+      "type": "read",
+      "title": {{ read.title | jsonify }},
+      "url": {{ read.url | relative_url | jsonify }},
+      "content": {{ read_text | strip | jsonify }}
+    }
+    {% endfor %}
     {% assign fragments = site.fragments | sort: "date" | reverse %}
     {% for fragment in fragments %}
     {% unless first_item %},{% endunless %}

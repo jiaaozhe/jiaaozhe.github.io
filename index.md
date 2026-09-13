@@ -11,8 +11,11 @@ title: 个人主页
     <div class="timeline-filter" data-timeline-filter>
         <button class="filter-button is-active" data-filter="all" aria-pressed="true">全部</button>
         <button class="filter-button" data-filter="post" aria-pressed="false">文章</button>
+        <button class="filter-button" data-filter="read" aria-pressed="false">分享</button>
         <button class="filter-button" data-filter="photo" aria-pressed="false">摄影</button>
+        {% if site.fragments.size > 0 %}
         <button class="filter-button" data-filter="fragment" aria-pressed="false">碎片</button>
+        {% endif %}
         <button class="filter-button" data-filter="publication" aria-pressed="false">研究</button>
     </div>
 
@@ -38,6 +41,21 @@ title: 个人主页
         </article>
         {% endfor %}
 
+        {% assign reads = site.reads | sort: "date" | reverse %}
+        {% for read in reads limit: 8 %}
+        <article class="timeline-item" data-timeline-kind="read" data-timeline-date="{{ read.date | date: '%Y-%m-%d' }}">
+            <div class="timeline-marker" data-kind="read"></div>
+            <div class="timeline-body">
+                <div class="timeline-meta">
+                    <span class="timeline-kind">分享</span>
+                    <time datetime="{{ read.date }}">{{ read.date | date: "%Y.%m.%d" }}</time>
+                </div>
+                <h3 class="timeline-title"><a href="{{ read.url | relative_url }}">{{ read.title }}</a></h3>
+                <p class="timeline-excerpt">{{ read.summary | truncate: 120 }}</p>
+            </div>
+        </article>
+        {% endfor %}
+
         {% assign fragments = site.fragments | sort: "date" | reverse %}
         {% for fragment in fragments limit: 8 %}
         <article class="timeline-item" data-timeline-kind="fragment" data-timeline-date="{{ fragment.date | date: '%Y-%m-%d' }}">
@@ -47,7 +65,10 @@ title: 个人主页
                     <span class="timeline-kind">{{ fragment.type | default: "碎片" }}</span>
                     <time datetime="{{ fragment.date }}">{{ fragment.date | date: "%Y.%m.%d" }}</time>
                 </div>
-                <p class="timeline-excerpt">{{ fragment.content | strip_html | truncate: 120 }}</p>
+                {% assign fragment_excerpt = fragment.content | strip_html | strip %}
+                {% if fragment_excerpt != "" %}
+                <p class="timeline-excerpt">{{ fragment_excerpt | truncate: 120 }}</p>
+                {% endif %}
             </div>
         </article>
         {% endfor %}

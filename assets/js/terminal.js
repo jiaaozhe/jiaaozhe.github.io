@@ -78,6 +78,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function buildVfs(data) {
         const defaultSections = [
             { name: 'posts', title: '文章', url: '/posts/', types: ['post'] },
+            { name: 'reads', title: '好文分享', url: '/reads/', types: ['read'] },
             { name: 'fragments', title: '碎片流', url: '/fragments/', types: ['fragment'] },
             { name: 'photos', title: '摄影', url: '/photos/', types: ['photo'] },
             { name: 'research', title: '学术研究', url: '/research/', types: ['publication'] },
@@ -206,6 +207,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (parts[0] === 'posts') {
             return ['posts'];
+        }
+
+        if (parts[0] === 'reads') {
+            return ['reads'];
         }
 
         if (parts[0] === 'uses') {
@@ -1483,7 +1488,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function completeCommand() {
         const value = input.value;
-        const commandNames = ['help', 'man', 'pwd', 'ls', 'tree', 'cd', 'open', 'cat', 'less', 'grep', 'find', 'ask', 'clear', 'random', 'whoami', 'date', 'uname', 'll', 'la', '..', 'home', 'cls', 'posts', 'photos', 'fragments', 'research', 'tools', 'status', 'about', 'ghostty'];
+        const commandNames = ['help', 'man', 'pwd', 'ls', 'tree', 'cd', 'open', 'cat', 'less', 'grep', 'find', 'ask', 'clear', 'random', 'whoami', 'date', 'uname', 'll', 'la', '..', 'home', 'cls', 'posts', 'reads', 'photos', 'fragments', 'research', 'tools', 'status', 'about', 'ghostty'];
         const parts = value.trimStart().split(/\s+/);
         const command = parts[0] || '';
 

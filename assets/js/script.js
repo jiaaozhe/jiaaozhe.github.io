@@ -8,6 +8,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const fragmentItems = Array.from(document.querySelectorAll('[data-fragment-item]'));
     const photoFilterRoot = document.querySelector('[data-photo-filter]');
     const photoItems = Array.from(document.querySelectorAll('[data-photo-item]'));
+    const readFilterRoot = document.querySelector('[data-reads-filter]');
+    const readItems = Array.from(document.querySelectorAll('[data-read-item]'));
 
     function toggleTheme() {
         const root = document.documentElement;
@@ -178,6 +180,47 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const params = new URLSearchParams(window.location.search);
         applyPhotoFilter(params.get('tag') || 'all', false);
+    }
+
+    if (readFilterRoot && readItems.length) {
+        const readButtons = Array.from(readFilterRoot.querySelectorAll('[data-read-category]'));
+
+        function applyReadFilter(category, updateUrl) {
+            const activeCategory = readButtons.some(function(button) {
+                return button.dataset.readCategory === category;
+            }) ? category : 'all';
+
+            readButtons.forEach(function(button) {
+                const isActive = button.dataset.readCategory === activeCategory;
+                button.classList.toggle('is-active', isActive);
+                button.setAttribute('aria-pressed', String(isActive));
+            });
+
+            readItems.forEach(function(item) {
+                item.hidden = activeCategory !== 'all' && item.dataset.readCategory !== activeCategory;
+            });
+
+            if (updateUrl) {
+                const url = new URL(window.location.href);
+
+                if (activeCategory === 'all') {
+                    url.searchParams.delete('category');
+                } else {
+                    url.searchParams.set('category', activeCategory);
+                }
+
+                window.history.replaceState({}, '', url);
+            }
+        }
+
+        readButtons.forEach(function(button) {
+            button.addEventListener('click', function() {
+                applyReadFilter(button.dataset.readCategory, true);
+            });
+        });
+
+        const params = new URLSearchParams(window.location.search);
+        applyReadFilter(params.get('category') || 'all', false);
     }
 
     // Timeline filter

@@ -18,6 +18,7 @@ permalink: /site-manifest.json
   },
   "sections": [
     { "name": "posts", "title": "文章", "url": {{ "/posts/" | relative_url | jsonify }}, "types": ["post"] },
+    { "name": "reads", "title": "好文分享", "url": {{ "/reads/" | relative_url | jsonify }}, "types": ["read"] },
     { "name": "fragments", "title": "碎片流", "url": {{ "/fragments/" | relative_url | jsonify }}, "types": ["fragment"] },
     { "name": "photos", "title": "摄影", "url": {{ "/photos/" | relative_url | jsonify }}, "types": ["photo"] },
     { "name": "research", "title": "学术研究", "url": {{ "/research/" | relative_url | jsonify }}, "types": ["publication"] },
@@ -64,6 +65,26 @@ permalink: /site-manifest.json
       "source_path": {{ post.path | jsonify }},
       "raw_url": {{ raw_url | jsonify }},
       "size": {{ post.content | size }}
+    }
+    {% endfor %}
+    {% assign reads = site.reads | sort: "date" | reverse %}
+    {% for read in reads %}
+    {% assign read_raw_branch = site.raw_branch | default: "main" %}
+    {% assign read_raw_url = "https://raw.githubusercontent.com/" | append: site.source_repository | append: "/" | append: read_raw_branch | append: "/" | append: read.path %}
+    {% unless first_item %},{% endunless %}
+    {% assign first_item = false %}
+    {
+      "id": {{ read.url | relative_url | jsonify }},
+      "type": "read",
+      "name": {{ read.slug | jsonify }},
+      "title": {{ read.title | jsonify }},
+      "url": {{ read.url | relative_url | jsonify }},
+      "date": {{ read.date | date: "%Y-%m-%d" | jsonify }},
+      "summary": {{ read.summary | default: read.content | strip_html | strip | truncate: 220 | jsonify }},
+      "tags": {{ read.tags | default: empty | jsonify }},
+      "source_path": {{ read.path | jsonify }},
+      "raw_url": {{ read_raw_url | jsonify }},
+      "size": {{ read.content | size }}
     }
     {% endfor %}
     {% assign fragments = site.fragments | sort: "date" | reverse %}
