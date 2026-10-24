@@ -48,18 +48,6 @@ async function main() {
     assert(reads.length > 2, 'the read catalog must list at least one entry');
     assert.equal(contentReads, 0, 'read catalog questions must not load page content');
 
-    const tools = await window.siteAI.answerAsync('有哪些小工具？');
-    assert(tools.some(function(line) {
-        return line.includes('Markdown 编辑器');
-    }));
-    assert(tools.some(function(line) {
-        return line.includes('图像工作台');
-    }));
-    assert(tools.some(function(line) {
-        return line.includes('PDF 页管理器');
-    }));
-    assert.equal(contentReads, 0, 'tool catalog questions must not load page content');
-
     const ghostty = await window.siteAI.answerAsync('ghostty 配置是什么？');
     assert(ghostty.some(function(line) {
         return line.includes('font-family = CaskaydiaMono Nerd Font Mono');

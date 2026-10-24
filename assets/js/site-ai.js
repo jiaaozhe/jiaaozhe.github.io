@@ -98,18 +98,6 @@
         }));
     }
 
-    function answerTools(manifest) {
-        const tools = getRoutes(manifest, 'tool');
-
-        if (!tools.length) {
-            return ['AI demo:', '目前还没有可运行的站内工具。'];
-        }
-
-        return ['AI demo:', '当前工具：'].concat(tools.map(function(tool) {
-            return '- ' + tool.title + ' (' + itemPath(tool) + ')';
-        }));
-    }
-
     async function answerUses(question, manifest) {
         const uses = getRoutes(manifest, 'use');
         const ghostty = uses.find(function(item) {
@@ -202,10 +190,6 @@
 
         if (includesAny(q, ['ghostty', '终端配置', 'terminal config', '配置', 'uses', 'vscode'])) {
             return answerUses(q, manifest);
-        }
-
-        if (includesAny(q, ['工具', '小工具', '在线工具', 'tools', 'tool'])) {
-            return answerTools(manifest);
         }
 
         if (includesAny(q, ['网站', '站点', 'site', '目录', '有什么', '导航', '内容'])) {
