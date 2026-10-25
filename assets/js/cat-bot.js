@@ -31,6 +31,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let singleClickTimer = null;
     let resetExpressionTimer = null;
     let aiStreamId = 0;
+    let aiController = null;
+    let aiSetupPromise = null;
     let aiMessages = [];
     let panelResizeTimer = null;
 
@@ -50,6 +52,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (!open) {
             aiStreamId += 1;
+            if (aiController) aiController.abort();
+        } else {
+            prepareAI().catch(function(error) { setConfigStatus(error.message); });
         }
 
         catAiPanel.hidden = !open;
@@ -280,6 +285,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function clearAiMessages() {
         aiStreamId += 1;
+        if (aiController) aiController.abort();
         aiMessages = [];
         localStorage.removeItem(AI_MESSAGES_KEY);
         resetAiOutput();
@@ -300,6 +306,19 @@ document.addEventListener('DOMContentLoaded', function() {
         if (catAiConfigStatus) {
             catAiConfigStatus.textContent = text;
         }
+    }
+
+    function prepareAI() {
+        if (!aiSetupPromise) {
+            aiSetupPromise = window.siteFeatures.loadAI().then(async function(ai) {
+                await loadConfigForm();
+                return ai;
+            }).catch(function(error) {
+                aiSetupPromise = null;
+                throw error;
+            });
+        }
+        return aiSetupPromise;
     }
 
     async function loadConfigForm() {
@@ -469,81 +488,49 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function askCatAi(question) {
         const normalized = String(question || '').trim();
-
         if (!normalized) {
             setExpression('ASK', 900);
-            if (catAiInput) {
-                catAiInput.focus();
-            }
+            if (catAiInput) catAiInput.focus();
             return;
         }
-
+        if (aiController) aiController.abort();
+        const controller = new AbortController();
+        aiController = controller;
+        const streamId = ++aiStreamId;
+        let statusMessage = null;
         setCatMenu(false);
         setAiPanel(true);
         appendAiText('user', [normalized]);
+        setExpression('AI', 900);
 
-        if (window.siteAI && typeof window.siteAI.answerAsync === 'function') {
-            setExpression('AI', 900);
-            const streamId = aiStreamId + 1;
-            let statusMessage = null;
-
-            aiStreamId = streamId;
-
-            try {
-                const lines = await window.siteAI.answerAsync(normalized, {
-                    onStatus: function(status) {
-                        if (streamId !== aiStreamId) {
-                            return;
-                        }
-
-                        if (!statusMessage) {
-                            statusMessage = appendAiMessage('assistant');
-                            if (!statusMessage) {
-                                return;
-                            }
-                            statusMessage.classList.add('cat-ai-message-status');
-                            statusMessage.appendChild(document.createElement('p'));
-                        }
-
-                        statusMessage.querySelector('p').textContent = status + '...';
-                        scrollCatAiOutput();
+        try {
+            const ai = await prepareAI();
+            if (controller.signal.aborted) return;
+            const lines = await ai.answerAsync(normalized, {
+                signal: controller.signal,
+                onStatus: function(status) {
+                    if (streamId !== aiStreamId) return;
+                    if (!statusMessage) {
+                        statusMessage = appendAiMessage('assistant');
+                        if (!statusMessage) return;
+                        statusMessage.classList.add('cat-ai-message-status');
+                        statusMessage.appendChild(document.createElement('p'));
                     }
-                });
-
-                if (streamId !== aiStreamId) {
-                    return;
+                    statusMessage.querySelector('p').textContent = status + '...';
+                    scrollCatAiOutput();
                 }
-
-                if (statusMessage) {
-                    statusMessage.remove();
-                }
-
-                streamAiLines(lines);
-                await updateAiMode();
-            } catch (error) {
-                if (statusMessage) {
-                    statusMessage.remove();
-                }
-                appendAiText('assistant', [
-                    'AI request failed:',
-                    error && error.message ? error.message : String(error)
-                ]);
-                setExpression('ERR', 1100);
-            }
-            return;
-        }
-
-        if (window.siteAI && typeof window.siteAI.answer === 'function') {
-            setExpression('AI', 900);
-            Promise.resolve(window.siteAI.answer(normalized)).then(streamAiLines).catch(function(error) {
-                appendAiText('assistant', [error && error.message ? error.message : String(error)]);
-                setExpression('ERR', 1100);
             });
-            return;
+            if (streamId !== aiStreamId) return;
+            streamAiLines(lines);
+            await updateAiMode();
+        } catch (error) {
+            if (controller.signal.aborted || streamId !== aiStreamId) return;
+            appendAiText('assistant', ['AI request failed:', error.message || String(error)]);
+            setExpression('ERR', 1100);
+        } finally {
+            if (statusMessage) statusMessage.remove();
+            if (aiController === controller) aiController = null;
         }
-
-        appendAiText('assistant', ['AI module unavailable']);
-        setExpression('404', 900);
     }
 
     async function copyUseConfig() {
@@ -620,7 +607,7 @@ document.addEventListener('DOMContentLoaded', function() {
         catBot.style.removeProperty('--eye-y');
     });
 
-    catMenu.addEventListener('click', function(event) {
+    catMenu.addEventListener('click', async function(event) {
         const actionButton = event.target.closest('[data-cat-action]');
 
         if (!actionButton) {
@@ -642,12 +629,7 @@ document.addEventListener('DOMContentLoaded', function() {
         setAiPanel(false);
 
         if (action === 'terminal') {
-            if (window.siteTerminal && typeof window.siteTerminal.open === 'function') {
-                window.siteTerminal.open();
-                return;
-            }
-
-            setExpression('>_', 900);
+            await window.siteFeatures.openTerminal();
             return;
         }
 
@@ -657,8 +639,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (action === 'random') {
-            if (!window.siteTerminal || typeof window.siteTerminal.randomPost !== 'function' || !window.siteTerminal.randomPost()) {
-                setExpression('404', 900);
+            try {
+                const manifest = await window.siteData.loadManifest();
+                const posts = manifest.routes.filter(function(route) { return route.type === 'post'; });
+                if (posts.length) window.location.href = posts[Math.floor(Math.random() * posts.length)].url;
+                else setExpression('404', 900);
+            } catch (error) {
+                setExpression('ERR', 1100);
             }
         }
     });
@@ -678,13 +665,9 @@ document.addEventListener('DOMContentLoaded', function() {
         catAiConfigForm.addEventListener('submit', async function(event) {
             event.preventDefault();
 
-            if (!window.siteAI || typeof window.siteAI.writeConfig !== 'function') {
-                setConfigStatus('AI config module unavailable.');
-                return;
-            }
-
             setConfigStatus('Saving...');
             try {
+                await prepareAI();
                 await window.siteAI.writeConfig({
                     baseUrl: catAiConfigForm.elements.baseUrl.value,
                     apiKey: catAiConfigForm.elements.apiKey.value,
@@ -703,22 +686,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (catAiTest) {
         catAiTest.addEventListener('click', async function() {
-            if (!window.siteAI || typeof window.siteAI.testConnection !== 'function') {
-                setConfigStatus('AI config module unavailable.');
-                return;
-            }
-
-            if (catAiConfigForm && typeof window.siteAI.writeConfig === 'function') {
-                await window.siteAI.writeConfig({
-                    baseUrl: catAiConfigForm.elements.baseUrl.value,
-                    apiKey: catAiConfigForm.elements.apiKey.value,
-                    model: catAiConfigForm.elements.model.value
-                });
-                catAiConfigForm.elements.apiKey.value = '';
-            }
-
             setConfigStatus('Testing connection...');
             try {
+                await prepareAI();
+                if (catAiConfigForm) {
+                    await window.siteAI.writeConfig({
+                        baseUrl: catAiConfigForm.elements.baseUrl.value,
+                        apiKey: catAiConfigForm.elements.apiKey.value,
+                        model: catAiConfigForm.elements.model.value
+                    });
+                    catAiConfigForm.elements.apiKey.value = '';
+                }
                 await window.siteAI.testConnection();
                 await loadConfigForm();
                 setConfigStatus('Connection OK.');
@@ -732,18 +710,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (catAiClear) {
         catAiClear.addEventListener('click', async function() {
-            if (window.siteAI && typeof window.siteAI.clearConfig === 'function') {
+            try {
+                await prepareAI();
                 await window.siteAI.clearConfig();
+                if (catAiConfigForm) {
+                    catAiConfigForm.reset();
+                    catAiConfigForm.elements.apiKey.placeholder = AI_KEY_EMPTY_PLACEHOLDER;
+                }
+                setConfigStatus('Cleared. Demo mode is active.');
+                await updateAiMode({ baseUrl: '', model: '' });
+                setExpression('CLR', 900);
+            } catch (error) {
+                setConfigStatus(error.message);
             }
-
-            if (catAiConfigForm) {
-                catAiConfigForm.reset();
-                catAiConfigForm.elements.apiKey.placeholder = AI_KEY_EMPTY_PLACEHOLDER;
-            }
-
-            setConfigStatus('Cleared. Demo mode is active.');
-            await updateAiMode({ baseUrl: '', model: '' });
-            setExpression('CLR', 900);
         });
     }
 
@@ -799,7 +778,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    loadConfigForm();
     restoreAiMessages();
     setupPanelResize();
 });

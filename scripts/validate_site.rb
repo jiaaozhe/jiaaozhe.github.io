@@ -57,7 +57,8 @@ end
 sections = manifest["sections"] || []
 routes = manifest["routes"] || []
 content_pages = content["pages"] || {}
-allowed_types = %w[page post read fragment photo use publication]
+section_definitions = YAML.safe_load(ROOT.join("_data/sections.yml").read)
+allowed_types = ["page"] + section_definitions.map { |section| section.fetch("type") }
 
 check.call(sections.is_a?(Array) && !sections.empty?, "manifest sections must be a non-empty array")
 check.call(routes.is_a?(Array) && !routes.empty?, "manifest routes must be a non-empty array")
@@ -80,6 +81,11 @@ routes.each do |route|
   check.call(allowed_types.include?(route["type"]), "route #{label} has unknown type #{route['type']}")
   check.call(route["tags"].is_a?(Array), "route #{label} tags must be an array")
   check.call(route["size"].is_a?(Integer) && route["size"] >= 0, "route #{label} size must be non-negative")
+  check.call(!route["summary"].to_s.match?(/\{%|\{\{\s*site\./), "route #{label} summary contains unrendered Liquid")
+  unless route["type"] == "fragment"
+    output = route["url"].to_s.delete_prefix(manifest.fetch("baseurl", "")).split("#", 2).first
+    check.call(SITE.join(output.delete_prefix("/"), "index.html").file?, "route #{label} has no generated HTML page")
+  end
   if route["type"] != "page"
     check.call(declared_types.include?(route["type"]), "route #{label} is not assigned to a section")
   end
@@ -92,6 +98,9 @@ check.call(orphaned_content.empty?, "content without routes: #{orphaned_content.
 
 content_pages.each do |id, page|
   check.call(page["content"].is_a?(String), "content #{id} must contain text")
+  if page["type"] == "page"
+    check.call(!page["content"].to_s.match?(/\{%|\{\{\s*site\./), "content #{id} contains unrendered Liquid")
+  end
 end
 
 legacy_outputs = %w[site-page-index.json site-page-content.json].select { |name| SITE.join(name).exist? }
@@ -99,14 +108,24 @@ check.call(legacy_outputs.empty?, "legacy data outputs still exist: #{legacy_out
 
 html_files = SITE.glob("**/*.html")
 html_files.each do |path|
-  check.call(!path.read.include?('id="site-data"'), "legacy embedded site-data found in #{path.relative_path_from(SITE)}")
+  html = path.read
+  label = path.relative_path_from(SITE)
+  check.call(!html.include?('id="site-data"'), "legacy embedded site-data found in #{label}")
+  check.call(html.scan(/<title\b[^>]*>/i).length == 1, "#{label} must contain exactly one title")
+  canonical = html.scan(/<link\b[^>]*rel="canonical"[^>]*href="([^"]+)"[^>]*>/i).flatten
+  check.call(canonical.length == 1 && canonical.first.start_with?("https://"), "#{label} requires one absolute HTTPS canonical URL")
+  og_urls = html.scan(/<meta\b[^>]*property="og:url"[^>]*content="([^"]+)"[^>]*>/i).flatten
+  check.call(og_urls == canonical, "#{label} og:url must match its canonical URL")
 end
 
 index_html = SITE.join("index.html")
 if index_html.exist?
   html = index_html.read
-  script_order = %w[site-data.js site-ai.js terminal.js].map { |name| html.index(name) }
-  check.call(script_order.all? && script_order == script_order.sort, "shared data and AI scripts load in the wrong order")
+  script_order = %w[site-data.js site-features.js script.js cat-bot.js].map { |name| html.index(name) }
+  check.call(script_order.all? && script_order == script_order.sort, "shared scripts load in the wrong order")
+  %w[site-ai.js terminal.js site-ai-config.js site-ai-context.js site-terminal-fs.js].each do |name|
+    check.call(!html.include?("/assets/js/#{name}?"), "#{name} must load on demand")
+  end
 end
 
 post_pages = SITE.glob("posts/*/index.html")
@@ -134,14 +153,9 @@ if fragment_html.exist?
   end
 end
 
-requirements = {
-  "content/_posts" => %w[title date categories],
-  "content/_fragments" => %w[date type],
-  "content/_photos" => %w[title date photos],
-  "content/_publications" => %w[title authors venue year abstract],
-  "content/_uses" => %w[title version role status official_url summary],
-  "content/_reads" => %w[title date source summary category]
-}
+requirements = section_definitions.to_h do |section|
+  ["content/_#{section.fetch('collection')}", section.fetch("required_fields")]
+end
 
 requirements.each do |directory, keys|
   ROOT.join(directory).glob("*.md").each do |path|

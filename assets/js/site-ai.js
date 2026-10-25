@@ -1,515 +1,11 @@
 (function() {
-    const CONFIG_KEY = 'site-ai.config';
-    const CRYPTO_DB_NAME = 'site-ai-crypto';
-    const CRYPTO_DB_VERSION = 1;
-    const CRYPTO_STORE = 'keys';
-    const API_KEY_ID = 'api-key';
-    const MAX_PAGES = 5;
-    const MAX_CHARS_PER_PAGE = 8000;
-    const MAX_TOTAL_CHARS = 24000;
-    let cryptoDbPromise = null;
+    const { readConfig, writeConfig, clearConfig, hasConfig } = window.siteAIConfig;
+    const { chatCompletion } = window.siteAIClient;
+    const { parseJsonObject, compactCatalog, cleanPlan, buildContext } = window.siteAIContext;
+    const demoAnswer = window.siteAIDemo.answer;
 
     function getSiteData() {
-        if (!window.siteData) {
-            throw new Error('Site data module unavailable.');
-        }
-
         return window.siteData;
-    }
-
-    function includesAny(text, terms) {
-        return terms.some(function(term) {
-            return text.includes(term);
-        });
-    }
-
-    function getRoutes(manifest, type) {
-        return (manifest.routes || []).filter(function(route) {
-            return route.type === type;
-        });
-    }
-
-    function itemPath(item) {
-        return item.url || item.id || '/';
-    }
-
-    function getLine(content, prefix) {
-        return (content || '').split(/\r?\n/).find(function(line) {
-            return line.toLowerCase().startsWith(prefix.toLowerCase());
-        }) || '';
-    }
-
-    function answerAbout(manifest) {
-        const profile = manifest.profile || {};
-
-        return [
-            'AI demo:',
-            '这里是 ' + (profile.name || 'jiaaozhe') + ' 的个人站点。',
-            'Focus: ' + (profile.focus || 'Multimodal Representation / Automation') + '.',
-            'Research: ' + (profile.research || '暂无研究简介')
-        ];
-    }
-
-    function answerPosts(manifest) {
-        const posts = getRoutes(manifest, 'post');
-
-        if (!posts.length) {
-            return ['AI demo:', '目前还没有可列出的文章。'];
-        }
-
-        return ['AI demo:', '当前文章：'].concat(posts.map(function(post) {
-            return '- ' + post.title + ' (' + itemPath(post) + ')';
-        }));
-    }
-
-    function answerReads(manifest) {
-        const reads = getRoutes(manifest, 'read');
-
-        if (!reads.length) {
-            return ['AI demo:', '目前还没有可列出的分享。'];
-        }
-
-        return ['AI demo:', '分享过的好文章：'].concat(reads.map(function(read) {
-            return '- ' + read.title + ' (' + itemPath(read) + ')';
-        }));
-    }
-
-    function answerResearch(manifest) {
-        const publications = getRoutes(manifest, 'publication');
-
-        if (!publications.length) {
-            return ['AI demo:', '研究内容在 /research，目前没有注入论文条目。'];
-        }
-
-        return ['AI demo:', '研究内容在 /research。当前论文：'].concat(publications.map(function(publication) {
-            return '- ' + publication.title + ' (' + itemPath(publication) + ')';
-        }));
-    }
-
-    function answerPhotos(manifest) {
-        const photos = getRoutes(manifest, 'photo');
-
-        if (!photos.length) {
-            return ['AI demo:', '目前还没有可列出的摄影文章。'];
-        }
-
-        return ['AI demo:', '当前摄影文章：'].concat(photos.map(function(photo) {
-            return '- ' + photo.title + ' (' + itemPath(photo) + ')';
-        }));
-    }
-
-    async function answerUses(question, manifest) {
-        const uses = getRoutes(manifest, 'use');
-        const ghostty = uses.find(function(item) {
-            return item.name === 'ghostty' || String(item.title || '').toLowerCase().includes('ghostty');
-        });
-
-        if (question.includes('ghostty') && ghostty) {
-            const page = await getSiteData().getContent(ghostty.id);
-            const content = page ? page.content : '';
-
-            return [
-                'AI demo:',
-                'Ghostty 是 uses 目录里的终端配置。',
-                getLine(content, 'font-family') || 'font-family: not found',
-                getLine(content, 'font-size') || 'font-size: not found',
-                getLine(content, 'theme') || 'theme: not found'
-            ];
-        }
-
-        if (!uses.length) {
-            return ['AI demo:', '目前没有 uses 条目。'];
-        }
-
-        return ['AI demo:', 'uses 目录记录常用工具：'].concat(uses.map(function(use) {
-            return '- ' + use.title + ' (' + itemPath(use) + ')';
-        }));
-    }
-
-    function answerSite(manifest) {
-        const sections = (manifest.sections || []).map(function(section) {
-            return '- ' + section.url + '：' + section.title;
-        });
-
-        return [
-            'AI demo:',
-            '这个站点包含：'
-        ].concat(sections);
-    }
-
-    function answerDemoQuestions() {
-        return [
-            'AI demo questions:',
-            '你是谁？',
-            '你有哪些文章？',
-            '你分享了哪些好文章？',
-            '你有哪些照片？',
-            'ghostty 配置是什么？',
-            '你的研究方向是什么？',
-            '这个网站有什么内容？'
-        ];
-    }
-
-    function fallback() {
-        return [
-            'AI demo:',
-            '我现在是本地规则 demo，还没有接入大模型。',
-            '可以试试：',
-            '你有哪些文章？',
-            'ghostty 配置是什么？',
-            '你的研究方向是什么？'
-        ];
-    }
-
-    async function demoAnswer(question, manifest) {
-        const q = String(question || '').toLowerCase();
-
-        if (includesAny(q, ['demo', '示例', '问题', '怎么问'])) {
-            return answerDemoQuestions();
-        }
-
-        if (includesAny(q, ['你是谁', 'about', '介绍', '个人', 'jiaaozhe'])) {
-            return answerAbout(manifest);
-        }
-
-        if (includesAny(q, ['分享', '好文', '推荐阅读', '阅读', 'reads', 'reading'])) {
-            return answerReads(manifest);
-        }
-
-        if (includesAny(q, ['照片', '摄影', 'photo', 'photos', '相机'])) {
-            return answerPhotos(manifest);
-        }
-
-        if (includesAny(q, ['文章', '博客', 'posts', '有哪些文章', '写了什么'])) {
-            return answerPosts(manifest);
-        }
-
-        if (includesAny(q, ['研究', '论文', 'research', 'publication', 'attention', 'iioa'])) {
-            return answerResearch(manifest);
-        }
-
-        if (includesAny(q, ['ghostty', '终端配置', 'terminal config', '配置', 'uses', 'vscode'])) {
-            return answerUses(q, manifest);
-        }
-
-        if (includesAny(q, ['网站', '站点', 'site', '目录', '有什么', '导航', '内容'])) {
-            return answerSite(manifest);
-        }
-
-        return fallback();
-    }
-
-    function readStoredConfig() {
-        try {
-            return JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}') || {};
-        } catch (error) {
-            return {};
-        }
-    }
-
-    function normalizeConfig(config) {
-        return {
-            baseUrl: String(config.baseUrl || '').trim().replace(/\/+$/, ''),
-            model: String(config.model || '').trim()
-        };
-    }
-
-    function bytesToBase64(bytes) {
-        let binary = '';
-
-        bytes.forEach(function(byte) {
-            binary += String.fromCharCode(byte);
-        });
-
-        return btoa(binary);
-    }
-
-    function base64ToBytes(value) {
-        const binary = atob(value);
-        const bytes = new Uint8Array(binary.length);
-
-        for (let index = 0; index < binary.length; index += 1) {
-            bytes[index] = binary.charCodeAt(index);
-        }
-
-        return bytes;
-    }
-
-    function assertCryptoSupport() {
-        if (!window.crypto || !window.crypto.subtle || !window.indexedDB) {
-            throw new Error('This browser cannot save encrypted API keys.');
-        }
-    }
-
-    function openCryptoDb() {
-        assertCryptoSupport();
-
-        if (!cryptoDbPromise) {
-            cryptoDbPromise = new Promise(function(resolve, reject) {
-                const request = indexedDB.open(CRYPTO_DB_NAME, CRYPTO_DB_VERSION);
-
-                request.onupgradeneeded = function() {
-                    const db = request.result;
-
-                    if (!db.objectStoreNames.contains(CRYPTO_STORE)) {
-                        db.createObjectStore(CRYPTO_STORE);
-                    }
-                };
-                request.onsuccess = function() {
-                    resolve(request.result);
-                };
-                request.onerror = function() {
-                    reject(request.error);
-                };
-            });
-        }
-
-        return cryptoDbPromise;
-    }
-
-    async function readCryptoKey() {
-        const db = await openCryptoDb();
-
-        return new Promise(function(resolve, reject) {
-            const transaction = db.transaction(CRYPTO_STORE, 'readonly');
-            const request = transaction.objectStore(CRYPTO_STORE).get(API_KEY_ID);
-
-            request.onsuccess = function() {
-                resolve(request.result || null);
-            };
-            request.onerror = function() {
-                reject(request.error);
-            };
-        });
-    }
-
-    async function writeCryptoKey(key) {
-        const db = await openCryptoDb();
-
-        return new Promise(function(resolve, reject) {
-            const transaction = db.transaction(CRYPTO_STORE, 'readwrite');
-            const request = transaction.objectStore(CRYPTO_STORE).put(key, API_KEY_ID);
-
-            request.onsuccess = function() {
-                resolve();
-            };
-            request.onerror = function() {
-                reject(request.error);
-            };
-        });
-    }
-
-    async function deleteCryptoKey() {
-        if (!window.indexedDB) {
-            return;
-        }
-
-        const db = await openCryptoDb();
-
-        return new Promise(function(resolve, reject) {
-            const transaction = db.transaction(CRYPTO_STORE, 'readwrite');
-            const request = transaction.objectStore(CRYPTO_STORE).delete(API_KEY_ID);
-
-            request.onsuccess = function() {
-                resolve();
-            };
-            request.onerror = function() {
-                reject(request.error);
-            };
-        });
-    }
-
-    async function getOrCreateCryptoKey() {
-        const existing = await readCryptoKey();
-
-        if (existing) {
-            return existing;
-        }
-
-        const key = await crypto.subtle.generateKey(
-            { name: 'AES-GCM', length: 256 },
-            false,
-            ['encrypt', 'decrypt']
-        );
-        await writeCryptoKey(key);
-        return key;
-    }
-
-    async function encryptApiKey(apiKey) {
-        const key = await getOrCreateCryptoKey();
-        const iv = crypto.getRandomValues(new Uint8Array(12));
-        const encoded = new TextEncoder().encode(apiKey);
-        const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, encoded);
-
-        return {
-            apiKeyEncrypted: bytesToBase64(new Uint8Array(encrypted)),
-            apiKeyIv: bytesToBase64(iv)
-        };
-    }
-
-    async function decryptApiKey(config) {
-        if (!config.apiKeyEncrypted || !config.apiKeyIv) {
-            return '';
-        }
-
-        const key = await readCryptoKey();
-
-        if (!key) {
-            return '';
-        }
-
-        const encrypted = base64ToBytes(String(config.apiKeyEncrypted));
-        const iv = base64ToBytes(String(config.apiKeyIv));
-        const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, encrypted);
-
-        return new TextDecoder().decode(decrypted);
-    }
-
-    async function readConfig() {
-        const stored = readStoredConfig();
-        const next = normalizeConfig(stored);
-        const oldPlainApiKey = String(stored.apiKey || '');
-        let apiKey = '';
-
-        if (stored.apiKeyEncrypted && stored.apiKeyIv) {
-            apiKey = await decryptApiKey(stored).catch(function() {
-                return '';
-            });
-        } else if (oldPlainApiKey) {
-            await writeConfig({
-                baseUrl: next.baseUrl,
-                apiKey: oldPlainApiKey,
-                model: next.model
-            });
-            apiKey = oldPlainApiKey;
-        }
-
-        return {
-            baseUrl: next.baseUrl,
-            apiKey: apiKey,
-            hasSavedApiKey: Boolean(apiKey),
-            model: next.model
-        };
-    }
-
-    async function writeConfig(config) {
-        const previous = readStoredConfig();
-        const next = normalizeConfig(config);
-        const plainApiKey = String(config.apiKey || '');
-
-        if (plainApiKey) {
-            Object.assign(next, await encryptApiKey(plainApiKey));
-        } else if (previous.apiKeyEncrypted && previous.apiKeyIv) {
-            next.apiKeyEncrypted = previous.apiKeyEncrypted;
-            next.apiKeyIv = previous.apiKeyIv;
-        } else if (previous.apiKey) {
-            Object.assign(next, await encryptApiKey(String(previous.apiKey)));
-        }
-
-        localStorage.setItem(CONFIG_KEY, JSON.stringify(next));
-        return next;
-    }
-
-    async function clearConfig() {
-        localStorage.removeItem(CONFIG_KEY);
-        await deleteCryptoKey().catch(function() {});
-    }
-
-    function hasConfig(config) {
-        const value = config || readStoredConfig();
-        return Boolean(value.baseUrl && value.model);
-    }
-
-    async function chatCompletion(config, messages, options) {
-        const body = {
-            model: config.model,
-            messages: messages,
-            temperature: options && typeof options.temperature === 'number' ? options.temperature : 0.2
-        };
-        const headers = {
-            'Content-Type': 'application/json'
-        };
-
-        if (config.apiKey) {
-            headers.Authorization = 'Bearer ' + config.apiKey;
-        }
-
-        const response = await fetch(config.baseUrl + '/chat/completions', {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify(body)
-        });
-
-        if (!response.ok) {
-            const text = await response.text().catch(function() {
-                return '';
-            });
-            throw new Error('Model request failed: HTTP ' + response.status + (text ? ' ' + text.slice(0, 180) : ''));
-        }
-
-        const data = await response.json();
-        const content = data && data.choices && data.choices[0] && data.choices[0].message ? data.choices[0].message.content : '';
-
-        if (!content) {
-            throw new Error('Model returned an empty response.');
-        }
-
-        return String(content).trim();
-    }
-
-    function parseJsonObject(text) {
-        const clean = String(text || '').trim().replace(/^```(?:json)?/i, '').replace(/```$/i, '').trim();
-
-        try {
-            return JSON.parse(clean);
-        } catch (error) {
-            const start = clean.indexOf('{');
-            const end = clean.lastIndexOf('}');
-
-            if (start >= 0 && end > start) {
-                return JSON.parse(clean.slice(start, end + 1));
-            }
-
-            throw error;
-        }
-    }
-
-    function compactCatalog(manifest) {
-        const routes = Array.isArray(manifest.routes) ? manifest.routes : [];
-        return routes.map(function(page) {
-            return {
-                id: page.id,
-                type: page.type,
-                title: page.title,
-                url: page.url,
-                date: page.date,
-                summary: page.summary,
-                tags: page.tags || []
-            };
-        });
-    }
-
-    function cleanPlan(plan, manifest) {
-        const pages = Array.isArray(manifest.routes) ? manifest.routes : [];
-        const action = plan.action === 'read_pages' ? 'read_pages' : 'answer';
-        const allowed = new Set(pages.map(function(page) {
-            return page.id;
-        }));
-        const deduped = [];
-
-        (Array.isArray(plan.pages) ? plan.pages : []).forEach(function(item) {
-            const id = typeof item === 'string' ? item : item && item.id;
-
-            if (id && allowed.has(id) && !deduped.includes(id)) {
-                deduped.push(id);
-            }
-        });
-
-        return {
-            action: action,
-            pages: deduped.slice(0, MAX_PAGES),
-            answer: String(plan.answer || '').trim()
-        };
     }
 
     function splitAnswer(text) {
@@ -518,7 +14,7 @@
         });
     }
 
-    async function planAnswer(config, question, manifest) {
+    async function planAnswer(config, question, manifest, options) {
         const prompt = [
             '你会收到用户问题、站点简介和页面目录。',
             '先判断是否必须读取具体页面正文才能可靠回答。',
@@ -549,39 +45,8 @@
         const response = await chatCompletion(config, [
             { role: 'system', content: '你是一个严谨的站点问答规划器，只返回符合要求的 JSON。' },
             { role: 'user', content: prompt }
-        ], { temperature: 0 });
+        ], { temperature: 0, signal: options && options.signal });
         return cleanPlan(parseJsonObject(response), manifest);
-    }
-
-    function buildContext(ids, contentData, manifest) {
-        const contentPages = contentData.pages || {};
-        const indexById = {};
-        let total = 0;
-
-        (manifest.routes || []).forEach(function(page) {
-            indexById[page.id] = page;
-        });
-
-        return ids.map(function(id, index) {
-            const page = contentPages[id] || indexById[id] || {};
-            const title = page.title || (indexById[id] && indexById[id].title) || id;
-            const url = page.url || (indexById[id] && indexById[id].url) || id;
-            const rawContent = String(page.content || indexById[id].summary || '').trim();
-            const remaining = Math.max(0, MAX_TOTAL_CHARS - total);
-            const content = rawContent.slice(0, Math.min(MAX_CHARS_PER_PAGE, remaining));
-
-            total += content.length;
-
-            return [
-                'PAGE ' + (index + 1),
-                'TITLE: ' + title,
-                'URL: ' + url,
-                'CONTENT:',
-                content
-            ].join('\n');
-        }).filter(function(block) {
-            return block.includes('CONTENT:\n') && !block.endsWith('CONTENT:\n');
-        });
     }
 
     async function answerWithModel(question, options) {
@@ -597,7 +62,7 @@
         }
 
         onStatus('分析问题');
-        const plan = await planAnswer(config, question, manifest);
+        const plan = await planAnswer(config, question, manifest, options);
 
         if (plan.action === 'answer') {
             return splitAnswer(plan.answer);
@@ -609,7 +74,7 @@
 
         onStatus('读取页面内容');
         const content = await siteData.loadContent();
-        const contextBlocks = buildContext(plan.pages, content, manifest);
+        const contextBlocks = buildContext(plan.pages, content, manifest, question);
 
         if (!contextBlocks.length) {
             return ['找到了相关页面，但没有可用正文内容。'];
@@ -638,7 +103,7 @@
                     contextBlocks.join('\n\n---\n\n')
                 ].join('\n')
             }
-        ], { temperature: 0.2 });
+        ], { temperature: 0.2, signal: options && options.signal });
 
         return splitAnswer(answer);
     }
@@ -663,7 +128,7 @@
         });
     }
 
-    window.siteAI = {
+    window.siteAI = Object.freeze({
         answer: answer,
         answerAsync: answerWithModel,
         clearConfig: clearConfig,
@@ -671,5 +136,5 @@
         readConfig: readConfig,
         testConnection: testConnection,
         writeConfig: writeConfig
-    };
+    });
 })();

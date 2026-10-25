@@ -130,3 +130,7 @@ _site/
 .sass-cache/
 .jekyll-cache/
 .jekyll-metadata
+
+# Browser checks
+test-results/
+playwright-report/

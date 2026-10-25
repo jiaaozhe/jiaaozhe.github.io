@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+(function() {
     const palette = document.getElementById('command-palette');
     const form = document.getElementById('command-form');
     const input = document.getElementById('command-input');
@@ -14,141 +14,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const historyStorageKey = 'terminal.history';
     const historyLimit = 80;
     const rawCache = {};
-    const textEncoder = window.TextEncoder ? new TextEncoder() : null;
+    const filesystem = window.siteTerminalFS;
+    const byteLength = filesystem.byteLength;
     let commandHistory = readHistory();
     let historyIndex = commandHistory.length;
     let lessState = null;
+    let aiController = null;
     let manifestReady = false;
     let manifestError = null;
     let shortcutRoutes = {};
 
-    function slugFromUrl(url) {
-        return url.split('/').filter(Boolean).pop() || 'home';
-    }
-
-    function createDir(name, route, title) {
-        return {
-            type: 'dir',
-            name: name,
-            route: route || '',
-            title: title || name,
-            children: {},
-            aliases: {}
-        };
-    }
-
-    function byteLength(value) {
-        const text = String(value || '');
-
-        if (textEncoder) {
-            return textEncoder.encode(text).length;
-        }
-
-        return unescape(encodeURIComponent(text)).length;
-    }
-
-    function createFile(name, route, title, content, meta) {
-        const details = meta || {};
-
-        return {
-            type: 'file',
-            name: name,
-            displayName: details.displayName || name,
-            route: route || '',
-            title: title || name,
-            content: content || '',
-            contentId: details.contentId || '',
-            rawUrl: details.rawUrl || '',
-            sourcePath: details.sourcePath || '',
-            date: details.date || '',
-            size: details.size || byteLength(content || '')
-        };
-    }
-
-    function addChild(parent, node, aliases) {
-        parent.children[node.name] = node;
-
-        (aliases || []).forEach(function(alias) {
-            if (alias && alias !== node.name) {
-                parent.aliases[alias] = node.name;
-            }
-        });
-    }
-
-    function buildVfs(data) {
-        const defaultSections = [
-            { name: 'posts', title: '文章', url: '/posts/', types: ['post'] },
-            { name: 'reads', title: '好文分享', url: '/reads/', types: ['read'] },
-            { name: 'fragments', title: '碎片流', url: '/fragments/', types: ['fragment'] },
-            { name: 'photos', title: '摄影', url: '/photos/', types: ['photo'] },
-            { name: 'research', title: '学术研究', url: '/research/', types: ['publication'] },
-            { name: 'uses', title: '工具', url: '/status/', types: ['use'] }
-        ];
-        const sections = Array.isArray(data.sections) && data.sections.length ? data.sections : defaultSections;
-        const root = createDir('', '/', '/');
-        const directories = {};
-        const sectionByType = {};
-        const nextShortcuts = {};
-
-        sections.forEach(function(section) {
-            const dir = createDir(section.name, section.url, section.title);
-            directories[section.name] = dir;
-            nextShortcuts[section.name] = section.url;
-            addChild(root, dir);
-
-            (section.types || []).forEach(function(type) {
-                sectionByType[type] = dir;
-            });
-        });
-
-        (data.routes || []).forEach(function(route) {
-            if (route.type === 'page' && directories[route.name]) {
-                directories[route.name].route = route.url;
-                directories[route.name].title = route.title;
-                return;
-            }
-
-            const parent = sectionByType[route.type] || root;
-            let name = route.name || slugFromUrl(route.url);
-
-            if (route.type === 'page' && route.url === '/') {
-                name = 'home';
-            } else if (route.type === 'page' && route.name === 'introduction') {
-                name = 'about.md';
-            }
-
-            const file = createFile(name, route.url, route.title, '', {
-                contentId: route.id,
-                rawUrl: route.raw_url,
-                sourcePath: route.source_path,
-                date: route.date,
-                size: route.size
-            });
-            const aliases = [slugFromUrl(route.url)];
-
-            if (route.source_path) {
-                aliases.push(route.source_path.split('/').pop());
-            }
-
-            addChild(parent, file, aliases);
-
-            if (route.type === 'page') {
-                nextShortcuts[route.name] = route.url;
-                if (route.name === 'introduction') {
-                    nextShortcuts.about = route.url;
-                }
-            } else if (route.type === 'use' && route.name === 'ghostty') {
-                nextShortcuts.ghostty = route.url;
-            }
-        });
-
-        shortcutRoutes = nextShortcuts;
-        return root;
-    }
-
-    let vfs = buildVfs({});
+    let vfs = filesystem.create({}).root;
     const manifestPromise = siteData.loadManifest().then(function(manifest) {
-        vfs = buildVfs(manifest);
+        const model = filesystem.create(manifest);
+        vfs = model.root;
+        shortcutRoutes = model.shortcuts;
         manifestReady = true;
 
         if (palette.classList.contains('is-open') && !output.querySelector('.command-history-line')) {
@@ -258,48 +138,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function getNode(parts) {
-        let node = vfs;
-
-        for (let index = 0; index < parts.length; index += 1) {
-            const part = parts[index];
-            const canonical = node.aliases && node.aliases[part] ? node.aliases[part] : part;
-
-            if (!node.children || !node.children[canonical]) {
-                return null;
-            }
-
-            node = node.children[canonical];
-        }
-
-        return node;
+        return filesystem.getNode(vfs, parts);
     }
 
     function resolveParts(path) {
-        let raw = (path || '').trim();
-
-        if (raw === '~') {
-            raw = '/';
-        } else if (raw.startsWith('~/')) {
-            raw = '/' + raw.slice(2);
-        }
-
-        const base = raw.startsWith('/') ? [] : cwd.slice();
-        const tokens = raw.split('/').filter(Boolean);
-
-        tokens.forEach(function(token) {
-            if (token === '.') {
-                return;
-            }
-
-            if (token === '..') {
-                base.pop();
-                return;
-            }
-
-            base.push(token);
-        });
-
-        return base;
+        return filesystem.resolveParts(path, cwd);
     }
 
     function resolvePath(path) {
@@ -633,7 +476,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     function firstFileName(node) {
-        return Object.keys(node.children || {}).sort().find(function(name) {
+        return Object.keys(node && node.children || {}).sort().find(function(name) {
             return node.children[name].type === 'file';
         });
     }
@@ -678,7 +521,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function randomPost() {
-        const posts = Object.values(vfs.children.posts.children || {});
+        const posts = Object.values(vfs.children.posts ? vfs.children.posts.children : {});
 
         if (!posts.length) {
             return false;
@@ -1200,24 +1043,28 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        if (!window.siteAI || typeof window.siteAI.answerAsync !== 'function') {
-            writeLines([[token('ask: AI module unavailable', 'error')]]);
-            return;
-        }
-
+        if (aiController) aiController.abort();
+        const controller = new AbortController();
+        aiController = controller;
         const status = appendLine([token('ask: loading site manifest...', 'muted')]);
 
-        window.siteAI.answerAsync(question, {
-            onStatus: function(message) {
-                status.textContent = 'ask: ' + message + '...';
-            }
+        window.siteFeatures.loadAI().then(function(ai) {
+            controller.signal.throwIfAborted();
+            return ai.answerAsync(question, {
+                signal: controller.signal,
+                onStatus: function(message) {
+                    status.textContent = 'ask: ' + message + '...';
+                }
+            });
         }).then(function(response) {
+            if (controller.signal.aborted) return;
             const lines = Array.isArray(response) ? response : [String(response)];
             let lineIndex = 0;
 
             status.remove();
 
             function streamNextLine() {
+                if (controller.signal.aborted) return;
                 if (lineIndex >= lines.length) {
                     return;
                 }
@@ -1229,6 +1076,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 lineIndex += 1;
 
                 function streamNextChar() {
+                    if (controller.signal.aborted) return;
                     item.textContent = line.slice(0, charIndex);
                     scrollOutput();
 
@@ -1247,7 +1095,7 @@ document.addEventListener('DOMContentLoaded', function() {
             streamNextLine();
         }).catch(function(error) {
             status.remove();
-            writeLines([[token('ask: ' + error.message, 'error')]]);
+            if (!controller.signal.aborted) writeLines([[token('ask: ' + error.message, 'error')]]);
         });
     }
 
@@ -1547,6 +1395,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function close() {
         lessState = null;
+        if (aiController) aiController.abort();
         palette.classList.remove('is-open');
         palette.setAttribute('aria-hidden', 'true');
         document.dispatchEvent(new CustomEvent('command-palette:close'));
@@ -1722,4 +1571,4 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     updatePrompt();
-});
+})();

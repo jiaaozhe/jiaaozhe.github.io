@@ -1,0 +1,36 @@
+- collection: posts
+  type: post
+  name: posts
+  title: 文章
+  url: /posts/
+  required_fields: [title, date, categories]
+- collection: reads
+  type: read
+  name: reads
+  title: 好文分享
+  url: /reads/
+  required_fields: [title, date, source, summary, category]
+- collection: fragments
+  type: fragment
+  name: fragments
+  title: 碎片流
+  url: /fragments/
+  required_fields: [date, type]
+- collection: photos
+  type: photo
+  name: photos
+  title: 摄影
+  url: /photos/
+  required_fields: [title, date, photos]
+- collection: publications
+  type: publication
+  name: research
+  title: 学术研究
+  url: /research/
+  required_fields: [title, authors, venue, year, abstract]
+- collection: uses
+  type: use
+  name: uses
+  title: 工具配置
+  url: /status/
+  required_fields: [title, version, role, status, official_url, summary]

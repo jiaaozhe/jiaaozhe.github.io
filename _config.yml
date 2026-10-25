@@ -3,7 +3,7 @@ title: 我的博客
 description: 分享技术、生活和思考
 author: jiaaozhe
 baseurl: "" # the subpath of your site, e.g. /blog
-url: "" # the base hostname & protocol for your site, e.g. https://example.com
+url: "https://jiaaozhe.github.io"
 source_repository: jiaaozhe/jiaaozhe.github.io
 raw_branch: main
 
@@ -75,3 +75,7 @@ exclude:
   - DESIGN.md
   - AGENTS.md
   - scripts
+  - package.json
+  - package-lock.json
+  - test-results
+  - playwright-report

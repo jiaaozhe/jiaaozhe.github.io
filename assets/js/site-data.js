@@ -53,5 +53,4 @@
         loadManifest: loadManifest
     });
 
-    loadManifest().catch(function() {});
 })();

@@ -27,8 +27,8 @@ global.window = {
     }
 };
 
-vm.runInThisContext(fs.readFileSync('assets/js/site-ai.js', 'utf8'), {
-    filename: 'assets/js/site-ai.js'
+['site-ai-config.js', 'site-ai-client.js', 'site-ai-context.js', 'site-ai-demo.js', 'site-ai.js'].forEach(function(name) {
+    vm.runInThisContext(fs.readFileSync('assets/js/' + name, 'utf8'), { filename: name });
 });
 
 async function main() {
