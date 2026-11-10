@@ -19,7 +19,7 @@ permalink: /introduction/
             </svg>
         </a>
         <h1>关于</h1>
-        <p class="subtitle">Code is cheap, show me your talk.</p>
+        <p class="subtitle">Rewrite is all you need.</p>
     </div>
 </section>
 
